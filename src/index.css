@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#F9F7F1] text-on-surface antialiased;
+  }
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Custom styles based on user's HTML */
+.smooth-shadow {
+    box-shadow: 0px 10px 30px rgba(0,0,0,0.04);
+}
+
+.rich-text-area:empty:before {
+    content: attr(placeholder);
+    color: #c4c5d9;
+    pointer-events: none;
+    display: block; 
+}
+
+.context-menu {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: all 0.2s ease;
+}
+
+.context-menu.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.prose p {
+    margin-bottom: 2rem;
+    color: #1c1b1b; 
+    font-family: "Source Serif 4", serif;
+}
+.prose h2 {
+    margin-top: 3.5rem;
+    margin-bottom: 1.5rem;
+    color: #1c1b1b;
+    font-family: "Anton", sans-serif;
+    font-weight: 400;
+}
+.prose blockquote {
+    border-left: 8px solid #b1f342;
+    padding: 2rem;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 3rem;
+    margin-bottom: 3rem;
+    font-style: italic;
+    color: #496d00;
+    background-color: #b1f342;
+    border-radius: 1rem;
+    font-family: "Source Serif 4", serif;
+    font-size: 1.5rem;
+    line-height: 2.25rem;
+    text-align: left;
+    box-shadow: 4px 4px 0px 0px #1c1b1b;
+}
+
+@media (min-width: 768px) {
+    .prose blockquote {
+        margin-left: -2rem;
+        margin-right: -2rem;
+        font-size: 1.875rem;
+        line-height: 2.5rem;
+    }
+}
+
+.floating-actions {
+    transition: opacity 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
