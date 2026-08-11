@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -9,10 +9,12 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  // If already authenticated, redirect to dashboard
-  if (isAuthenticated) {
-    navigate('/admin/dashboard', { replace: true });
-  }
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
