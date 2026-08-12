@@ -2,6 +2,7 @@ import { articles as initialArticles, type Article } from './articles';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const LOCAL_STORAGE_KEY = 'iedc_published_articles';
+const DELETED_IDS_KEY = 'iedc_deleted_article_ids';
 
 // --- HTML Sanitization ---
 function sanitizeHtml(input: string): string {
@@ -12,6 +13,28 @@ function sanitizeHtml(input: string): string {
 
 function sanitizeParagraphs(paragraphs: string[]): string[] {
   return paragraphs.map(sanitizeHtml);
+}
+
+// --- Deleted IDs helper ---
+function getDeletedIds(): string[] {
+  try {
+    const stored = localStorage.getItem(DELETED_IDS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function addDeletedId(id: string): void {
+  try {
+    const current = getDeletedIds();
+    if (!current.includes(String(id))) {
+      current.push(String(id));
+      localStorage.setItem(DELETED_IDS_KEY, JSON.stringify(current));
+    }
+  } catch (e) {
+    console.error('Failed to save deleted ID:', e);
+  }
 }
 
 // --- Local Storage Helpers ---
@@ -38,7 +61,7 @@ function saveLocalArticles(articlesList: Article[]): void {
 // --- Cross-tab sync ---
 export function onArticlesChange(callback: () => void): () => void {
   const handler = (e: StorageEvent) => {
-    if (e.key === LOCAL_STORAGE_KEY) {
+    if (e.key === LOCAL_STORAGE_KEY || e.key === DELETED_IDS_KEY) {
       callback();
     }
   };
@@ -49,8 +72,8 @@ export function onArticlesChange(callback: () => void): () => void {
 // --- Supabase row mapper ---
 function mapSupabaseRow(item: Record<string, unknown>): Article {
   return {
-    id: item.id as string,
-    title: item.title as string,
+    id: String(item.id),
+    title: (item.title as string) || '',
     subtitle: (item.subtitle as string) || '',
     category: (item.category as string) || 'Tech Update',
     categoryColor: (item.category_color as Article['categoryColor']) || 'primary',
@@ -68,7 +91,7 @@ function mapSupabaseRow(item: Record<string, unknown>): Article {
 
 function toSupabaseRow(article: Article): Record<string, unknown> {
   return {
-    id: article.id,
+    id: String(article.id),
     title: article.title,
     subtitle: article.subtitle,
     category: article.category,
@@ -87,8 +110,11 @@ function toSupabaseRow(article: Article): Record<string, unknown> {
 
 // --- Public API ---
 
-/** Get all articles (admin view — includes drafts/scheduled) */
+/** Get all articles for admin (filters out deleted IDs) */
 export async function getAllArticlesAdmin(): Promise<Article[]> {
+  const deletedIds = getDeletedIds();
+  let list: Article[] = [];
+
   if (isSupabaseConfigured && supabase) {
     try {
       const { data, error } = await supabase
@@ -97,16 +123,23 @@ export async function getAllArticlesAdmin(): Promise<Article[]> {
         .order('createdAt', { ascending: false });
 
       if (!error && data && data.length > 0) {
-        return data.map(mapSupabaseRow);
+        list = data.map(mapSupabaseRow);
+      } else {
+        list = getLocalArticles();
       }
     } catch (err) {
       console.warn('Supabase fetch failed, falling back to local:', err);
+      list = getLocalArticles();
     }
+  } else {
+    list = getLocalArticles();
   }
-  return getLocalArticles();
+
+  // Filter out any IDs marked as deleted
+  return list.filter((a) => !deletedIds.includes(String(a.id)));
 }
 
-/** Get only publicly visible articles (published + scheduled-past-due) */
+/** Get only publicly visible articles */
 export async function getAllArticles(): Promise<Article[]> {
   const all = await getAllArticlesAdmin();
   const now = new Date();
@@ -197,8 +230,9 @@ export async function publishArticle(payload: CreateArticlePayload): Promise<Art
 
 // --- Update ---
 export async function updateArticle(id: string, payload: Partial<CreateArticlePayload>): Promise<Article | null> {
+  const targetId = String(id);
   const all = await getAllArticlesAdmin();
-  const idx = all.findIndex((a) => String(a.id) === String(id));
+  const idx = all.findIndex((a) => String(a.id) === targetId);
   if (idx === -1) return null;
 
   const existing = all[idx];
@@ -218,7 +252,6 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
     } : existing.content,
   };
 
-  // Recalculate read time if content changed
   if (payload.paragraphs) {
     const totalWords = [...updated.content.paragraphs, updated.title, updated.subtitle].join(' ').split(/\s+/).length;
     updated.readTime = `${Math.max(1, Math.ceil(totalWords / 200))} min read`;
@@ -229,7 +262,7 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
       const { error } = await supabase
         .from('articles')
         .update(toSupabaseRow(updated))
-        .eq('id', id);
+        .eq('id', targetId);
       if (error) console.error('Supabase update error:', error);
     } catch (err) {
       console.error('Supabase update exception:', err);
@@ -243,18 +276,26 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
 
 // --- Delete ---
 export async function deleteArticle(id: string): Promise<boolean> {
+  const targetId = String(id);
+
+  // Mark as deleted in local persistent tracking
+  addDeletedId(targetId);
+
+  // Update local storage array
+  const allLocal = getLocalArticles();
+  const filteredLocal = allLocal.filter((a) => String(a.id) !== targetId);
+  saveLocalArticles(filteredLocal);
+
+  // Delete from Supabase cloud table if connected
   if (isSupabaseConfigured && supabase) {
     try {
-      const { error } = await supabase.from('articles').delete().eq('id', id);
+      const { error } = await supabase.from('articles').delete().eq('id', targetId);
       if (error) console.error('Supabase delete error:', error);
     } catch (err) {
       console.error('Supabase delete exception:', err);
     }
   }
 
-  const all = getLocalArticles();
-  const filtered = all.filter((a) => String(a.id) !== String(id));
-  saveLocalArticles(filtered);
   return true;
 }
 
