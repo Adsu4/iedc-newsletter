@@ -65,27 +65,54 @@ export default function About() {
         </div>
       </section>
 
-      {/* Leadership Committee */}
+      {/* Leadership Committee — Nodal Officers & Student Leads */}
       <section className="flex flex-col gap-12">
         <h2 className="text-headline-xl font-headline-xl text-on-surface uppercase border-b-2 border-on-surface pb-4">
-          Executive Leadership (2024-2025)
+          IEDC Leadership & Officers
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {[
-            { name: 'Meera Krishnan', role: 'Chairperson', dept: 'CSE, 3rd Year', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDp6-LO5wbh6CTC36gJGeJayrbGtizLZWUlH9INz99YIJjIvsgYIZWEI3FCpw0i_0qiTUtAr6wPwhbUntODV_DKp16HJ_i97nWITmL3RCUSGrO0UEQgfLjdcaub8MJ1eBmE7L8UKpcRIhK6qh2roHWO8mK9WHTiHouOVak3xxVFkkI027MEgVlLW2Wt-YE2_7_p67F0NuRnWR6AOvYY3tYmko7Kd-N5jpyO_R33j4KF_IVtKvrukoEY2Q' },
-            { name: 'Aditya Mohan', role: 'Chief Executive Officer', dept: 'ECE, 4th Year', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDp6-LO5wbh6CTC36gJGeJayrbGtizLZWUlH9INz99YIJjIvsgYIZWEI3FCpw0i_0qiTUtAr6wPwhbUntODV_DKp16HJ_i97nWITmL3RCUSGrO0UEQgfLjdcaub8MJ1eBmE7L8UKpcRIhK6qh2roHWO8mK9WHTiHouOVak3xxVFkkI027MEgVlLW2Wt-YE2_7_p67F0NuRnWR6AOvYY3tYmko7Kd-N5jpyO_R33j4KF_IVtKvrukoEY2Q' },
-            { name: 'Dr. Rajesh P.', role: 'Faculty Nodal Officer', dept: 'Professor, EEE', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDp6-LO5wbh6CTC36gJGeJayrbGtizLZWUlH9INz99YIJjIvsgYIZWEI3FCpw0i_0qiTUtAr6wPwhbUntODV_DKp16HJ_i97nWITmL3RCUSGrO0UEQgfLjdcaub8MJ1eBmE7L8UKpcRIhK6qh2roHWO8mK9WHTiHouOVak3xxVFkkI027MEgVlLW2Wt-YE2_7_p67F0NuRnWR6AOvYY3tYmko7Kd-N5jpyO_R33j4KF_IVtKvrukoEY2Q' },
-            { name: 'Ananya R.', role: 'Chief Operating Officer', dept: 'Mech, 3rd Year', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDp6-LO5wbh6CTC36gJGeJayrbGtizLZWUlH9INz99YIJjIvsgYIZWEI3FCpw0i_0qiTUtAr6wPwhbUntODV_DKp16HJ_i97nWITmL3RCUSGrO0UEQgfLjdcaub8MJ1eBmE7L8UKpcRIhK6qh2roHWO8mK9WHTiHouOVak3xxVFkkI027MEgVlLW2Wt-YE2_7_p67F0NuRnWR6AOvYY3tYmko7Kd-N5jpyO_R33j4KF_IVtKvrukoEY2Q' },
-          ].map((member) => (
-            <div key={member.name} className="bg-surface p-6 rounded-2xl border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] flex flex-col items-center text-center gap-4">
-              <img src={member.avatar} alt={member.name} className="w-24 h-24 rounded-full border-4 border-on-surface object-cover shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]" />
-              <div>
-                <h4 className="text-headline-md font-headline-md text-on-surface uppercase leading-tight">{member.name}</h4>
-                <p className="text-label-bold font-label-bold text-primary text-xs uppercase mt-1">{member.role}</p>
-                <p className="text-xs text-secondary mt-0.5">{member.dept}</p>
+
+        {/* Nodal Officers */}
+        <div className="flex flex-col gap-6">
+          <h3 className="text-headline-md font-headline-md text-primary uppercase">Nodal Officers</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            {[
+              { name: 'Dr. Vipinkumar K S', role: 'Nodal Officer I', dept: 'Faculty Advisor', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDp6-LO5wbh6CTC36gJGeJayrbGtizLZWUlH9INz99YIJjIvsgYIZWEI3FCpw0i_0qiTUtAr6wPwhbUntODV_DKp16HJ_i97nWITmL3RCUSGrO0UEQgfLjdcaub8MJ1eBmE7L8UKpcRIhK6qh2roHWO8mK9WHTiHouOVak3xxVFkkI027MEgVlLW2Wt-YE2_7_p67F0NuRnWR6AOvYY3tYmko7Kd-N5jpyO_R33j4KF_IVtKvrukoEY2Q' },
+              { name: 'Prof. Asha J', role: 'Nodal Officer II', dept: 'Faculty Advisor', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDp6-LO5wbh6CTC36gJGeJayrbGtizLZWUlH9INz99YIJjIvsgYIZWEI3FCpw0i_0qiTUtAr6wPwhbUntODV_DKp16HJ_i97nWITmL3RCUSGrO0UEQgfLjdcaub8MJ1eBmE7L8UKpcRIhK6qh2roHWO8mK9WHTiHouOVak3xxVFkkI027MEgVlLW2Wt-YE2_7_p67F0NuRnWR6AOvYY3tYmko7Kd-N5jpyO_R33j4KF_IVtKvrukoEY2Q' },
+            ].map((member) => (
+              <div key={member.name} className="bg-surface p-6 rounded-2xl border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] flex items-center gap-6">
+                <div className="w-20 h-20 rounded-full border-4 border-on-surface overflow-hidden shrink-0 bg-primary shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]">
+                  <img src={member.avatar} alt={member.name} className="w-full h-full object-cover mix-blend-luminosity" />
+                </div>
+                <div>
+                  <h4 className="text-headline-md font-headline-md text-on-surface uppercase leading-tight">{member.name}</h4>
+                  <p className="text-label-bold font-label-bold text-primary text-xs uppercase mt-1">{member.role}</p>
+                  <p className="text-xs text-secondary mt-0.5">{member.dept}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+        </div>
+
+        {/* Student Leads */}
+        <div className="flex flex-col gap-6 mt-4">
+          <h3 className="text-headline-md font-headline-md text-secondary uppercase">Student Leads</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            {[
+              { name: 'Nikhil Nizam C K', role: 'Student Lead', dept: 'GECT IEDC', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDp6-LO5wbh6CTC36gJGeJayrbGtizLZWUlH9INz99YIJjIvsgYIZWEI3FCpw0i_0qiTUtAr6wPwhbUntODV_DKp16HJ_i97nWITmL3RCUSGrO0UEQgfLjdcaub8MJ1eBmE7L8UKpcRIhK6qh2roHWO8mK9WHTiHouOVak3xxVFkkI027MEgVlLW2Wt-YE2_7_p67F0NuRnWR6AOvYY3tYmko7Kd-N5jpyO_R33j4KF_IVtKvrukoEY2Q' },
+              { name: 'Shanum Gaddafi', role: 'Student Lead', dept: 'GECT IEDC', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDp6-LO5wbh6CTC36gJGeJayrbGtizLZWUlH9INz99YIJjIvsgYIZWEI3FCpw0i_0qiTUtAr6wPwhbUntODV_DKp16HJ_i97nWITmL3RCUSGrO0UEQgfLjdcaub8MJ1eBmE7L8UKpcRIhK6qh2roHWO8mK9WHTiHouOVak3xxVFkkI027MEgVlLW2Wt-YE2_7_p67F0NuRnWR6AOvYY3tYmko7Kd-N5jpyO_R33j4KF_IVtKvrukoEY2Q' },
+            ].map((member) => (
+              <div key={member.name} className="bg-surface p-6 rounded-2xl border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] flex items-center gap-6">
+                <div className="w-20 h-20 rounded-full border-4 border-on-surface overflow-hidden shrink-0 bg-tertiary shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]">
+                  <img src={member.avatar} alt={member.name} className="w-full h-full object-cover mix-blend-luminosity" />
+                </div>
+                <div>
+                  <h4 className="text-headline-md font-headline-md text-on-surface uppercase leading-tight">{member.name}</h4>
+                  <p className="text-label-bold font-label-bold text-secondary text-xs uppercase mt-1">{member.role}</p>
+                  <p className="text-xs text-secondary mt-0.5">{member.dept}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
