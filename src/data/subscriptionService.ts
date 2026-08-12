@@ -37,7 +37,8 @@ export async function subscribe(email: string): Promise<SubscribeResult> {
 
   if (existingIdx !== -1) {
     if (current[existingIdx].action === 'subscribe') {
-      result = 'already_subscribed';
+      // User is ALREADY subscribed — STOP HERE! Do NOT send webhook request to Google Sheets!
+      return 'already_subscribed';
     } else {
       result = 'resubscribed';
       current[existingIdx] = { email: normalizedEmail, action: 'subscribe', updatedAt: new Date().toISOString() };
@@ -48,7 +49,7 @@ export async function subscribe(email: string): Promise<SubscribeResult> {
 
   saveLocalSubscribers(current);
 
-  // Send payload to Google Sheets Webhook for cloud deduplication
+  // Only call webhook for NEW signups or RESUBSCRIBES
   if (WEBHOOK_URL) {
     try {
       await fetch(WEBHOOK_URL, {
