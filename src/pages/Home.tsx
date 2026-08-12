@@ -22,6 +22,11 @@ export default function Home() {
 
   useEffect(() => {
     getAllArticles().then(setArticlesList);
+    if (window.location.hash === '#newsletter') {
+      setTimeout(() => {
+        newsletterRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 200);
+    }
   }, []);
 
   const featured = articlesList.find((a) => a.featured) || articlesList[0];

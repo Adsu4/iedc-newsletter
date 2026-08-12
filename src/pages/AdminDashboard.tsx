@@ -17,6 +17,7 @@ export default function AdminDashboard() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishStatus, setPublishStatus] = useState<Article['status']>('published');
   const [scheduledFor, setScheduledFor] = useState('');
+  const [initialParagraphs, setInitialParagraphs] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(!isEditMode);
 
   const [showToolbar, setShowToolbar] = useState(false);
@@ -38,13 +39,18 @@ export default function AdminDashboard() {
         setCoverImageUrl(art.imageUrl);
         setPublishStatus(art.status);
         setScheduledFor(art.scheduledFor || '');
-        if (editorRef.current) {
-          editorRef.current.innerHTML = art.content.paragraphs.map((p) => `<p class="mb-6">${p}</p>`).join('');
-        }
+        setInitialParagraphs(art.content?.paragraphs || []);
       }
       setLoaded(true);
     });
   }, [articleId]);
+
+  // Populate contentEditable after component mounts
+  useEffect(() => {
+    if (loaded && initialParagraphs.length > 0 && editorRef.current) {
+      editorRef.current.innerHTML = initialParagraphs.map((p) => `<p class="mb-6">${p}</p>`).join('');
+    }
+  }, [loaded, initialParagraphs]);
 
   // Auto-save timer display
   useEffect(() => {

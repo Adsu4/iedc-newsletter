@@ -5,12 +5,14 @@ export default function Footer() {
     <footer className="border-t-4 border-on-surface w-full mt-auto bg-[#F9F7F1]">
       <div className="flex flex-col md:flex-row items-center justify-between py-16 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto gap-12">
         <div className="flex items-center gap-3">
-          <h2 className="text-headline-md font-headline-md text-on-surface uppercase">IEDC GECT News</h2>
+          <Link to="/" className="text-headline-md font-headline-md text-on-surface uppercase hover:text-primary transition-colors">
+            IEDC GECT News
+          </Link>
         </div>
-        <div className="flex flex-wrap justify-center gap-10 text-label-bold font-label-bold uppercase">
-          <Link to="/" className="text-on-surface hover:text-primary transition-colors duration-200">Submit News</Link>
-          <Link to="/" className="text-on-surface hover:text-primary transition-colors duration-200">Contact</Link>
-          <Link to="/" className="text-on-surface hover:text-primary transition-colors duration-200">Privacy</Link>
+        <div className="flex flex-wrap justify-center gap-8 md:gap-10 text-label-bold font-label-bold uppercase">
+          <Link to="/admin/dashboard" className="text-on-surface hover:text-primary transition-colors duration-200">Submit News</Link>
+          <a href="mailto:iedc@gect.ac.in" className="text-on-surface hover:text-primary transition-colors duration-200">Contact</a>
+          <Link to="/about" className="text-on-surface hover:text-primary transition-colors duration-200">About IEDC</Link>
           <Link to="/unsubscribe" className="text-on-surface hover:text-error transition-colors duration-200">Unsubscribe</Link>
         </div>
         <div className="flex flex-col items-center md:items-end gap-4 text-right">

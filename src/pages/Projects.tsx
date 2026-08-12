@@ -91,7 +91,7 @@ export default function Projects() {
           </p>
         </div>
         <Link
-          to="/"
+          to="/admin/dashboard"
           className="bg-primary text-on-primary px-8 py-4 rounded-full text-label-bold font-label-bold uppercase border-2 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] transition-all shrink-0"
         >
           Submit Your Project
