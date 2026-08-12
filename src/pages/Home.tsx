@@ -17,7 +17,7 @@ export default function Home() {
   const [articlesList, setArticlesList] = useState<Article[]>([]);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const [subEmail, setSubEmail] = useState('');
-  const [subStatus, setSubStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [subStatus, setSubStatus] = useState<'idle' | 'sending' | 'success' | 'already_subscribed' | 'resubscribed' | 'error'>('idle');
   const newsletterRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -175,13 +175,31 @@ export default function Home() {
             <p className="text-headline-md font-headline-md text-on-surface uppercase mb-2">You're in!</p>
             <p className="text-body-md text-secondary">Check your inbox for a confirmation email.</p>
           </div>
+        ) : subStatus === 'resubscribed' ? (
+          <div className="bg-surface rounded-2xl p-8 border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] max-w-md mx-auto">
+            <span className="text-4xl mb-4 block">🎉</span>
+            <p className="text-headline-md font-headline-md text-on-surface uppercase mb-2">Welcome back!</p>
+            <p className="text-body-md text-secondary">You've been re-subscribed to the newsletter.</p>
+          </div>
+        ) : subStatus === 'already_subscribed' ? (
+          <div className="bg-surface rounded-2xl p-8 border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] max-w-md mx-auto">
+            <span className="text-4xl mb-4 block">📬</span>
+            <p className="text-headline-md font-headline-md text-on-surface uppercase mb-2">You're already subscribed!</p>
+            <p className="text-body-md text-secondary">Your email is already on our active newsletter list. You'll receive all upcoming editions!</p>
+          </div>
         ) : (
           <form className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto" onSubmit={async (e) => {
             e.preventDefault();
             if (!subEmail.trim()) return;
             setSubStatus('sending');
-            const ok = await subscribe(subEmail.trim());
-            setSubStatus(ok ? 'success' : 'error');
+            const res = await subscribe(subEmail.trim());
+            if (res === 'created') {
+              setSubStatus('success');
+            } else if (res === 'already_subscribed' || res === 'resubscribed') {
+              setSubStatus(res);
+            } else {
+              setSubStatus('error');
+            }
           }}>
             <input 
               className="flex-1 px-8 py-5 rounded-full border-4 border-on-surface bg-surface text-body-md font-body-md focus:border-primary focus:outline-none transition-colors placeholder-on-surface/50 shadow-[4px_4px_0px_0px_rgba(28,27,27,1)]" 
