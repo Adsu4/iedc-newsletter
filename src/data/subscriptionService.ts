@@ -10,23 +10,21 @@ interface SubscribePayload {
 export async function submitToGoogleSheet(payload: SubscribePayload): Promise<boolean> {
   if (!WEBHOOK_URL) {
     console.warn('Google Sheet webhook URL not configured. Set VITE_GOOGLE_SHEET_WEBHOOK in your environment variables.');
-    // Still return true so the UI flow completes in dev
     return true;
   }
 
   try {
+    // Note: Content-Type text/plain with no-cors avoids CORS preflight blocking in browsers
     await fetch(WEBHOOK_URL, {
       method: 'POST',
-      mode: 'no-cors', // Google Apps Script requires no-cors
-      headers: { 'Content-Type': 'application/json' },
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         ...payload,
         timestamp: new Date().toISOString(),
       }),
     });
 
-    // no-cors mode always returns opaque response, so we can't check status
-    // If the fetch itself didn't throw, consider it successful
     return true;
   } catch (err) {
     console.error('Failed to submit to Google Sheet:', err);
