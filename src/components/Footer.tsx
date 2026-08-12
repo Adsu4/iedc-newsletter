@@ -11,6 +11,7 @@ export default function Footer() {
           <Link to="/" className="text-on-surface hover:text-primary transition-colors duration-200">Submit News</Link>
           <Link to="/" className="text-on-surface hover:text-primary transition-colors duration-200">Contact</Link>
           <Link to="/" className="text-on-surface hover:text-primary transition-colors duration-200">Privacy</Link>
+          <Link to="/unsubscribe" className="text-on-surface hover:text-error transition-colors duration-200">Unsubscribe</Link>
         </div>
         <div className="flex flex-col items-center md:items-end gap-4 text-right">
           <p className="text-body-md font-body-md text-on-surface">

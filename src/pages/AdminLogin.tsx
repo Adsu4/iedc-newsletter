@@ -9,27 +9,25 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/admin/dashboard', { replace: true });
+      navigate('/admin/articles', { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const success = login(userId, password);
-    if (success) {
-      navigate('/admin/dashboard');
+    const result = login(userId, password);
+    if (result.success) {
+      navigate('/admin/articles');
     } else {
-      setError('Please enter both User ID and Password.');
+      setError(result.error || 'Login failed.');
     }
   };
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {/* Decorative background elements */}
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary-fixed-dim rounded-full mix-blend-multiply filter blur-[100px] opacity-70"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-secondary-fixed-dim rounded-full mix-blend-multiply filter blur-[100px] opacity-70"></div>
 

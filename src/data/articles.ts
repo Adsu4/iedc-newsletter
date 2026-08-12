@@ -8,6 +8,8 @@ export interface Article {
   readTime: string;
   imageUrl: string;
   featured?: boolean;
+  status: 'published' | 'draft' | 'scheduled';
+  scheduledFor?: string;
   content: {
     paragraphs: string[];
     subheadings: string[];
@@ -32,6 +34,7 @@ export const articles: Article[] = [
     readTime: '8 min read',
     imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBGMRl1dRUP3Cr1L5leksQUJB_6c_VVlTZv2dO5tLx-fYZZ6gkVzoYboO4xveDoPswMmnl3c8I5P7Zs0FOstO6anVNSlLGGkKjxmSZmMFxT2vM5j55AgK_RV3dHFlZlLa1roL2etkVICbJUdYD2VxeoOv4vXpxWS35HSK9-7X_KMcqfjIKEhG7QdX5Xw-ulKANh_szfaD9A7hlUqSc2kXDv4gkcJDrEhKUwLLjbUkk4VLMdGa4yKJ7vHA',
     featured: true,
+    status: 'published',
     content: {
       paragraphs: [
         'The newly inaugurated Artificial Intelligence lab at GECT is already making waves. Nestled in the corner of the IT block, this state-of-the-art facility is more than just rows of high-performance computers. It represents a paradigm shift in how students approach complex problem-solving in their respective engineering fields.',
@@ -57,6 +60,7 @@ export const articles: Article[] = [
     date: 'Aug 2024',
     readTime: '4 min read',
     imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCO3gZzUKko1uW4sbl158JBCKDjmGxsr_Z_JjWzCDJjiZN3PfVzqCtCGUh2BtDaq2vrXLnIn1-GEHcE8Xs6KWyCkjxV7dpSzaw0MUQel4gh9xknUzFt5q1u1czsq3T5FZhazub_WOUubM6UWK1nwJky_SLUwxtJP0TgWJqGD2kEyekH7YK7DCH-T8f75uK13v44HGSg_13dEVkgdz8x7ZRMQj2AePG75JSQorXSbEJMlk53Nm5XwW54kw',
+    status: 'published',
     content: {
       paragraphs: [
         'The annual inter-college hackathon saw an unprecedented level of participation from GECT students this year. Over 40 teams registered, with three making it to the finals and securing top positions.',
@@ -82,6 +86,7 @@ export const articles: Article[] = [
     date: 'July 2024',
     readTime: '6 min read',
     imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBGMRl1dRUP3Cr1L5leksQUJB_6c_VVlTZv2dO5tLx-fYZZ6gkVzoYboO4xveDoPswMmnl3c8I5P7Zs0FOstO6anVNSlLGGkKjxmSZmMFxT2vM5j55AgK_RV3dHFlZlLa1roL2etkVICbJUdYD2VxeoOv4vXpxWS35HSK9-7X_KMcqfjIKEhG7QdX5Xw-ulKANh_szfaD9A7hlUqSc2kXDv4gkcJDrEhKUwLLjbUkk4VLMdGa4yKJ7vHA',
+    status: 'published',
     content: {
       paragraphs: [
         'Arun Krishnan graduated from GECT\'s Computer Science department in 2018. Within five years, he\'s become one of the most prominent voices in the decentralized infrastructure space.',
@@ -107,6 +112,7 @@ export const articles: Article[] = [
     date: 'May 2024',
     readTime: '5 min read',
     imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCO3gZzUKko1uW4sbl158JBCKDjmGxsr_Z_JjWzCDJjiZN3PfVzqCtCGUh2BtDaq2vrXLnIn1-GEHcE8Xs6KWyCkjxV7dpSzaw0MUQel4gh9xknUzFt5q1u1czsq3T5FZhazub_WOUubM6UWK1nwJky_SLUwxtJP0TgWJqGD2kEyekH7YK7DCH-T8f75uK13v44HGSg_13dEVkgdz8x7ZRMQj2AePG75JSQorXSbEJMlk53Nm5XwW54kw',
+    status: 'published',
     content: {
       paragraphs: [
         'It started as a weekend project. Ananya, Siddharth, and Fahad, all final-year CSE students, were frustrated with the lack of good attendance tracking tools at their college.',
@@ -132,6 +138,7 @@ export const articles: Article[] = [
     date: 'Sept 2024',
     readTime: '7 min read',
     imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCO3gZzUKko1uW4sbl158JBCKDjmGxsr_Z_JjWzCDJjiZN3PfVzqCtCGUh2BtDaq2vrXLnIn1-GEHcE8Xs6KWyCkjxV7dpSzaw0MUQel4gh9xknUzFt5q1u1czsq3T5FZhazub_WOUubM6UWK1nwJky_SLUwxtJP0TgWJqGD2kEyekH7YK7DCH-T8f75uK13v44HGSg_13dEVkgdz8x7ZRMQj2AePG75JSQorXSbEJMlk53Nm5XwW54kw',
+    status: 'published',
     content: {
       paragraphs: [
         'The Mechanical Engineering department recently acquired two industrial-grade robotic arms, marking a significant investment in hands-on automation education at GECT.',
@@ -157,6 +164,7 @@ export const articles: Article[] = [
     date: 'June 2024',
     readTime: '3 min read',
     imageUrl: '',
+    status: 'published',
     content: {
       paragraphs: [
         'The annual IEDC elections saw a record turnout this year, with over 200 students casting their votes for the new executive committee.',
@@ -182,6 +190,7 @@ export const articles: Article[] = [
     date: 'April 2024',
     readTime: '4 min read',
     imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBGMRl1dRUP3Cr1L5leksQUJB_6c_VVlTZv2dO5tLx-fYZZ6gkVzoYboO4xveDoPswMmnl3c8I5P7Zs0FOstO6anVNSlLGGkKjxmSZmMFxT2vM5j55AgK_RV3dHFlZlLa1roL2etkVICbJUdYD2VxeoOv4vXpxWS35HSK9-7X_KMcqfjIKEhG7QdX5Xw-ulKANh_szfaD9A7hlUqSc2kXDv4gkcJDrEhKUwLLjbUkk4VLMdGa4yKJ7vHA',
+    status: 'published',
     content: {
       paragraphs: [
         'Over 80 students attended the two-day AWS Cloud Computing workshop, making it one of the most popular IEDC events of the semester.',
@@ -207,6 +216,7 @@ export const articles: Article[] = [
     date: 'March 2024',
     readTime: '5 min read',
     imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCO3gZzUKko1uW4sbl158JBCKDjmGxsr_Z_JjWzCDJjiZN3PfVzqCtCGUh2BtDaq2vrXLnIn1-GEHcE8Xs6KWyCkjxV7dpSzaw0MUQel4gh9xknUzFt5q1u1czsq3T5FZhazub_WOUubM6UWK1nwJky_SLUwxtJP0TgWJqGD2kEyekH7YK7DCH-T8f75uK13v44HGSg_13dEVkgdz8x7ZRMQj2AePG75JSQorXSbEJMlk53Nm5XwW54kw',
+    status: 'published',
     content: {
       paragraphs: [
         'Four students from the Electronics and Communication Engineering department have won the regional round of the Smart India Hackathon with their innovative air quality monitoring solution.',
@@ -224,19 +234,3 @@ export const articles: Article[] = [
     },
   },
 ];
-
-export function getArticleById(id: string): Article | undefined {
-  return articles.find((a) => a.id === id);
-}
-
-export function getFeaturedArticle(): Article | undefined {
-  return articles.find((a) => a.featured);
-}
-
-export function getTrendingArticles(): Article[] {
-  return articles.filter((a) => !a.featured).slice(0, 3);
-}
-
-export function getArchiveArticles(): Article[] {
-  return articles.filter((a) => !a.featured);
-}

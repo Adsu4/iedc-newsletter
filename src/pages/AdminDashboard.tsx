@@ -1,17 +1,24 @@
 import { useState, useRef, useEffect, useCallback, type ChangeEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { publishArticle, uploadCoverImage } from '../data/articleService';
+import { useNavigate, useParams } from 'react-router-dom';
+import { publishArticle, updateArticle, uploadCoverImage, fetchArticleByIdAdmin } from '../data/articleService';
+import type { Article } from '../data/articles';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const { articleId } = useParams<{ articleId: string }>();
+  const isEditMode = Boolean(articleId);
+
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
   const [category, setCategory] = useState('Tech Update');
-  const [categoryColor, setCategoryColor] = useState<'primary' | 'secondary' | 'tertiary'>('primary');
+  const [categoryColor, setCategoryColor] = useState<Article['categoryColor']>('primary');
   const [coverImageUrl, setCoverImageUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
-  
+  const [publishStatus, setPublishStatus] = useState<Article['status']>('published');
+  const [scheduledFor, setScheduledFor] = useState('');
+  const [loaded, setLoaded] = useState(!isEditMode);
+
   const [showToolbar, setShowToolbar] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date>(new Date());
   const [savedText, setSavedText] = useState('Just now');
@@ -19,7 +26,27 @@ export default function AdminDashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Update "saved X ago" text
+  // Load existing article in edit mode
+  useEffect(() => {
+    if (!articleId) return;
+    fetchArticleByIdAdmin(articleId).then((art) => {
+      if (art) {
+        setTitle(art.title);
+        setSubtitle(art.subtitle);
+        setCategory(art.category);
+        setCategoryColor(art.categoryColor);
+        setCoverImageUrl(art.imageUrl);
+        setPublishStatus(art.status);
+        setScheduledFor(art.scheduledFor || '');
+        if (editorRef.current) {
+          editorRef.current.innerHTML = art.content.paragraphs.map((p) => `<p class="mb-6">${p}</p>`).join('');
+        }
+      }
+      setLoaded(true);
+    });
+  }, [articleId]);
+
+  // Auto-save timer display
   useEffect(() => {
     const interval = setInterval(() => {
       const diff = Math.floor((Date.now() - lastSaved.getTime()) / 1000);
@@ -39,17 +66,12 @@ export default function AdminDashboard() {
     }, 1500);
   }, []);
 
-  // Contextual toolbar on text selection
+  // Contextual toolbar
   useEffect(() => {
     const handleMouseUp = () => {
       const selection = window.getSelection();
-      if (selection && selection.toString().length > 0) {
-        setShowToolbar(true);
-      } else {
-        setShowToolbar(false);
-      }
+      setShowToolbar(!!selection && selection.toString().length > 0);
     };
-
     const handleMouseDown = (e: MouseEvent) => {
       if (editorRef.current && !editorRef.current.contains(e.target as Node)) {
         const toolbar = document.querySelector('.context-menu');
@@ -58,7 +80,6 @@ export default function AdminDashboard() {
         }
       }
     };
-
     document.addEventListener('mouseup', handleMouseUp);
     document.addEventListener('mousedown', handleMouseDown);
     return () => {
@@ -70,7 +91,6 @@ export default function AdminDashboard() {
   const handleImageFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setIsUploading(true);
     try {
       const url = await uploadCoverImage(file);
@@ -82,15 +102,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handlePublish = async () => {
-    if (!title.trim()) {
-      alert('Please enter a title for your story before publishing.');
-      return;
-    }
-
-    setIsPublishing(true);
-
-    // Extract text paragraphs from contentEditable
+  const extractParagraphs = (): string[] => {
     const paragraphs: string[] = [];
     if (editorRef.current) {
       const pElements = editorRef.current.querySelectorAll('p');
@@ -102,40 +114,112 @@ export default function AdminDashboard() {
         paragraphs.push(editorRef.current.innerText.trim());
       }
     }
+    return paragraphs;
+  };
+
+  const handlePublish = async () => {
+    if (!title.trim()) {
+      alert('Please enter a title for your story before publishing.');
+      return;
+    }
+
+    setIsPublishing(true);
+    const paragraphs = extractParagraphs();
+    const payload = {
+      title: title.trim(),
+      subtitle: subtitle.trim(),
+      category,
+      categoryColor,
+      imageUrl: coverImageUrl,
+      paragraphs,
+      subheadings: ['Key Takeaways'],
+      status: publishStatus,
+      scheduledFor: publishStatus === 'scheduled' ? scheduledFor : undefined,
+    };
 
     try {
-      const published = await publishArticle({
-        title: title.trim(),
-        subtitle: subtitle.trim(),
-        category,
-        categoryColor,
-        imageUrl: coverImageUrl,
-        paragraphs,
-        subheadings: ['Key Takeaways'],
-      });
-
-      // Redirect to published article page
-      navigate(`/article/${published.id}`);
+      if (isEditMode && articleId) {
+        await updateArticle(articleId, payload);
+        navigate('/admin/articles');
+      } else {
+        const published = await publishArticle(payload);
+        if (publishStatus === 'published') {
+          navigate(`/article/${published.id}`);
+        } else {
+          navigate('/admin/articles');
+        }
+      }
     } catch (err) {
       console.error('Publishing failed:', err);
-      alert('Failed to publish article. Please check your inputs.');
+      alert('Failed to save article. Please check your inputs.');
     } finally {
       setIsPublishing(false);
     }
   };
 
+  const handleSaveDraft = async () => {
+    if (!title.trim()) {
+      alert('Please enter a title before saving.');
+      return;
+    }
+    setIsPublishing(true);
+    const paragraphs = extractParagraphs();
+    const payload = {
+      title: title.trim(),
+      subtitle: subtitle.trim(),
+      category,
+      categoryColor,
+      imageUrl: coverImageUrl,
+      paragraphs,
+      subheadings: ['Key Takeaways'],
+      status: 'draft' as const,
+    };
+
+    try {
+      if (isEditMode && articleId) {
+        await updateArticle(articleId, payload);
+      } else {
+        await publishArticle(payload);
+      }
+      navigate('/admin/articles');
+    } catch (err) {
+      console.error('Save draft failed:', err);
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  if (!loaded) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <span className="material-symbols-outlined text-4xl animate-spin text-primary">progress_activity</span>
+      </div>
+    );
+  }
+
+  const publishLabel = isEditMode ? 'Update' : publishStatus === 'scheduled' ? 'Schedule' : 'Publish';
+
   return (
     <>
-      {/* Header (Minimalist) */}
+      {/* Header */}
       <header className="flex justify-between items-center mb-12 flex-wrap gap-4 fixed top-0 right-0 left-0 md:left-20 bg-surface/90 backdrop-blur-md z-40 p-4 md:px-12 border-b border-surface-variant/30">
         <div className="flex items-center gap-4">
-          <span className="text-label-bold font-label-bold text-secondary uppercase tracking-widest">Draft</span>
+          <button onClick={() => navigate('/admin/articles')} className="text-secondary hover:text-on-surface transition-colors">
+            <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+          </button>
+          <span className="text-label-bold font-label-bold text-secondary uppercase tracking-widest">
+            {isEditMode ? 'Editing' : 'Draft'}
+          </span>
           <span className="text-secondary/30">•</span>
           <span className="text-label-md font-label-md text-secondary">Saved {savedText}</span>
         </div>
-        <div className="flex items-center gap-4">
-          <button className="p-2 text-secondary hover:bg-surface-container rounded-full transition-colors flex items-center justify-center" title="Settings">
-            <span className="material-symbols-outlined text-[20px]">more_horiz</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSaveDraft}
+            disabled={isPublishing}
+            className="px-4 py-2 border-2 border-outline-variant text-secondary rounded-full text-label-bold font-label-bold hover:border-on-surface hover:text-on-surface transition-colors disabled:opacity-50"
+          >
+            Save Draft
           </button>
           <button
             onClick={handlePublish}
@@ -145,10 +229,10 @@ export default function AdminDashboard() {
             {isPublishing ? (
               <>
                 <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
-                Publishing...
+                Saving...
               </>
             ) : (
-              'Publish'
+              publishLabel
             )}
           </button>
         </div>
@@ -156,17 +240,13 @@ export default function AdminDashboard() {
 
       {/* Editor Area */}
       <div className="max-w-3xl mx-auto mt-24 px-4 md:pr-80 lg:pr-0">
-        {/* Title & Meta */}
         <div className="mb-12">
           <input
             className="w-full bg-transparent text-headline-xl font-headline-xl text-on-surface border-none focus:ring-0 p-0 placeholder:text-surface-variant mb-6"
             placeholder="Title"
             type="text"
             value={title}
-            onChange={(e) => {
-              setTitle(e.target.value);
-              handleInput();
-            }}
+            onChange={(e) => { setTitle(e.target.value); handleInput(); }}
           />
           <div className="flex flex-col gap-2">
             <input
@@ -174,10 +254,7 @@ export default function AdminDashboard() {
               placeholder="Tell your story..."
               type="text"
               value={subtitle}
-              onChange={(e) => {
-                setSubtitle(e.target.value);
-                handleInput();
-              }}
+              onChange={(e) => { setSubtitle(e.target.value); handleInput(); }}
             />
             <div className="flex items-center gap-4 text-secondary pt-4 border-t border-surface-variant/30">
               <span className="text-label-bold font-label-bold uppercase">By Admin User</span>
@@ -189,7 +266,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Cover Preview (if uploaded) */}
+        {/* Cover Preview */}
         {coverImageUrl && (
           <div className="mb-8 relative group rounded-2xl overflow-hidden border-4 border-on-surface shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] max-h-[350px]">
             <img src={coverImageUrl} alt="Cover Preview" className="w-full h-full object-cover mix-blend-luminosity opacity-90" />
@@ -214,7 +291,7 @@ export default function AdminDashboard() {
           <button className="w-8 h-8 flex items-center justify-center hover:bg-surface-variant/20 rounded text-inverse-on-surface transition-colors"><span className="material-symbols-outlined text-[18px]">link</span></button>
         </div>
 
-        {/* The Content Area */}
+        {/* Content Area */}
         <div className="relative group">
           <div className="absolute -left-12 top-0 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-2">
             <button className="w-8 h-8 rounded-full border border-outline flex items-center justify-center text-secondary hover:border-secondary transition-colors bg-surface-container-lowest">
@@ -222,26 +299,23 @@ export default function AdminDashboard() {
             </button>
           </div>
           <div ref={editorRef} className="rich-text-area prose text-body-lg font-body-lg text-on-surface min-h-[400px] focus:outline-none leading-relaxed" contentEditable suppressContentEditableWarning data-placeholder="Start writing..." onInput={handleInput}>
-            <p className="mb-6">Here is a space where your thoughts can flow freely without distractions. Type your story paragraphs here.</p>
-            <p className="mb-6">Highlight text to reveal the contextual formatting bar.</p>
+            {!isEditMode && (
+              <>
+                <p className="mb-6">Start writing your story here...</p>
+              </>
+            )}
           </div>
         </div>
       </div>
 
       {/* Hidden File Input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleImageFileChange}
-      />
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageFileChange} />
 
-      {/* Sidebar for Settings */}
+      {/* Sidebar */}
       <div className="fixed right-0 top-20 h-[calc(100vh-80px)] w-80 bg-surface border-l border-surface-variant transform translate-x-full md:translate-x-0 transition-transform duration-300 z-30 p-6 overflow-y-auto">
         <h3 className="text-body-md font-body-md font-semibold text-on-surface mb-8 border-b border-surface-variant/50 pb-4">Publish Details</h3>
         <div className="flex flex-col gap-8">
-          {/* Cover Image Upload */}
+          {/* Cover Image */}
           <div>
             <span className="block text-label-bold font-label-bold uppercase text-secondary mb-3">Cover Image</span>
             <div
@@ -257,23 +331,20 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Category Topic */}
+          {/* Topic */}
           <div>
             <span className="block text-label-bold font-label-bold uppercase text-secondary mb-3">Topic</span>
             <div className="flex flex-wrap gap-2">
               {[
-                { name: 'Tech Update', color: 'primary' },
-                { name: 'Event', color: 'secondary' },
-                { name: 'Project', color: 'tertiary' },
-                { name: 'Robotics', color: 'primary' },
+                { name: 'Tech Update', color: 'primary' as const },
+                { name: 'Event', color: 'secondary' as const },
+                { name: 'Project', color: 'tertiary' as const },
+                { name: 'Robotics', color: 'primary' as const },
               ].map((t) => (
                 <button
                   key={t.name}
                   type="button"
-                  onClick={() => {
-                    setCategory(t.name);
-                    setCategoryColor(t.color as any);
-                  }}
+                  onClick={() => { setCategory(t.name); setCategoryColor(t.color); }}
                   className={`px-3 py-1.5 rounded-full border text-label-md font-label-md transition-colors ${
                     category === t.name
                       ? 'border-primary bg-primary text-on-primary shadow-sm'
@@ -286,12 +357,41 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Schedule Streamlined */}
+          {/* Schedule */}
           <div>
             <span className="block text-label-bold font-label-bold uppercase text-secondary mb-3">Schedule</span>
-            <div className="flex items-center gap-3 text-body-md text-on-surface cursor-pointer hover:text-primary transition-colors">
-              <span className="material-symbols-outlined text-[20px]">calendar_month</span>
-              <span>Publish immediately</span>
+            <div className="flex flex-col gap-3">
+              <label className="flex items-center gap-3 text-body-md text-on-surface cursor-pointer hover:text-primary transition-colors">
+                <input
+                  type="radio"
+                  name="publishTime"
+                  checked={publishStatus === 'published'}
+                  onChange={() => { setPublishStatus('published'); setScheduledFor(''); }}
+                  className="accent-primary"
+                />
+                <span className="material-symbols-outlined text-[20px]">send</span>
+                Publish immediately
+              </label>
+              <label className="flex items-center gap-3 text-body-md text-on-surface cursor-pointer hover:text-primary transition-colors">
+                <input
+                  type="radio"
+                  name="publishTime"
+                  checked={publishStatus === 'scheduled'}
+                  onChange={() => setPublishStatus('scheduled')}
+                  className="accent-primary"
+                />
+                <span className="material-symbols-outlined text-[20px]">calendar_month</span>
+                Schedule for later
+              </label>
+              {publishStatus === 'scheduled' && (
+                <input
+                  type="datetime-local"
+                  value={scheduledFor}
+                  onChange={(e) => setScheduledFor(e.target.value)}
+                  min={new Date().toISOString().slice(0, 16)}
+                  className="mt-2 px-4 py-3 rounded-xl border-2 border-outline-variant bg-surface-container-lowest text-body-md focus:border-primary focus:outline-none transition-colors"
+                />
+              )}
             </div>
           </div>
         </div>

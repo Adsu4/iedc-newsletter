@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { getAllArticles } from '../data/articleService';
+import { subscribe } from '../data/subscriptionService';
 import type { Article } from '../data/articles';
 
 const INITIAL_VISIBLE = 4;
@@ -15,6 +16,8 @@ const categoryColorMap = {
 export default function Home() {
   const [articlesList, setArticlesList] = useState<Article[]>([]);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const [subEmail, setSubEmail] = useState('');
+  const [subStatus, setSubStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const newsletterRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -160,12 +163,41 @@ export default function Home() {
       <section ref={newsletterRef} id="newsletter" className="max-w-4xl mx-auto w-full bg-tertiary-container rounded-[2rem] p-12 md:p-24 text-center mt-12 border-4 border-on-surface shadow-[12px_12px_0px_0px_rgba(28,27,27,1)]">
         <h2 className="text-display-lg-mobile md:text-headline-xl font-display-lg-mobile md:font-headline-xl mb-6 text-on-tertiary-container uppercase leading-none">Stay Ahead of the Curve</h2>
         <p className="text-body-lg font-body-lg text-on-tertiary-container/90 mb-12 max-w-2xl mx-auto">Get the latest updates, tech deep-dives, and campus innovation news delivered straight to your inbox every month.</p>
-        <form className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto" onSubmit={(e) => e.preventDefault()}>
-          <input className="flex-1 px-8 py-5 rounded-full border-4 border-on-surface bg-surface text-body-md font-body-md focus:border-primary focus:outline-none transition-colors placeholder-on-surface/50 shadow-[4px_4px_0px_0px_rgba(28,27,27,1)]" placeholder="Enter your college email" type="email"/>
-          <button className="bg-on-surface text-surface px-10 py-5 rounded-full text-label-bold font-label-bold uppercase hover:bg-primary hover:text-on-primary transition-colors duration-200 whitespace-nowrap shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] border-4 border-on-surface" type="submit">
-            Subscribe
-          </button>
-        </form>
+        
+        {subStatus === 'success' ? (
+          <div className="bg-surface rounded-2xl p-8 border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] max-w-md mx-auto">
+            <span className="text-4xl mb-4 block">🎉</span>
+            <p className="text-headline-md font-headline-md text-on-surface uppercase mb-2">You're in!</p>
+            <p className="text-body-md text-secondary">Check your inbox for a confirmation email.</p>
+          </div>
+        ) : (
+          <form className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto" onSubmit={async (e) => {
+            e.preventDefault();
+            if (!subEmail.trim()) return;
+            setSubStatus('sending');
+            const ok = await subscribe(subEmail.trim());
+            setSubStatus(ok ? 'success' : 'error');
+          }}>
+            <input 
+              className="flex-1 px-8 py-5 rounded-full border-4 border-on-surface bg-surface text-body-md font-body-md focus:border-primary focus:outline-none transition-colors placeholder-on-surface/50 shadow-[4px_4px_0px_0px_rgba(28,27,27,1)]" 
+              placeholder="Enter your college email" 
+              type="email"
+              value={subEmail}
+              onChange={(e) => setSubEmail(e.target.value)}
+              required
+            />
+            <button 
+              className="bg-on-surface text-surface px-10 py-5 rounded-full text-label-bold font-label-bold uppercase hover:bg-primary hover:text-on-primary transition-colors duration-200 whitespace-nowrap shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] border-4 border-on-surface disabled:opacity-50" 
+              type="submit"
+              disabled={subStatus === 'sending'}
+            >
+              {subStatus === 'sending' ? 'Subscribing...' : 'Subscribe'}
+            </button>
+          </form>
+        )}
+        {subStatus === 'error' && (
+          <p className="text-error font-label-bold mt-4">Something went wrong. Please try again.</p>
+        )}
       </section>
     </main>
   );
