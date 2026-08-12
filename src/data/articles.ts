@@ -18,6 +18,7 @@ export interface Article {
     role: string;
     avatarUrl: string;
   };
+  createdAt?: string;
 }
 
 export const articles: Article[] = [

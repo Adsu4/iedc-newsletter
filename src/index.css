@@ -18,7 +18,7 @@
 }
 
 .rich-text-area:empty:before {
-    content: attr(placeholder);
+    content: attr(data-placeholder);
     color: #c4c5d9;
     pointer-events: none;
     display: block; 

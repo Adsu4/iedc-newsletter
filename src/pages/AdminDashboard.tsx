@@ -17,7 +17,7 @@ export default function AdminDashboard() {
   const [savedText, setSavedText] = useState('Just now');
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Update "saved X ago" text
   useEffect(() => {
@@ -221,7 +221,7 @@ export default function AdminDashboard() {
               <span className="material-symbols-outlined text-[18px]">add</span>
             </button>
           </div>
-          <div ref={editorRef} className="rich-text-area prose text-body-lg font-body-lg text-on-surface min-h-[400px] focus:outline-none leading-relaxed" contentEditable suppressContentEditableWarning placeholder="Start writing..." onInput={handleInput}>
+          <div ref={editorRef} className="rich-text-area prose text-body-lg font-body-lg text-on-surface min-h-[400px] focus:outline-none leading-relaxed" contentEditable suppressContentEditableWarning data-placeholder="Start writing..." onInput={handleInput}>
             <p className="mb-6">Here is a space where your thoughts can flow freely without distractions. Type your story paragraphs here.</p>
             <p className="mb-6">Highlight text to reveal the contextual formatting bar.</p>
           </div>
