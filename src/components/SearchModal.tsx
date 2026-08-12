@@ -18,6 +18,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     };
 
     if (isOpen) {
+      setQuery('');
       getAllArticles().then(setArticlesList);
       document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleKeyDown);

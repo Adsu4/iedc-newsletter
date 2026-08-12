@@ -10,7 +10,7 @@ export default function Footer() {
           </Link>
         </div>
         <div className="flex flex-wrap justify-center gap-8 md:gap-10 text-label-bold font-label-bold uppercase">
-          <Link to="/admin/dashboard" className="text-on-surface hover:text-primary transition-colors duration-200">Submit News</Link>
+          <Link to="/admin/dashboard" className="text-on-surface hover:text-primary transition-colors duration-200">Write for Us</Link>
           <a href="mailto:iedc@gect.ac.in" className="text-on-surface hover:text-primary transition-colors duration-200">Contact</a>
           <Link to="/about" className="text-on-surface hover:text-primary transition-colors duration-200">About IEDC</Link>
           <Link to="/unsubscribe" className="text-on-surface hover:text-error transition-colors duration-200">Unsubscribe</Link>

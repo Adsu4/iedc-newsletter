@@ -50,7 +50,7 @@ export default function Home() {
   return (
     <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 flex flex-col gap-20 md:gap-32">
       {/* Top Stories Section */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-gutter border-b-2 border-on-surface pb-20">
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-gutter border-b-2 border-on-surface pb-20 animate-fade-in-up">
         {/* Hero Article */}
         {featured && (
           <Link to={`/article/${featured.id}`} className="lg:col-span-8 flex flex-col gap-8 group cursor-pointer">
@@ -104,7 +104,7 @@ export default function Home() {
       </section>
 
       {/* Vertical Feed (Archive) */}
-      <section className="max-w-4xl mx-auto w-full flex flex-col gap-16 md:gap-24">
+      <section className="max-w-4xl mx-auto w-full flex flex-col gap-16 md:gap-24 animate-fade-in-up-delay-1">
         <div className="flex items-center justify-between border-b-2 border-on-surface pb-6 mb-8">
           <h2 className="text-headline-xl font-headline-xl text-on-surface uppercase">Latest Articles</h2>
         </div>
@@ -165,61 +165,86 @@ export default function Home() {
       </section>
 
       {/* Newsletter Signup */}
-      <section ref={newsletterRef} id="newsletter" className="max-w-4xl mx-auto w-full bg-tertiary-container rounded-[2rem] p-12 md:p-24 text-center mt-12 border-4 border-on-surface shadow-[12px_12px_0px_0px_rgba(28,27,27,1)]">
+      <section ref={newsletterRef} id="newsletter" className="max-w-4xl mx-auto w-full bg-tertiary-container rounded-[2rem] p-12 md:p-24 text-center mt-12 border-4 border-on-surface shadow-[12px_12px_0px_0px_rgba(28,27,27,1)] animate-fade-in-up">
         <h2 className="text-display-lg-mobile md:text-headline-xl font-display-lg-mobile md:font-headline-xl mb-6 text-on-tertiary-container uppercase leading-none">Stay Ahead of the Curve</h2>
         <p className="text-body-lg font-body-lg text-on-tertiary-container/90 mb-12 max-w-2xl mx-auto">Get the latest updates, tech deep-dives, and campus innovation news delivered straight to your inbox every month.</p>
         
         {subStatus === 'success' ? (
-          <div className="bg-surface rounded-2xl p-8 border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] max-w-md mx-auto">
+          <div className="bg-surface rounded-2xl p-8 border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] max-w-md mx-auto animate-scale-in">
             <span className="text-4xl mb-4 block">🎉</span>
             <p className="text-headline-md font-headline-md text-on-surface uppercase mb-2">You're in!</p>
-            <p className="text-body-md text-secondary">Check your inbox for a confirmation email.</p>
+            <p className="text-body-md text-secondary mb-6">Check your inbox for a confirmation email.</p>
+            <button
+              onClick={() => { setSubStatus('idle'); setSubEmail(''); }}
+              className="text-label-bold font-label-bold text-primary hover:text-on-surface transition-colors uppercase text-sm"
+            >
+              ← Subscribe another email
+            </button>
           </div>
         ) : subStatus === 'resubscribed' ? (
-          <div className="bg-surface rounded-2xl p-8 border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] max-w-md mx-auto">
+          <div className="bg-surface rounded-2xl p-8 border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] max-w-md mx-auto animate-scale-in">
             <span className="text-4xl mb-4 block">🎉</span>
             <p className="text-headline-md font-headline-md text-on-surface uppercase mb-2">Welcome back!</p>
-            <p className="text-body-md text-secondary">You've been re-subscribed to the newsletter.</p>
+            <p className="text-body-md text-secondary mb-6">You've been re-subscribed to the newsletter.</p>
+            <button
+              onClick={() => { setSubStatus('idle'); setSubEmail(''); }}
+              className="text-label-bold font-label-bold text-primary hover:text-on-surface transition-colors uppercase text-sm"
+            >
+              ← Subscribe another email
+            </button>
           </div>
         ) : subStatus === 'already_subscribed' ? (
-          <div className="bg-surface rounded-2xl p-8 border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] max-w-md mx-auto">
+          <div className="bg-surface rounded-2xl p-8 border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] max-w-md mx-auto animate-scale-in">
             <span className="text-4xl mb-4 block">📬</span>
             <p className="text-headline-md font-headline-md text-on-surface uppercase mb-2">You're already subscribed!</p>
-            <p className="text-body-md text-secondary">Your email is already on our active newsletter list. You'll receive all upcoming editions!</p>
+            <p className="text-body-md text-secondary mb-6">Your email is already on our active newsletter list. You'll receive all upcoming editions!</p>
+            <button
+              onClick={() => { setSubStatus('idle'); setSubEmail(''); }}
+              className="text-label-bold font-label-bold text-primary hover:text-on-surface transition-colors uppercase text-sm"
+            >
+              ← Try a different email
+            </button>
           </div>
         ) : (
-          <form className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto" onSubmit={async (e) => {
-            e.preventDefault();
-            if (!subEmail.trim()) return;
-            setSubStatus('sending');
-            const res = await subscribe(subEmail.trim());
-            if (res === 'created') {
-              setSubStatus('success');
-            } else if (res === 'already_subscribed' || res === 'resubscribed') {
-              setSubStatus(res);
-            } else {
-              setSubStatus('error');
-            }
-          }}>
-            <input 
-              className="flex-1 px-8 py-5 rounded-full border-4 border-on-surface bg-surface text-body-md font-body-md focus:border-primary focus:outline-none transition-colors placeholder-on-surface/50 shadow-[4px_4px_0px_0px_rgba(28,27,27,1)]" 
-              placeholder="Enter your college email" 
-              type="email"
-              value={subEmail}
-              onChange={(e) => setSubEmail(e.target.value)}
-              required
-            />
-            <button 
-              className="bg-on-surface text-surface px-10 py-5 rounded-full text-label-bold font-label-bold uppercase hover:bg-primary hover:text-on-primary transition-colors duration-200 whitespace-nowrap shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] border-4 border-on-surface disabled:opacity-50" 
-              type="submit"
-              disabled={subStatus === 'sending'}
-            >
-              {subStatus === 'sending' ? 'Subscribing...' : 'Subscribe'}
-            </button>
-          </form>
-        )}
-        {subStatus === 'error' && (
-          <p className="text-error font-label-bold mt-4">Something went wrong. Please try again.</p>
+          <>
+            <form className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto" onSubmit={async (e) => {
+              e.preventDefault();
+              if (!subEmail.trim()) return;
+              setSubStatus('sending');
+              const res = await subscribe(subEmail.trim());
+              if (res === 'created') {
+                setSubStatus('success');
+              } else if (res === 'already_subscribed' || res === 'resubscribed') {
+                setSubStatus(res);
+              } else {
+                setSubStatus('error');
+              }
+            }}>
+              <input 
+                className="flex-1 px-8 py-5 rounded-full border-4 border-on-surface bg-surface text-body-md font-body-md focus:border-primary focus:outline-none transition-colors placeholder-on-surface/50 shadow-[4px_4px_0px_0px_rgba(28,27,27,1)]" 
+                placeholder="Enter your college email" 
+                type="email"
+                value={subEmail}
+                onChange={(e) => setSubEmail(e.target.value)}
+                required
+              />
+              <button 
+                className="bg-on-surface text-surface px-10 py-5 rounded-full text-label-bold font-label-bold uppercase hover:bg-primary hover:text-on-primary transition-colors duration-200 whitespace-nowrap shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] border-4 border-on-surface disabled:opacity-50 flex items-center justify-center gap-2" 
+                type="submit"
+                disabled={subStatus === 'sending'}
+              >
+                {subStatus === 'sending' ? (
+                  <>
+                    <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                    Subscribing...
+                  </>
+                ) : 'Subscribe'}
+              </button>
+            </form>
+            {subStatus === 'error' && (
+              <p className="text-error font-label-bold mt-4 animate-scale-in">Something went wrong. Please try again.</p>
+            )}
+          </>
         )}
       </section>
     </main>
