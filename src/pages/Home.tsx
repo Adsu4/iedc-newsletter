@@ -2,6 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { getAllArticles } from '../data/articleService';
 import { subscribe } from '../data/subscriptionService';
+import { currentEditionInfo } from '../data/newsletterData';
+import NumbersTicker from '../components/NumbersTicker';
+import ComingUpSection from '../components/ComingUpSection';
+import OpportunityRadar from '../components/OpportunityRadar';
+import StartupSpotlightSection from '../components/StartupSpotlightSection';
+import MonthInMoments from '../components/MonthInMoments';
 import type { Article } from '../data/articles';
 
 const INITIAL_VISIBLE = 4;
@@ -48,65 +54,134 @@ export default function Home() {
   ];
 
   return (
-    <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 flex flex-col gap-20 md:gap-32">
-      {/* Top Stories Section */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-gutter border-b-2 border-on-surface pb-20 animate-fade-in-up">
-        {/* Hero Article */}
-        {featured && (
-          <Link to={`/article/${featured.id}`} className="lg:col-span-8 flex flex-col gap-8 group cursor-pointer">
-            <div className="w-full aspect-[4/3] md:aspect-[16/9] overflow-hidden rounded-2xl bg-primary border-4 border-on-surface shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] relative transition-transform duration-300 group-hover:-translate-y-2 group-hover:-translate-x-2 group-hover:shadow-[16px_16px_0px_0px_rgba(28,27,27,1)]">
-              <img className="w-full h-full object-cover mix-blend-luminosity opacity-90" alt={featured.title} src={featured.imageUrl}/>
-              <div className="absolute top-6 right-6 bg-secondary text-on-secondary text-label-bold font-label-bold uppercase px-4 py-2 rounded-full border-2 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] rotate-3">
-                Featured Report
-              </div>
-            </div>
-            <div className="flex flex-col gap-4 max-w-3xl">
-              <div className="flex items-center gap-3 text-label-bold font-label-bold text-on-surface uppercase tracking-wider">
-                <span className="bg-tertiary text-on-tertiary px-3 py-1 rounded-full text-xs">{featured.category}</span>
-                <span>•</span>
-                <span>{featured.date}</span>
-                <span>•</span>
-                <span>{featured.readTime}</span>
-              </div>
-              <h1 className="text-display-lg-mobile md:text-display-lg font-display-lg-mobile md:font-display-lg text-on-surface group-hover:text-primary transition-colors duration-300 uppercase leading-none">{featured.title}</h1>
-              <p className="text-body-lg font-body-lg text-on-surface-variant leading-relaxed">{featured.subtitle}</p>
-            </div>
-          </Link>
-        )}
-        
-        {/* Trending Sidebar */}
-        <div className="lg:col-span-4 flex flex-col gap-10 lg:pl-10 lg:border-l-2 border-on-surface">
-          <h2 className="text-headline-md font-headline-md text-on-surface uppercase border-b-2 border-on-surface pb-6">Trending on Campus</h2>
-          <div className="flex flex-col gap-10">
-            {trending.map((article, index) => (
-              <Link
-                key={article.id}
-                to={`/article/${article.id}`}
-                className={`flex gap-6 group cursor-pointer ${trendingCardColors[index] || 'bg-surface-container-high'} p-6 rounded-2xl border-2 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] hover:shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-1 transition-all`}
-              >
-                <span className={`text-headline-xl font-headline-xl ${trendingTextColors[index]?.num || 'text-on-surface'} mt-[-4px]`}>
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                <div className="flex flex-col gap-3">
-                  <h3 className={`text-body-lg font-headline-md ${trendingTextColors[index]?.title || 'text-on-surface group-hover:text-primary'} transition-colors leading-tight uppercase`}>
-                    {article.title}
-                  </h3>
-                  <div className={`flex items-center gap-2 text-label-bold font-label-bold ${trendingTextColors[index]?.meta || 'text-on-surface'} uppercase text-xs`}>
-                    <span>{article.date}</span>
-                    <span>•</span>
-                    <span>{article.readTime}</span>
-                  </div>
+    <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-10 md:py-16 flex flex-col gap-20 md:gap-28">
+      {/* Monthly Newsletter Edition Header Ribbon */}
+      <div className="bg-surface rounded-2xl border-4 border-on-surface p-6 md:p-8 shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 animate-fade-in-up">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2 text-xs font-label-bold uppercase text-secondary tracking-widest">
+            <span className="bg-primary text-on-primary px-3 py-1 rounded-full">{currentEditionInfo.edition}</span>
+            <span>•</span>
+            <span className="text-on-surface">{currentEditionInfo.monthYear} Edition</span>
+          </div>
+          <h2 className="text-headline-md font-headline-md text-on-surface uppercase leading-tight mt-1">
+            Theme: {currentEditionInfo.theme}
+          </h2>
+          <p className="text-xs text-on-surface-variant max-w-2xl font-body-md mt-1">
+            {currentEditionInfo.summary}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <a
+            href="#newsletter"
+            className="bg-on-surface text-surface px-6 py-3 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-primary hover:text-on-primary transition-colors border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] whitespace-nowrap"
+          >
+            📬 Subscribe to Monthly Digest
+          </a>
+        </div>
+      </div>
+
+      {/* Pillar 1: This Month at IEDC (Top Stories & Highlights) */}
+      <section className="flex flex-col gap-8 animate-fade-in-up">
+        <div className="border-b-4 border-on-surface pb-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="bg-secondary text-on-secondary px-3.5 py-1 rounded-full text-label-bold font-label-bold uppercase text-xs">
+              Pillar 01
+            </span>
+            <h2 className="text-display-lg-mobile md:text-headline-xl font-display-lg-mobile md:font-headline-xl text-on-surface uppercase leading-none">
+              This Month at IEDC
+            </h2>
+          </div>
+          <span className="hidden sm:inline text-xs font-label-bold uppercase text-secondary">
+            Major Events & Breakthroughs
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-gutter">
+          {/* Hero Featured Article */}
+          {featured && (
+            <Link to={`/article/${featured.id}`} className="lg:col-span-8 flex flex-col gap-8 group cursor-pointer">
+              <div className="w-full aspect-[4/3] md:aspect-[16/9] overflow-hidden rounded-2xl bg-primary border-4 border-on-surface shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] relative transition-transform duration-300 group-hover:-translate-y-2 group-hover:-translate-x-2 group-hover:shadow-[16px_16px_0px_0px_rgba(28,27,27,1)]">
+                <img className="w-full h-full object-cover mix-blend-luminosity opacity-90" alt={featured.title} src={featured.imageUrl}/>
+                <div className="absolute top-6 right-6 bg-secondary text-on-secondary text-label-bold font-label-bold uppercase px-4 py-2 rounded-full border-2 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] rotate-3">
+                  Cover Story
                 </div>
-              </Link>
-            ))}
+              </div>
+              <div className="flex flex-col gap-4 max-w-3xl">
+                <div className="flex items-center gap-3 text-label-bold font-label-bold text-on-surface uppercase tracking-wider">
+                  <span className="bg-tertiary text-on-tertiary px-3 py-1 rounded-full text-xs">{featured.category}</span>
+                  <span>•</span>
+                  <span>{featured.date}</span>
+                  <span>•</span>
+                  <span>{featured.readTime}</span>
+                </div>
+                <h3 className="text-display-lg-mobile md:text-display-lg font-display-lg-mobile md:font-display-lg text-on-surface group-hover:text-primary transition-colors duration-300 uppercase leading-none">{featured.title}</h3>
+                <p className="text-body-lg font-body-lg text-on-surface-variant leading-relaxed">{featured.subtitle}</p>
+              </div>
+            </Link>
+          )}
+          
+          {/* Trending & Workshops Sidebar */}
+          <div className="lg:col-span-4 flex flex-col gap-8 lg:pl-8 lg:border-l-2 border-on-surface">
+            <h3 className="text-headline-md font-headline-md text-on-surface uppercase border-b-2 border-on-surface pb-4">
+              Monthly Highlights
+            </h3>
+            <div className="flex flex-col gap-6">
+              {trending.map((article, index) => (
+                <Link
+                  key={article.id}
+                  to={`/article/${article.id}`}
+                  className={`flex gap-5 group cursor-pointer ${trendingCardColors[index] || 'bg-surface-container-high'} p-6 rounded-2xl border-2 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] hover:shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-1 transition-all`}
+                >
+                  <span className={`text-headline-xl font-headline-xl ${trendingTextColors[index]?.num || 'text-on-surface'} mt-[-4px]`}>
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <div className="flex flex-col gap-2">
+                    <h4 className={`text-body-lg font-headline-md ${trendingTextColors[index]?.title || 'text-on-surface group-hover:text-primary'} transition-colors leading-tight uppercase`}>
+                      {article.title}
+                    </h4>
+                    <div className={`flex items-center gap-2 text-label-bold font-label-bold ${trendingTextColors[index]?.meta || 'text-on-surface'} uppercase text-xs`}>
+                      <span>{article.date}</span>
+                      <span>•</span>
+                      <span>{article.readTime}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Vertical Feed (Archive) */}
-      <section className="max-w-4xl mx-auto w-full flex flex-col gap-16 md:gap-24 animate-fade-in-up-delay-1">
-        <div className="flex items-center justify-between border-b-2 border-on-surface pb-6 mb-8">
-          <h2 className="text-headline-xl font-headline-xl text-on-surface uppercase">Latest Articles</h2>
+      {/* Pillar 2: IEDC by the Numbers */}
+      <NumbersTicker />
+
+      {/* Pillar 3: Coming Up (Events & Hackathons) */}
+      <ComingUpSection />
+
+      {/* Pillar 4: Opportunity Radar (Grants & Schemes) */}
+      <OpportunityRadar />
+
+      {/* Pillar 5: Startup & Innovation Spotlight */}
+      <StartupSpotlightSection />
+
+      {/* Pillar 6: Month in Moments (Photo Collage) */}
+      <MonthInMoments />
+
+      {/* Vertical Feed: Full Archive Articles */}
+      <section className="max-w-4xl mx-auto w-full flex flex-col gap-12 md:gap-16">
+        <div className="flex items-center justify-between border-b-4 border-on-surface pb-6">
+          <div className="flex items-center gap-3">
+            <span className="bg-primary text-on-primary px-3.5 py-1 rounded-full text-label-bold font-label-bold uppercase text-xs">
+              Archive
+            </span>
+            <h2 className="text-headline-xl font-headline-xl text-on-surface uppercase">
+              All Newsletter Stories
+            </h2>
+          </div>
+          <Link to="/archive" className="text-xs font-label-bold uppercase text-primary hover:underline">
+            View Full Archive →
+          </Link>
         </div>
         
         {visibleArchive.map((article, index) => {
@@ -153,7 +228,7 @@ export default function Home() {
         })}
         
         {hasMore && (
-          <div className="flex justify-center mt-12">
+          <div className="flex justify-center mt-6">
             <button
               onClick={() => setVisibleCount((c) => c + LOAD_MORE_COUNT)}
               className="bg-transparent border-4 border-on-surface text-on-surface px-12 py-4 rounded-full text-label-bold font-label-bold uppercase hover:bg-on-surface hover:text-surface transition-colors duration-200 shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] active:translate-y-1 active:shadow-none"
@@ -164,16 +239,23 @@ export default function Home() {
         )}
       </section>
 
-      {/* Newsletter Signup */}
-      <section ref={newsletterRef} id="newsletter" className="max-w-4xl mx-auto w-full bg-tertiary-container rounded-[2rem] p-12 md:p-24 text-center mt-12 border-4 border-on-surface shadow-[12px_12px_0px_0px_rgba(28,27,27,1)] animate-fade-in-up">
-        <h2 className="text-display-lg-mobile md:text-headline-xl font-display-lg-mobile md:font-headline-xl mb-6 text-on-tertiary-container uppercase leading-none">Stay Ahead of the Curve</h2>
-        <p className="text-body-lg font-body-lg text-on-tertiary-container/90 mb-12 max-w-2xl mx-auto">Get the latest updates, tech deep-dives, and campus innovation news delivered straight to your inbox every month.</p>
+      {/* Newsletter Signup Engine */}
+      <section ref={newsletterRef} id="newsletter" className="max-w-4xl mx-auto w-full bg-tertiary-container rounded-[2rem] p-12 md:p-24 text-center mt-8 border-4 border-on-surface shadow-[12px_12px_0px_0px_rgba(28,27,27,1)] animate-fade-in-up">
+        <div className="inline-flex items-center gap-2 bg-on-surface text-surface px-4 py-1.5 rounded-full text-xs font-label-bold uppercase mb-6">
+          <span>📬 Monthly In Your Inbox</span>
+        </div>
+        <h2 className="text-display-lg-mobile md:text-headline-xl font-display-lg-mobile md:font-headline-xl mb-6 text-on-tertiary-container uppercase leading-none">
+          Stay Ahead with IEDC GECT
+        </h2>
+        <p className="text-body-lg font-body-lg text-on-tertiary-container/90 mb-12 max-w-2xl mx-auto">
+          Get upcoming hackathons, verified KSUM grant deadlines, student startup breakthroughs, and workshop alerts delivered once every month.
+        </p>
         
         {subStatus === 'success' ? (
           <div className="bg-surface rounded-2xl p-8 border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] max-w-md mx-auto animate-scale-in">
             <span className="text-4xl mb-4 block">🎉</span>
             <p className="text-headline-md font-headline-md text-on-surface uppercase mb-2">You're in!</p>
-            <p className="text-body-md text-secondary mb-6">Check your inbox for a confirmation email.</p>
+            <p className="text-body-md text-secondary mb-6">Check your inbox for upcoming edition updates and grant alerts.</p>
             <button
               onClick={() => { setSubStatus('idle'); setSubEmail(''); }}
               className="text-label-bold font-label-bold text-primary hover:text-on-surface transition-colors uppercase text-sm"

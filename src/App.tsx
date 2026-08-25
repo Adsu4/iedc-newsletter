@@ -6,6 +6,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import TopStories from './pages/TopStories';
+import ComingUpPage from './pages/ComingUpPage';
+import OpportunityRadarPage from './pages/OpportunityRadarPage';
 import Archive from './pages/Archive';
 import Projects from './pages/Projects';
 import About from './pages/About';
@@ -24,8 +26,10 @@ function App() {
           <Route element={<MainLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/top-stories" element={<TopStories />} />
-            <Route path="/archive" element={<Archive />} />
+            <Route path="/coming-up" element={<ComingUpPage />} />
+            <Route path="/opportunities" element={<OpportunityRadarPage />} />
             <Route path="/projects" element={<Projects />} />
+            <Route path="/archive" element={<Archive />} />
             <Route path="/about" element={<About />} />
             <Route path="/article/:id" element={<ArticleDetail />} />
           </Route>

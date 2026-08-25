@@ -121,7 +121,7 @@ export default function About() {
         <div>
           <h3 className="text-headline-xl font-headline-xl text-on-tertiary-container uppercase leading-none mb-3">Visit the IEDC Innovation Lab</h3>
           <p className="text-body-lg text-on-tertiary-container/90 max-w-xl">
-            Ground Floor, IT Block, Govt. Engineering College, Ramavarmapuram, Thrissur, Kerala - 680009
+            Room no. 413, First Floor, Main Block, Govt. Engineering College, Ramavarmapuram, Thrissur, Kerala - 680009
           </p>
         </div>
         <a
