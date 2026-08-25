@@ -1,8 +1,8 @@
 import { articles as initialArticles, type Article } from './articles';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
-const LOCAL_STORAGE_KEY = 'iedc_published_articles';
-const DELETED_IDS_KEY = 'iedc_deleted_article_ids';
+const LOCAL_STORAGE_KEY = 'iedc_published_articles_v2';
+const DELETED_IDS_KEY = 'iedc_deleted_article_ids_v2';
 
 // --- HTML Sanitization ---
 function sanitizeHtml(input: string): string {
