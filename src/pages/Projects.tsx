@@ -154,7 +154,7 @@ export default function Projects() {
             <div>
               {/* Image Banner */}
               <div className="w-full aspect-[16/9] bg-primary border-b-4 border-on-surface overflow-hidden relative">
-                <img src={project.imageUrl} alt={project.title} className="w-full h-full object-cover mix-blend-luminosity opacity-90" />
+                <img src={project.imageUrl} alt={project.title} className="w-full h-full object-cover img-editorial" />
                 <span className={`absolute top-4 right-4 ${project.statusColor} px-4 py-1.5 rounded-full text-label-bold font-label-bold uppercase text-xs border-2 border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]`}>
                   {project.status}
                 </span>

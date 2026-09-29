@@ -47,7 +47,7 @@ export default function Home() {
 
   return (
     <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8 md:py-14 flex flex-col gap-16 md:gap-24">
-      {/* 1. Explicit Home Section & Portal Masthead */}
+      {/* 1. Home Section & Portal Masthead */}
       <section id="home" className="flex flex-col gap-6 animate-fade-in-up">
         {/* Section Header */}
         <div className="flex items-center justify-between border-b-4 border-on-surface pb-4">
@@ -56,27 +56,26 @@ export default function Home() {
               <span className="material-symbols-outlined text-[16px]">home</span>
               Home
             </span>
-            <h2 className="text-display-lg-mobile md:text-headline-xl font-display-lg-mobile md:font-headline-xl text-on-surface uppercase leading-none">
-              IEDC Innovation Portal
-            </h2>
+            <span className="hidden sm:inline text-xs font-label-bold uppercase text-secondary">
+              Govt. Engineering College Thrissur
+            </span>
           </div>
-          <span className="hidden sm:inline text-xs font-label-bold uppercase text-secondary">
-            Govt. Engineering College Thrissur
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="bg-surface-container-high text-on-surface px-3 py-1 rounded-full text-xs font-label-bold uppercase border border-on-surface">
+              {currentEditionInfo.monthYear}
+            </span>
+          </div>
         </div>
 
         {/* Master Portal Hero Card */}
-        <div className="bg-surface rounded-3xl border-4 border-on-surface p-6 sm:p-10 md:p-12 shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] md:shadow-[12px_12px_0px_0px_rgba(28,27,27,1)] flex flex-col gap-8">
+        <div className="bg-surface rounded-3xl border-4 border-on-surface p-6 sm:p-10 md:p-12 shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] md:shadow-[12px_12px_0px_0px_rgba(28,27,27,1)] flex flex-col gap-6">
           {/* Top Badges */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-on-surface/15 pb-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-on-surface/15 pb-5">
             <div className="flex flex-wrap items-center gap-2">
               <span className="bg-primary text-on-primary px-3.5 py-1 rounded-full text-xs font-label-bold uppercase border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]">
                 {currentEditionInfo.edition}
               </span>
-              <span className="bg-surface-container-high text-on-surface px-3 py-1 rounded-full text-xs font-label-bold uppercase border border-on-surface">
-                {currentEditionInfo.monthYear} Edition
-              </span>
-              <span className="text-secondary font-label-bold uppercase text-xs hidden sm:inline">
+              <span className="text-secondary font-label-bold uppercase text-xs">
                 • Official Newsletter Dispatch
               </span>
             </div>
@@ -90,10 +89,7 @@ export default function Home() {
           </div>
 
         {/* Hero Title and Description */}
-        <div className="flex flex-col gap-4">
-          <div className="inline-flex items-center gap-2 bg-secondary text-on-secondary px-3.5 py-1 rounded-full text-xs font-label-bold uppercase self-start border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]">
-            <span>Official Student Innovation Journal</span>
-          </div>
+        <div className="flex flex-col gap-3">
           <h1 className="text-display-lg-mobile md:text-[56px] lg:text-[68px] font-display-lg font-headline-xl uppercase leading-none text-on-surface tracking-tight">
             IEDC GECT Innovation Chronicle
           </h1>
@@ -155,8 +151,8 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-gutter">
             {/* Primary Cover Story (Hero Card) */}
             <Link to={`/article/${coverStory.id}`} className="lg:col-span-8 flex flex-col gap-6 group cursor-pointer">
-              <div className="w-full aspect-[4/3] md:aspect-[16/9] overflow-hidden rounded-2xl bg-primary border-4 border-on-surface shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] relative transition-transform duration-300 group-hover:-translate-y-2 group-hover:-translate-x-2 group-hover:shadow-[16px_16px_0px_0px_rgba(28,27,27,1)]">
-                <img className="w-full h-full object-cover mix-blend-luminosity opacity-90 group-hover:scale-105 transition-transform duration-500" alt={coverStory.title} src={coverStory.imageUrl}/>
+              <div className="w-full aspect-[4/3] md:aspect-[16/9] overflow-hidden rounded-2xl bg-surface-container-high border-4 border-on-surface shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] relative transition-transform duration-300 group-hover:-translate-y-2 group-hover:-translate-x-2 group-hover:shadow-[16px_16px_0px_0px_rgba(28,27,27,1)]">
+                <img className="w-full h-full object-cover img-editorial group-hover:scale-105 transition-transform duration-500" alt={coverStory.title} src={coverStory.imageUrl}/>
                 <div className="absolute top-5 right-5 bg-secondary text-on-secondary text-label-bold font-label-bold uppercase px-4 py-2 rounded-full border-2 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] rotate-2">
                   ⭐ Edition Cover Story
                 </div>
@@ -292,7 +288,7 @@ export default function Home() {
                         <img
                           src={article.imageUrl}
                           alt={article.title}
-                          className="w-full h-full object-cover mix-blend-luminosity opacity-85 group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover img-editorial group-hover:scale-105 transition-transform duration-300"
                         />
                       </div>
                     )}

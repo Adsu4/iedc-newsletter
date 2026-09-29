@@ -129,3 +129,54 @@
 .animate-scale-in {
     animation: scaleIn 0.3s ease-out both;
 }
+
+/* Editorial image treatment: subtle desaturate at rest, full color on hover */
+.img-editorial {
+    filter: saturate(0.85) contrast(1.05);
+    transition: filter 0.4s ease, transform 0.4s ease;
+}
+.group:hover .img-editorial,
+.img-editorial:hover {
+    filter: saturate(1.1) contrast(1.02);
+}
+
+/* Animated counting numbers */
+@keyframes countFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.animate-count-in {
+    animation: countFadeIn 0.5s ease-out both;
+}
+
+/* Back to top button animation */
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+.animate-fade-in-scale {
+    animation: fadeInScale 0.25s ease-out both;
+}
+
+/* Smooth section reveal */
+.section-reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.section-reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+}

@@ -81,7 +81,7 @@ export default function About() {
             ].map((member) => (
               <div key={member.name} className="bg-surface p-6 rounded-2xl border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] flex items-center gap-6">
                 <div className="w-20 h-20 rounded-full border-4 border-on-surface overflow-hidden shrink-0 bg-primary shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]">
-                  <img src={member.avatar} alt={member.name} className="w-full h-full object-cover mix-blend-luminosity" />
+                  <img src={member.avatar} alt={member.name} className="w-full h-full object-cover img-editorial" />
                 </div>
                 <div>
                   <h4 className="text-headline-md font-headline-md text-on-surface uppercase leading-tight">{member.name}</h4>
@@ -103,7 +103,7 @@ export default function About() {
             ].map((member) => (
               <div key={member.name} className="bg-surface p-6 rounded-2xl border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] flex items-center gap-6">
                 <div className="w-20 h-20 rounded-full border-4 border-on-surface overflow-hidden shrink-0 bg-tertiary shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]">
-                  <img src={member.avatar} alt={member.name} className="w-full h-full object-cover mix-blend-luminosity" />
+                  <img src={member.avatar} alt={member.name} className="w-full h-full object-cover img-editorial" />
                 </div>
                 <div>
                   <h4 className="text-headline-md font-headline-md text-on-surface uppercase leading-tight">{member.name}</h4>
@@ -125,7 +125,7 @@ export default function About() {
           </p>
         </div>
         <a
-          href="mailto:iedc@gect.ac.in"
+          href="mailto:iedc@gectcr.ac.in"
           className="bg-on-surface text-surface px-8 py-4 rounded-full text-label-bold font-label-bold uppercase hover:bg-primary hover:text-on-primary transition-all whitespace-nowrap border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)]"
         >
           Contact IEDC Team

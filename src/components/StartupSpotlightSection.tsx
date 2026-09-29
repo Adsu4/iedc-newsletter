@@ -39,7 +39,7 @@ export default function StartupSpotlightSection() {
                 <img
                   src={startup.imageUrl}
                   alt={startup.name}
-                  className="w-full h-full object-cover mix-blend-luminosity opacity-90"
+                  className="w-full h-full object-cover img-editorial"
                 />
                 <span className={`absolute top-3.5 right-3.5 ${startup.stageColor} px-3.5 py-1 rounded-full text-label-bold font-label-bold uppercase text-xs border-2 border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]`}>
                   {startup.stage}

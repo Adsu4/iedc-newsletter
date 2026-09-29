@@ -37,7 +37,7 @@ export default function TopStories() {
           <div className="bg-surface-container-high rounded-[2rem] border-4 border-on-surface p-8 md:p-14 shadow-[12px_12px_0px_0px_rgba(28,27,27,1)] group-hover:-translate-y-2 group-hover:-translate-x-2 group-hover:shadow-[18px_18px_0px_0px_rgba(28,27,27,1)] transition-all flex flex-col lg:flex-row gap-12 items-center">
             <div className="w-full lg:w-1/2 aspect-[16/10] rounded-2xl overflow-hidden border-4 border-on-surface bg-primary shadow-[4px_4px_0px_0px_rgba(28,27,27,1)]">
               {topPick.imageUrl ? (
-                <img src={topPick.imageUrl} alt={topPick.title} className="w-full h-full object-cover mix-blend-luminosity opacity-90" />
+                <img src={topPick.imageUrl} alt={topPick.title} className="w-full h-full object-cover img-editorial" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center p-8 bg-tertiary text-on-tertiary">
                   <span className="text-headline-xl font-headline-xl uppercase text-center">{topPick.title}</span>
@@ -86,7 +86,7 @@ export default function TopStories() {
             </div>
             {article.imageUrl && (
               <div className="w-full aspect-[16/9] rounded-xl overflow-hidden border-2 border-on-surface bg-secondary">
-                <img src={article.imageUrl} alt={article.title} className="w-full h-full object-cover mix-blend-luminosity opacity-85" />
+                <img src={article.imageUrl} alt={article.title} className="w-full h-full object-cover img-editorial" />
               </div>
             )}
             <div className="flex flex-col gap-3">

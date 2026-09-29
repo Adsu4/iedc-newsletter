@@ -39,7 +39,7 @@ export default function MonthInMoments() {
                 <img
                   src={moment.imageUrl}
                   alt={moment.title}
-                  className="w-full h-full object-cover mix-blend-luminosity opacity-90 group-hover:scale-105 transition-transform duration-300"
+                  className="w-full h-full object-cover img-editorial group-hover:scale-105 transition-transform duration-300"
                 />
                 <span className="absolute top-3 right-3 bg-on-surface text-surface px-3 py-1 rounded-full text-label-bold font-label-bold uppercase text-[10px] border border-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]">
                   {moment.tag}
@@ -80,7 +80,7 @@ export default function MonthInMoments() {
               <img
                 src={activePhoto.imageUrl}
                 alt={activePhoto.title}
-                className="w-full h-full object-cover mix-blend-luminosity opacity-95"
+                className="w-full h-full object-cover img-editorial"
               />
             </div>
 

@@ -102,7 +102,7 @@ export default function ArticleDetail() {
         {/* Hero Image */}
         {article.imageUrl && (
           <div className="w-full aspect-[16/9] mb-12 rounded-2xl overflow-hidden border-4 border-on-surface shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] relative bg-primary-fixed">
-            <img className="w-full h-full object-cover mix-blend-luminosity opacity-90" alt={article.title} src={article.imageUrl}/>
+            <img className="w-full h-full object-cover img-editorial" alt={article.title} src={article.imageUrl}/>
           </div>
         )}
 
@@ -130,7 +130,7 @@ export default function ArticleDetail() {
             <Link key={rec.id} to={`/article/${rec.id}`} className="flex flex-col gap-4 group cursor-pointer">
               {rec.imageUrl ? (
                 <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] group-hover:-translate-y-1 group-hover:-translate-x-1 group-hover:shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] transition-all bg-secondary">
-                  <img className="w-full h-full object-cover mix-blend-luminosity opacity-80" alt={rec.title} src={rec.imageUrl}/>
+                  <img className="w-full h-full object-cover img-editorial" alt={rec.title} src={rec.imageUrl}/>
                 </div>
               ) : (
                 <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] group-hover:-translate-y-1 group-hover:-translate-x-1 group-hover:shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] transition-all bg-surface-container-high flex items-center justify-center p-8">

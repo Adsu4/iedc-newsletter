@@ -95,7 +95,7 @@ export default function Archive() {
             >
               {article.imageUrl ? (
                 <div className="w-full aspect-[16/10] bg-primary border-b-4 border-on-surface overflow-hidden">
-                  <img src={article.imageUrl} alt={article.title} className="w-full h-full object-cover mix-blend-luminosity opacity-90 group-hover:scale-105 transition-transform duration-300" />
+                  <img src={article.imageUrl} alt={article.title} className="w-full h-full object-cover img-editorial group-hover:scale-105 transition-transform duration-300" />
                 </div>
               ) : (
                 <div className="w-full aspect-[16/10] bg-tertiary-container border-b-4 border-on-surface p-6 flex items-center justify-center">

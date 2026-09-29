@@ -12,9 +12,11 @@ export default function Footer() {
         </div>
         <div className="flex flex-wrap justify-center gap-6 md:gap-8 text-label-bold font-label-bold uppercase text-xs">
           <Link to="/" className="text-on-surface hover:text-primary transition-colors">Home</Link>
+          <Link to="/top-stories" className="text-on-surface hover:text-primary transition-colors">Top Stories</Link>
           <Link to="/coming-up" className="text-on-surface hover:text-primary transition-colors">Coming Up</Link>
           <Link to="/opportunities" className="text-on-surface hover:text-primary transition-colors">Opportunities</Link>
           <Link to="/projects" className="text-on-surface hover:text-primary transition-colors">Projects & Startups</Link>
+          <Link to="/archive" className="text-on-surface hover:text-primary transition-colors">Archive</Link>
           <Link to="/about" className="text-on-surface hover:text-primary transition-colors">About IEDC</Link>
           <a href="mailto:iedc@gectcr.ac.in?subject=Write%20for%20IEDC%20Newsletter" className="text-on-surface hover:text-primary transition-colors">Write for Us</a>
           <Link to="/unsubscribe" className="text-on-surface hover:text-error transition-colors">Unsubscribe</Link>
