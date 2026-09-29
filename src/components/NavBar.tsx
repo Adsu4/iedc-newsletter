@@ -40,7 +40,7 @@ export default function NavBar() {
           </Link>
 
           {/* Navigation Links (Desktop) */}
-          <div className="hidden lg:flex space-x-8 items-center text-label-bold font-label-bold uppercase text-xs">
+          <div className="hidden lg:flex space-x-5 xl:space-x-7 items-center text-label-bold font-label-bold uppercase text-xs">
             {navLinks.map((link) => (
               <Link
                 key={link.path}

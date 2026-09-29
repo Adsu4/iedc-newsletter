@@ -56,9 +56,9 @@ export default function Home() {
               <span className="material-symbols-outlined text-[16px]">home</span>
               Home
             </span>
-            <h1 className="text-display-lg-mobile md:text-headline-xl font-display-lg-mobile md:font-headline-xl text-on-surface uppercase leading-none">
+            <h2 className="text-display-lg-mobile md:text-headline-xl font-display-lg-mobile md:font-headline-xl text-on-surface uppercase leading-none">
               IEDC Innovation Portal
-            </h1>
+            </h2>
           </div>
           <span className="hidden sm:inline text-xs font-label-bold uppercase text-secondary">
             Govt. Engineering College Thrissur
@@ -94,7 +94,7 @@ export default function Home() {
           <div className="inline-flex items-center gap-2 bg-secondary text-on-secondary px-3.5 py-1 rounded-full text-xs font-label-bold uppercase self-start border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]">
             <span>Official Student Innovation Journal</span>
           </div>
-          <h1 className="text-display-lg-mobile sm:text-display-lg md:text-[3.75rem] font-black uppercase leading-none text-on-surface tracking-tight">
+          <h1 className="text-display-lg-mobile md:text-[56px] lg:text-[68px] font-display-lg font-headline-xl uppercase leading-none text-on-surface tracking-tight">
             IEDC GECT Innovation Chronicle
           </h1>
           <p className="text-body-lg md:text-xl text-on-surface-variant max-w-3xl leading-relaxed">
