@@ -20,6 +20,7 @@ export default function NavBar() {
   };
 
   const navLinks = [
+    { label: 'Home', path: '/' },
     { label: 'Top Stories', path: '/top-stories' },
     { label: 'Coming Up', path: '/coming-up' },
     { label: 'Opportunity Radar', path: '/opportunities' },

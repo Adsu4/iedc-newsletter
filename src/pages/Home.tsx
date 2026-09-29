@@ -47,29 +47,47 @@ export default function Home() {
 
   return (
     <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8 md:py-14 flex flex-col gap-16 md:gap-24">
-      {/* 1. Master Portal Hero Masthead */}
-      <section className="bg-surface rounded-3xl border-4 border-on-surface p-6 sm:p-10 md:p-12 shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] md:shadow-[12px_12px_0px_0px_rgba(28,27,27,1)] flex flex-col gap-8 animate-fade-in-up">
-        {/* Top Badges */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-on-surface/15 pb-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="bg-primary text-on-primary px-3.5 py-1 rounded-full text-xs font-label-bold uppercase border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]">
-              {currentEditionInfo.edition}
+      {/* 1. Explicit Home Section & Portal Masthead */}
+      <section id="home" className="flex flex-col gap-6 animate-fade-in-up">
+        {/* Section Header */}
+        <div className="flex items-center justify-between border-b-4 border-on-surface pb-4">
+          <div className="flex items-center gap-3">
+            <span className="bg-primary text-on-primary px-3.5 py-1 rounded-full text-label-bold font-label-bold uppercase text-xs flex items-center gap-1.5 shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]">
+              <span className="material-symbols-outlined text-[16px]">home</span>
+              Home
             </span>
-            <span className="bg-surface-container-high text-on-surface px-3 py-1 rounded-full text-xs font-label-bold uppercase border border-on-surface">
-              {currentEditionInfo.monthYear} Edition
-            </span>
-            <span className="text-secondary font-label-bold uppercase text-xs hidden sm:inline">
-              • Govt. Engineering College Thrissur
-            </span>
+            <h1 className="text-display-lg-mobile md:text-headline-xl font-display-lg-mobile md:font-headline-xl text-on-surface uppercase leading-none">
+              IEDC Innovation Portal
+            </h1>
           </div>
-
-          <a
-            href="#newsletter"
-            className="bg-on-surface text-surface px-5 py-2.5 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-primary hover:text-on-primary transition-all border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex items-center gap-1.5 whitespace-nowrap ml-auto sm:ml-0"
-          >
-            <span>📬 Subscribe to Digest</span>
-          </a>
+          <span className="hidden sm:inline text-xs font-label-bold uppercase text-secondary">
+            Govt. Engineering College Thrissur
+          </span>
         </div>
+
+        {/* Master Portal Hero Card */}
+        <div className="bg-surface rounded-3xl border-4 border-on-surface p-6 sm:p-10 md:p-12 shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] md:shadow-[12px_12px_0px_0px_rgba(28,27,27,1)] flex flex-col gap-8">
+          {/* Top Badges */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-on-surface/15 pb-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="bg-primary text-on-primary px-3.5 py-1 rounded-full text-xs font-label-bold uppercase border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]">
+                {currentEditionInfo.edition}
+              </span>
+              <span className="bg-surface-container-high text-on-surface px-3 py-1 rounded-full text-xs font-label-bold uppercase border border-on-surface">
+                {currentEditionInfo.monthYear} Edition
+              </span>
+              <span className="text-secondary font-label-bold uppercase text-xs hidden sm:inline">
+                • Official Newsletter Dispatch
+              </span>
+            </div>
+
+            <a
+              href="#newsletter"
+              className="bg-on-surface text-surface px-5 py-2.5 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-primary hover:text-on-primary transition-all border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex items-center gap-1.5 whitespace-nowrap ml-auto sm:ml-0"
+            >
+              <span>📬 Subscribe to Digest</span>
+            </a>
+          </div>
 
         {/* Hero Title and Description */}
         <div className="flex flex-col gap-4">
@@ -113,7 +131,8 @@ export default function Home() {
             </Link>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
       {/* 2. Editorial Lead: Cover Story & Executive Briefs (Unique - never repeated below) */}
       {coverStory && (

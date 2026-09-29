@@ -11,6 +11,7 @@ export default function Footer() {
           <span className="text-xs text-secondary font-label-bold uppercase">Govt. Engineering College Thrissur</span>
         </div>
         <div className="flex flex-wrap justify-center gap-6 md:gap-8 text-label-bold font-label-bold uppercase text-xs">
+          <Link to="/" className="text-on-surface hover:text-primary transition-colors">Home</Link>
           <Link to="/coming-up" className="text-on-surface hover:text-primary transition-colors">Coming Up</Link>
           <Link to="/opportunities" className="text-on-surface hover:text-primary transition-colors">Opportunities</Link>
           <Link to="/projects" className="text-on-surface hover:text-primary transition-colors">Projects & Startups</Link>
