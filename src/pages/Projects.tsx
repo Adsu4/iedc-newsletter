@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 interface ProjectItem {
@@ -75,6 +76,16 @@ const campusProjects: ProjectItem[] = [
 ];
 
 export default function Projects() {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyEmail = () => {
+    navigator.clipboard.writeText('iedc@gectcr.ac.in');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const mailtoUrl = "mailto:iedc@gectcr.ac.in?subject=Project%20Submission%20-%20IEDC%20Student%20Labs&body=Hi%20IEDC%20Team%2C%0A%0AI%20would%20like%20to%20submit%20our%20project%20for%20the%20IEDC%20Newsletter%20Showcase.%0A%0AProject%20Title%3A%20%0ADepartment%3A%20%0ATeam%20Members%3A%20%0AProject%20Summary%3A%20%0ATechnologies%20Used%3A%20%0AGitHub%20%2F%20Demo%20Link%3A%20%0AContact%20Phone%3A%20%0A%0AThank%20you!";
+
   return (
     <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 flex flex-col gap-12">
       {/* Header */}
@@ -90,12 +101,47 @@ export default function Projects() {
             Explore cutting-edge hardware prototypes, SaaS applications, and IoT systems built by student innovators at Govt. Engineering College Thrissur.
           </p>
         </div>
-        <Link
-          to="/admin/dashboard"
-          className="bg-primary text-on-primary px-8 py-4 rounded-full text-label-bold font-label-bold uppercase border-2 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] transition-all shrink-0"
+        <a
+          href={mailtoUrl}
+          className="bg-primary text-on-primary px-8 py-4 rounded-full text-label-bold font-label-bold uppercase border-2 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] transition-all shrink-0 flex items-center gap-2"
         >
-          Submit Your Project
-        </Link>
+          <span className="material-symbols-outlined text-[20px]">mail</span>
+          <span>Submit Your Project</span>
+        </a>
+      </div>
+
+      {/* Submission Guidance Callout Banner */}
+      <div className="bg-surface-container-high rounded-2xl border-4 border-on-surface p-6 sm:p-8 shadow-[6px_6px_0px_0px_rgba(28,27,27,1)] flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+        <div className="flex flex-col gap-2 max-w-2xl">
+          <div className="flex items-center gap-2 text-xs font-label-bold uppercase text-secondary">
+            <span className="bg-secondary text-on-secondary px-2.5 py-0.5 rounded-full">Call for Submissions</span>
+            <span>• Open for All Departments</span>
+          </div>
+          <h2 className="text-headline-md font-headline-md text-on-surface uppercase leading-tight">
+            How to Submit Your Project
+          </h2>
+          <p className="text-body-md text-on-surface-variant leading-relaxed">
+            Built an innovative hardware prototype, software application, or research model? Student projects can be submitted directly by emailing our official IEDC address at{' '}
+            <strong className="text-on-surface font-label-bold underline">iedc@gectcr.ac.in</strong> with your project title, team members, tech stack, and GitHub or demo links.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <a
+            href={mailtoUrl}
+            className="bg-on-surface text-surface px-6 py-3.5 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-primary hover:text-on-primary transition-colors border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex items-center justify-center gap-2 whitespace-nowrap flex-1 sm:flex-initial"
+          >
+            <span className="material-symbols-outlined text-[16px]">send</span>
+            <span>Send to iedc@gectcr.ac.in</span>
+          </a>
+          <button
+            onClick={handleCopyEmail}
+            className="bg-surface text-on-surface px-5 py-3.5 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-surface-container transition-colors border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex items-center justify-center gap-2 whitespace-nowrap flex-1 sm:flex-initial"
+          >
+            <span className="material-symbols-outlined text-[16px]">{copied ? 'check' : 'content_copy'}</span>
+            <span>{copied ? 'Copied Email!' : 'Copy Email Address'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Grid of Projects */}

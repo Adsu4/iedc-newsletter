@@ -35,23 +35,8 @@ export default function Home() {
     }
   }, []);
 
-  const featured = articlesList.find((a) => a.featured) || articlesList[0];
-  const trending = articlesList.filter((a) => a.id !== featured?.id).slice(0, 3);
-  const archive = articlesList.filter((a) => a.id !== featured?.id);
-
-  const visibleArchive = archive.slice(0, visibleCount);
-  const hasMore = visibleCount < archive.length;
-
-  const trendingCardColors = [
-    'bg-secondary-container',
-    'bg-tertiary-container',
-    'bg-surface-container-high',
-  ];
-  const trendingTextColors = [
-    { num: 'text-on-surface', title: 'text-on-surface group-hover:text-primary', meta: 'text-on-surface' },
-    { num: 'text-on-tertiary-container', title: 'text-on-tertiary-container group-hover:text-tertiary-fixed', meta: 'text-on-tertiary-container opacity-90' },
-    { num: 'text-on-surface', title: 'text-on-surface group-hover:text-primary', meta: 'text-on-surface' },
-  ];
+  const visibleArchive = articlesList.slice(0, visibleCount);
+  const hasMore = visibleCount < articlesList.length;
 
   return (
     <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-10 md:py-16 flex flex-col gap-20 md:gap-28">
@@ -80,78 +65,6 @@ export default function Home() {
           </a>
         </div>
       </div>
-
-      {/* Pillar 1: This Month at IEDC (Top Stories & Highlights) */}
-      <section className="flex flex-col gap-8 animate-fade-in-up">
-        <div className="border-b-4 border-on-surface pb-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="bg-secondary text-on-secondary px-3.5 py-1 rounded-full text-label-bold font-label-bold uppercase text-xs">
-              Pillar 01
-            </span>
-            <h2 className="text-display-lg-mobile md:text-headline-xl font-display-lg-mobile md:font-headline-xl text-on-surface uppercase leading-none">
-              This Month at IEDC
-            </h2>
-          </div>
-          <span className="hidden sm:inline text-xs font-label-bold uppercase text-secondary">
-            Major Events & Breakthroughs
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-gutter">
-          {/* Hero Featured Article */}
-          {featured && (
-            <Link to={`/article/${featured.id}`} className="lg:col-span-8 flex flex-col gap-8 group cursor-pointer">
-              <div className="w-full aspect-[4/3] md:aspect-[16/9] overflow-hidden rounded-2xl bg-primary border-4 border-on-surface shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] relative transition-transform duration-300 group-hover:-translate-y-2 group-hover:-translate-x-2 group-hover:shadow-[16px_16px_0px_0px_rgba(28,27,27,1)]">
-                <img className="w-full h-full object-cover mix-blend-luminosity opacity-90" alt={featured.title} src={featured.imageUrl}/>
-                <div className="absolute top-6 right-6 bg-secondary text-on-secondary text-label-bold font-label-bold uppercase px-4 py-2 rounded-full border-2 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] rotate-3">
-                  Cover Story
-                </div>
-              </div>
-              <div className="flex flex-col gap-4 max-w-3xl">
-                <div className="flex items-center gap-3 text-label-bold font-label-bold text-on-surface uppercase tracking-wider">
-                  <span className="bg-tertiary text-on-tertiary px-3 py-1 rounded-full text-xs">{featured.category}</span>
-                  <span>•</span>
-                  <span>{featured.date}</span>
-                  <span>•</span>
-                  <span>{featured.readTime}</span>
-                </div>
-                <h3 className="text-display-lg-mobile md:text-display-lg font-display-lg-mobile md:font-display-lg text-on-surface group-hover:text-primary transition-colors duration-300 uppercase leading-none">{featured.title}</h3>
-                <p className="text-body-lg font-body-lg text-on-surface-variant leading-relaxed">{featured.subtitle}</p>
-              </div>
-            </Link>
-          )}
-          
-          {/* Trending & Workshops Sidebar */}
-          <div className="lg:col-span-4 flex flex-col gap-8 lg:pl-8 lg:border-l-2 border-on-surface">
-            <h3 className="text-headline-md font-headline-md text-on-surface uppercase border-b-2 border-on-surface pb-4">
-              Monthly Highlights
-            </h3>
-            <div className="flex flex-col gap-6">
-              {trending.map((article, index) => (
-                <Link
-                  key={article.id}
-                  to={`/article/${article.id}`}
-                  className={`flex gap-5 group cursor-pointer ${trendingCardColors[index] || 'bg-surface-container-high'} p-6 rounded-2xl border-2 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] hover:shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-1 transition-all`}
-                >
-                  <span className={`text-headline-xl font-headline-xl ${trendingTextColors[index]?.num || 'text-on-surface'} mt-[-4px]`}>
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <div className="flex flex-col gap-2">
-                    <h4 className={`text-body-lg font-headline-md ${trendingTextColors[index]?.title || 'text-on-surface group-hover:text-primary'} transition-colors leading-tight uppercase`}>
-                      {article.title}
-                    </h4>
-                    <div className={`flex items-center gap-2 text-label-bold font-label-bold ${trendingTextColors[index]?.meta || 'text-on-surface'} uppercase text-xs`}>
-                      <span>{article.date}</span>
-                      <span>•</span>
-                      <span>{article.readTime}</span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Pillar 2: IEDC by the Numbers */}
       <NumbersTicker />

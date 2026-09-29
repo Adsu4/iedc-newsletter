@@ -15,7 +15,7 @@ export default function Footer() {
           <Link to="/opportunities" className="text-on-surface hover:text-primary transition-colors">Opportunities</Link>
           <Link to="/projects" className="text-on-surface hover:text-primary transition-colors">Projects & Startups</Link>
           <Link to="/about" className="text-on-surface hover:text-primary transition-colors">About IEDC</Link>
-          <Link to="/admin/dashboard" className="text-on-surface hover:text-primary transition-colors">Write for Us</Link>
+          <a href="mailto:iedc@gectcr.ac.in?subject=Write%20for%20IEDC%20Newsletter" className="text-on-surface hover:text-primary transition-colors">Write for Us</a>
           <Link to="/unsubscribe" className="text-on-surface hover:text-error transition-colors">Unsubscribe</Link>
         </div>
         <div className="flex flex-col items-center md:items-end gap-3 text-right">
