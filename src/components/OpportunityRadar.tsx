@@ -18,40 +18,39 @@ export default function OpportunityRadar({ showAll = false }: OpportunityRadarPr
   const displayList = showAll ? filtered : filtered.slice(0, 4);
 
   return (
-    <section className="flex flex-col gap-10">
+    <section className="flex flex-col gap-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b-4 border-on-surface pb-6 gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b-2 border-on-surface pb-3 gap-3">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="bg-tertiary text-on-tertiary px-3.5 py-1 rounded-full text-label-bold font-label-bold uppercase text-xs">
-              Grants & Funding Radar
+          <div className="flex items-center gap-2 mb-1">
+            <span className="bg-tertiary text-on-tertiary px-3 py-0.5 rounded-full text-label-bold font-label-bold uppercase text-[11px]">
+              Grants Radar
             </span>
-            <span className="text-secondary font-label-bold uppercase text-xs">• Verified Open Calls</span>
           </div>
-          <h2 className="text-display-lg-mobile md:text-headline-xl font-display-lg-mobile md:font-headline-xl text-on-surface uppercase leading-none">
+          <h2 className="text-2xl md:text-3xl font-bold font-headline-md text-on-surface leading-tight">
             Opportunity Radar
           </h2>
         </div>
         {!showAll && (
           <Link
             to="/opportunities"
-            className="text-label-bold font-label-bold uppercase text-primary hover:text-on-surface transition-colors flex items-center gap-1.5 text-sm"
+            className="text-xs font-medium text-primary hover:text-on-surface transition-colors flex items-center gap-1"
           >
-            <span>Explore All Grants ({opportunitiesList.length})</span>
-            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+            <span>Explore all grants ({opportunitiesList.length})</span>
+            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
           </Link>
         )}
       </div>
 
       {/* Category Filter Pills */}
-      <div className="flex flex-wrap gap-2.5">
+      <div className="flex flex-wrap gap-2">
         {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`px-5 py-2.5 rounded-full text-label-bold font-label-bold uppercase text-xs transition-all border-2 border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all border border-on-surface ${
               selectedCategory === cat
-                ? 'bg-primary text-on-primary shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] -translate-y-0.5'
+                ? 'bg-primary text-on-primary font-bold shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] -translate-y-0.5'
                 : 'bg-surface hover:bg-surface-container-high text-on-surface'
             }`}
           >
@@ -61,62 +60,62 @@ export default function OpportunityRadar({ showAll = false }: OpportunityRadarPr
       </div>
 
       {/* Opportunities Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
         {displayList.map((item) => (
           <div
             key={item.id}
-            className="bg-surface rounded-2xl border-4 border-on-surface p-8 flex flex-col justify-between shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-1.5 hover:shadow-[14px_14px_0px_0px_rgba(28,27,27,1)] transition-all"
+            className="bg-surface rounded-xl border-2 border-on-surface p-5 sm:p-6 flex flex-col justify-between shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-1 hover:shadow-[5px_5px_0px_0px_rgba(28,27,27,1)] transition-all"
           >
             <div>
               {/* Provider & Category Header */}
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <span className="text-xs font-label-bold uppercase text-secondary">
+              <div className="flex items-center justify-between gap-2 mb-2.5">
+                <span className="text-xs font-medium text-secondary">
                   {item.provider}
                 </span>
-                <span className={`${item.categoryColor} px-3 py-1 rounded-full text-label-bold font-label-bold uppercase text-xs border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]`}>
+                <span className={`${item.categoryColor} px-2.5 py-0.5 rounded-full text-[10px] font-label-bold uppercase border border-on-surface shadow-[1px_1px_0px_0px_rgba(28,27,27,1)]`}>
                   {item.category}
                 </span>
               </div>
 
               {/* Title */}
-              <h3 className="text-headline-md font-headline-md text-on-surface uppercase leading-tight mb-3">
+              <h3 className="text-lg sm:text-xl font-bold font-sans text-on-surface leading-snug mb-2">
                 {item.title}
               </h3>
 
               {/* Grant / Funding Highlight Card */}
               {item.grantAmount && (
-                <div className="inline-flex items-center gap-2 bg-surface-container-high px-4 py-2 rounded-xl border border-on-surface font-label-bold text-xs uppercase text-on-surface mb-4">
-                  <span className="material-symbols-outlined text-primary text-[18px]">payments</span>
+                <div className="inline-flex items-center gap-1.5 bg-surface-container-high px-3 py-1 rounded-lg border border-on-surface text-xs font-bold text-on-surface mb-3">
+                  <span className="material-symbols-outlined text-primary text-[16px]">payments</span>
                   <span>{item.grantAmount}</span>
                 </div>
               )}
 
-              <p className="text-body-md text-on-surface-variant leading-relaxed mb-6">
+              <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed mb-4">
                 {item.description}
               </p>
 
               {/* Eligibility */}
-              <div className="bg-surface-container-lowest p-4 rounded-xl border border-on-surface/30 mb-6">
-                <span className="text-[11px] font-label-bold uppercase text-secondary block mb-1">Target Eligibility</span>
+              <div className="bg-surface-container-lowest p-3 rounded-lg border border-on-surface/20 mb-4">
+                <span className="text-[10px] font-label-bold uppercase text-secondary block mb-0.5">Target Eligibility</span>
                 <p className="text-xs text-on-surface font-medium">{item.eligibility}</p>
               </div>
             </div>
 
             {/* Footer / Apply Button */}
-            <div className="pt-4 border-t-2 border-on-surface/10 flex items-center justify-between gap-4">
+            <div className="pt-3 border-t border-on-surface/10 flex items-center justify-between gap-4">
               <div className="flex flex-col">
-                <span className="text-[11px] font-label-bold uppercase text-secondary">Deadline</span>
-                <span className="text-xs font-label-bold uppercase text-error">{item.deadline}</span>
+                <span className="text-[10px] font-label-bold uppercase text-secondary">Deadline</span>
+                <span className="text-xs font-bold text-error">{item.deadline}</span>
               </div>
 
               <a
                 href={item.applyUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-primary text-on-primary px-6 py-3 rounded-full text-label-bold font-label-bold uppercase text-xs border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_rgba(28,27,27,1)] transition-all flex items-center gap-1.5"
+                className="bg-primary text-on-primary px-4 py-2 rounded-full text-label-bold font-label-bold uppercase text-xs border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] transition-all flex items-center gap-1.5"
               >
                 <span>Apply / Details</span>
-                <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+                <span className="material-symbols-outlined text-[14px]">open_in_new</span>
               </a>
             </div>
           </div>

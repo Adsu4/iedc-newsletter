@@ -79,43 +79,43 @@ export default function ArticleDetail() {
       </div>
 
       {/* Article Header */}
-      <article className="max-w-[700px] mx-auto relative">
-        <div className="mb-10 text-center">
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <span className="text-primary font-label-bold text-label-bold uppercase tracking-widest">{article.category}</span>
-            <span className="text-on-surface-variant font-label-bold text-label-bold">·</span>
-            <span className="text-on-surface-variant font-label-bold text-label-bold">{article.date?.toUpperCase()}</span>
+      <article className="max-w-[720px] mx-auto relative">
+        <div className="mb-8 text-center">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <span className="text-primary font-label-bold text-xs uppercase tracking-wider">{article.category}</span>
+            <span className="text-on-surface-variant font-medium">·</span>
+            <span className="text-on-surface-variant text-xs font-medium">{article.date}</span>
           </div>
-          <h1 className="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface mb-6 uppercase">{article.title}</h1>
-          <p className="font-body-lg text-body-lg text-on-surface-variant mb-10">{article.subtitle}</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-sans text-on-surface mb-4 leading-tight">{article.title}</h1>
+          <p className="text-sm sm:text-base font-normal text-on-surface-variant mb-6 leading-relaxed">{article.subtitle}</p>
 
           {/* Author Bio Box */}
-          <div className="flex items-center justify-center gap-4 py-6 border-y border-outline-variant mb-12">
-            <img className="w-14 h-14 rounded-full object-cover border-2 border-on-surface" alt={article.author?.name} src={article.author?.avatarUrl}/>
+          <div className="flex items-center justify-center gap-3 py-4 border-y border-outline-variant/40 mb-8">
+            <img className="w-11 h-11 rounded-full object-cover border border-on-surface" alt={article.author?.name} src={article.author?.avatarUrl}/>
             <div className="text-left">
-              <div className="font-label-bold text-label-bold text-on-surface uppercase">{article.author?.name}</div>
-              <div className="text-sm font-body-md text-on-surface-variant">{article.author?.role}</div>
+              <div className="text-xs font-bold text-on-surface">{article.author?.name}</div>
+              <div className="text-[11px] text-secondary">{article.author?.role}</div>
             </div>
           </div>
         </div>
 
         {/* Hero Image */}
         {article.imageUrl && (
-          <div className="w-full aspect-[16/9] mb-12 rounded-2xl overflow-hidden border-4 border-on-surface shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] relative bg-primary-fixed">
+          <div className="w-full aspect-[16/9] mb-8 rounded-xl overflow-hidden border-2 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] relative bg-surface-container-high">
             <img className="w-full h-full object-cover img-editorial" alt={article.title} src={article.imageUrl}/>
           </div>
         )}
 
         {/* Content */}
-        <div className="prose text-body-lg font-body-lg text-on-surface leading-relaxed">
+        <div className="prose text-base md:text-lg font-body-lg text-on-surface leading-relaxed">
           {article.content?.paragraphs?.map((p, idx) => (
             <div key={idx}>
               {article.content?.subheadings?.[idx] && (
-                <h2>{article.content.subheadings[idx]}</h2>
+                <h2 className="text-xl sm:text-2xl font-bold font-sans text-on-surface mt-8 mb-3">{article.content.subheadings[idx]}</h2>
               )}
-              <p className="mb-6">{p}</p>
+              <p className="mb-5">{p}</p>
               {idx === 1 && article.content?.blockquote && (
-                <blockquote>{article.content.blockquote}</blockquote>
+                <blockquote className="my-6 border-l-4 border-secondary bg-secondary-container/40 p-4 rounded-xl text-base sm:text-lg italic text-on-surface font-serif">{article.content.blockquote}</blockquote>
               )}
             </div>
           ))}
@@ -123,21 +123,21 @@ export default function ArticleDetail() {
       </article>
 
       {/* Recommended Articles Section */}
-      <section className="max-w-4xl mx-auto w-full mt-24 border-t-2 border-on-surface pt-12">
-        <h2 className="text-headline-md font-headline-md text-on-surface uppercase mb-8">Up Next</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <section className="max-w-4xl mx-auto w-full mt-16 border-t-2 border-on-surface pt-8">
+        <h2 className="text-xl font-bold font-headline-md text-on-surface mb-6">Up Next</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {recommended.map((rec) => (
-            <Link key={rec.id} to={`/article/${rec.id}`} className="flex flex-col gap-4 group cursor-pointer">
+            <Link key={rec.id} to={`/article/${rec.id}`} className="flex flex-col gap-3 group cursor-pointer bg-surface p-4 rounded-xl border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_rgba(28,27,27,1)] transition-all">
               {rec.imageUrl ? (
-                <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] group-hover:-translate-y-1 group-hover:-translate-x-1 group-hover:shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] transition-all bg-secondary">
-                  <img className="w-full h-full object-cover img-editorial" alt={rec.title} src={rec.imageUrl}/>
+                <div className="w-full aspect-[16/9] rounded-lg overflow-hidden border border-on-surface bg-surface-container-high">
+                  <img className="w-full h-full object-cover img-editorial group-hover:scale-105 transition-transform duration-300" alt={rec.title} src={rec.imageUrl}/>
                 </div>
               ) : (
-                <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] group-hover:-translate-y-1 group-hover:-translate-x-1 group-hover:shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] transition-all bg-surface-container-high flex items-center justify-center p-8">
-                  <span className="text-headline-md font-headline-md uppercase text-center text-on-surface">{rec.title}</span>
+                <div className="w-full aspect-[16/9] rounded-lg overflow-hidden border border-on-surface bg-surface-container-high flex items-center justify-center p-4">
+                  <span className="text-base font-bold font-sans text-center text-on-surface">{rec.title}</span>
                 </div>
               )}
-              <h3 className="text-body-lg font-headline-md text-on-surface group-hover:text-primary transition-colors leading-tight uppercase">{rec.title}</h3>
+              <h3 className="text-base font-bold font-sans text-on-surface group-hover:text-primary transition-colors leading-snug">{rec.title}</h3>
             </Link>
           ))}
         </div>

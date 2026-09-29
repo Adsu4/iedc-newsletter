@@ -75,24 +75,27 @@ export default {
         "container-max": "1280px"
       },
       fontFamily: {
+        "sans": ["\"Hanken Grotesk\"", "sans-serif"],
         "body-md": ["\"Source Serif 4\"", "serif"],
         "headline-md": ["Anton", "sans-serif"],
         "headline-xl": ["Anton", "sans-serif"],
         "display-lg-mobile": ["Anton", "sans-serif"],
         "display-lg": ["Anton", "sans-serif"],
-        "label-bold": ["Hanken Grotesk", "sans-serif"],
-        "label-md": ["Hanken Grotesk", "sans-serif"],
+        "label-bold": ["\"Hanken Grotesk\"", "sans-serif"],
+        "label-md": ["\"Hanken Grotesk\"", "sans-serif"],
         "body-lg": ["\"Source Serif 4\"", "serif"]
       },
       fontSize: {
-        "body-md": ["17px", { lineHeight: "28px", fontWeight: "400" }],
-        "headline-md": ["32px", { lineHeight: "38px", fontWeight: "400" }],
-        "headline-xl": ["48px", { lineHeight: "56px", fontWeight: "400" }],
-        "display-lg-mobile": ["48px", { lineHeight: "52px", fontWeight: "400" }],
-        "display-lg": ["84px", { lineHeight: "90px", letterSpacing: "-0.02em", fontWeight: "400" }],
-        "label-bold": ["14px", { lineHeight: "20px", letterSpacing: "0.05em", fontWeight: "700" }],
-        "label-md": ["14px", { lineHeight: "20px", fontWeight: "500" }],
-        "body-lg": ["20px", { lineHeight: "32px", fontWeight: "400" }]
+        "body-sm": ["14px", { lineHeight: "22px", fontWeight: "400" }],
+        "body-md": ["16px", { lineHeight: "26px", fontWeight: "400" }],
+        "body-lg": ["18px", { lineHeight: "30px", fontWeight: "400" }],
+        "label-bold": ["13px", { lineHeight: "18px", letterSpacing: "0.04em", fontWeight: "700" }],
+        "label-md": ["13px", { lineHeight: "18px", fontWeight: "500" }],
+        "headline-sm": ["20px", { lineHeight: "26px", fontWeight: "400" }],
+        "headline-md": ["24px", { lineHeight: "30px", fontWeight: "400" }],
+        "headline-xl": ["32px", { lineHeight: "38px", fontWeight: "400" }],
+        "display-lg-mobile": ["36px", { lineHeight: "40px", fontWeight: "400" }],
+        "display-lg": ["56px", { lineHeight: "60px", letterSpacing: "-0.02em", fontWeight: "400" }],
       }
     },
   },

@@ -30,28 +30,28 @@ export default function Archive() {
   }, [articlesList, selectedCategory, searchQuery]);
 
   return (
-    <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 flex flex-col gap-12">
+    <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8 md:py-14 flex flex-col gap-8 md:gap-10">
       {/* Header */}
-      <div className="border-b-4 border-on-surface pb-8">
-        <h1 className="text-display-lg-mobile md:text-display-lg font-display-lg-mobile md:font-display-lg text-on-surface uppercase leading-none mb-4">
+      <div className="border-b-2 border-on-surface pb-5">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-headline-xl uppercase text-on-surface leading-tight mb-2">
           Archive
         </h1>
-        <p className="text-body-lg text-on-surface-variant max-w-2xl">
+        <p className="text-sm sm:text-base text-on-surface-variant max-w-2xl leading-relaxed">
           Browse the complete collection of articles, news editions, hackathon reports, and student startup showcases published by IEDC GECT.
         </p>
       </div>
 
       {/* Search & Category Filter Bar */}
-      <div className="flex flex-col lg:flex-row gap-6 justify-between items-stretch lg:items-center">
+      <div className="flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-center">
         {/* Category Pills */}
         <div className="flex flex-wrap gap-2">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-5 py-2.5 rounded-full text-label-bold font-label-bold uppercase text-xs transition-all border-2 ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all border ${
                 selectedCategory === cat
-                  ? 'bg-on-surface text-surface border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)]'
+                  ? 'bg-on-surface text-surface border-on-surface font-bold shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]'
                   : 'bg-surface text-on-surface border-outline-variant hover:border-on-surface'
               }`}
             >
@@ -62,61 +62,61 @@ export default function Archive() {
 
         {/* Search Input */}
         <div className="relative w-full lg:w-80">
-          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-secondary">search</span>
+          <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary text-[20px]">search</span>
           <input
             type="text"
             placeholder="Search stories..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-6 py-3 rounded-full border-2 border-on-surface bg-surface text-body-md font-body-md focus:border-primary focus:outline-none transition-colors shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] placeholder-on-surface/50"
+            className="w-full pl-10 pr-4 py-2.5 rounded-full border border-on-surface bg-surface text-sm font-sans focus:border-primary focus:outline-none transition-colors shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] placeholder-on-surface/50"
           />
         </div>
       </div>
 
       {/* Articles Count */}
-      <div className="text-label-bold font-label-bold uppercase text-secondary text-sm">
+      <div className="text-xs font-medium text-secondary">
         Showing {filteredArticles.length} {filteredArticles.length === 1 ? 'article' : 'articles'}
       </div>
 
       {/* Articles Feed */}
       {filteredArticles.length === 0 ? (
-        <div className="text-center py-24 bg-surface rounded-2xl border-4 border-on-surface">
-          <span className="material-symbols-outlined text-6xl text-secondary mb-4 block">search_off</span>
-          <h2 className="text-headline-md font-headline-md text-on-surface uppercase mb-2">No matching stories found</h2>
-          <p className="text-body-md text-secondary">Try adjusting your search query or selected category filter.</p>
+        <div className="text-center py-16 bg-surface rounded-xl border-2 border-on-surface">
+          <span className="material-symbols-outlined text-5xl text-secondary mb-3 block">search_off</span>
+          <h2 className="text-xl font-bold font-sans text-on-surface mb-1">No matching stories found</h2>
+          <p className="text-sm text-secondary">Try adjusting your search query or selected category filter.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredArticles.map((article) => (
             <Link
               key={article.id}
               to={`/article/${article.id}`}
-              className="flex flex-col group cursor-pointer bg-surface rounded-2xl border-4 border-on-surface shadow-[6px_6px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-2 hover:-translate-x-2 hover:shadow-[12px_12px_0px_0px_rgba(28,27,27,1)] transition-all overflow-hidden"
+              className="flex flex-col group cursor-pointer bg-surface rounded-xl border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-1 hover:shadow-[5px_5px_0px_0px_rgba(28,27,27,1)] transition-all overflow-hidden"
             >
               {article.imageUrl ? (
-                <div className="w-full aspect-[16/10] bg-primary border-b-4 border-on-surface overflow-hidden">
+                <div className="w-full aspect-[16/10] bg-surface-container-high border-b-2 border-on-surface overflow-hidden">
                   <img src={article.imageUrl} alt={article.title} className="w-full h-full object-cover img-editorial group-hover:scale-105 transition-transform duration-300" />
                 </div>
               ) : (
-                <div className="w-full aspect-[16/10] bg-tertiary-container border-b-4 border-on-surface p-6 flex items-center justify-center">
-                  <span className="text-headline-md font-headline-md uppercase text-center text-on-tertiary-container">{article.title}</span>
+                <div className="w-full aspect-[16/10] bg-tertiary-container border-b-2 border-on-surface p-5 flex items-center justify-center">
+                  <span className="text-base font-bold font-sans text-center text-on-tertiary-container">{article.title}</span>
                 </div>
               )}
-              <div className="p-6 flex flex-col flex-1 gap-4">
-                <div className="flex items-center gap-2 text-label-bold font-label-bold uppercase text-xs">
-                  <span className="bg-tertiary text-on-tertiary px-3 py-1 rounded-full">{article.category}</span>
+              <div className="p-4 sm:p-5 flex flex-col flex-1 gap-2.5">
+                <div className="flex items-center gap-2 text-xs font-medium">
+                  <span className="bg-tertiary text-on-tertiary px-2.5 py-0.5 rounded-full text-[10px] font-label-bold uppercase">{article.category}</span>
                   <span className="text-secondary">•</span>
                   <span className="text-secondary">{article.date}</span>
                 </div>
-                <h3 className="text-headline-md font-headline-md text-on-surface group-hover:text-primary transition-colors uppercase leading-tight">
+                <h3 className="text-base sm:text-lg font-bold font-sans text-on-surface group-hover:text-primary transition-colors leading-snug">
                   {article.title}
                 </h3>
-                <p className="text-body-md text-on-surface-variant line-clamp-3 leading-relaxed flex-1">
+                <p className="text-xs sm:text-sm text-on-surface-variant line-clamp-2 leading-relaxed flex-1">
                   {article.subtitle}
                 </p>
-                <div className="pt-4 border-t border-on-surface/10 flex justify-between items-center text-xs font-label-bold uppercase text-secondary">
+                <div className="pt-3 border-t border-on-surface/10 flex justify-between items-center text-xs text-secondary font-medium">
                   <span>{article.readTime}</span>
-                  <span className="text-primary font-bold group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                  <span className="text-primary font-bold group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
                     Read <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                   </span>
                 </div>

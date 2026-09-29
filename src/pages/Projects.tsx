@@ -87,96 +87,96 @@ export default function Projects() {
   const mailtoUrl = "mailto:iedc@gectcr.ac.in?subject=Project%20Submission%20-%20IEDC%20Student%20Labs&body=Hi%20IEDC%20Team%2C%0A%0AI%20would%20like%20to%20submit%20our%20project%20for%20the%20IEDC%20Newsletter%20Showcase.%0A%0AProject%20Title%3A%20%0ADepartment%3A%20%0ATeam%20Members%3A%20%0AProject%20Summary%3A%20%0ATechnologies%20Used%3A%20%0AGitHub%20%2F%20Demo%20Link%3A%20%0AContact%20Phone%3A%20%0A%0AThank%20you!";
 
   return (
-    <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 flex flex-col gap-12">
+    <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8 md:py-14 flex flex-col gap-8 md:gap-10">
       {/* Header */}
-      <div className="border-b-4 border-on-surface pb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+      <div className="border-b-2 border-on-surface pb-5 flex flex-col md:flex-row justify-between items-start md:items-end gap-5">
         <div>
-          <span className="bg-tertiary text-on-tertiary px-4 py-1.5 rounded-full text-label-bold font-label-bold uppercase text-xs mb-4 inline-block">
+          <span className="bg-tertiary text-on-tertiary px-3 py-0.5 rounded-full text-label-bold font-label-bold uppercase text-[11px] mb-2 inline-block">
             Student Labs & R&D
           </span>
-          <h1 className="text-display-lg-mobile md:text-display-lg font-display-lg-mobile md:font-display-lg text-on-surface uppercase leading-none">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-headline-xl uppercase text-on-surface leading-tight">
             Projects Showcase
           </h1>
-          <p className="text-body-lg text-on-surface-variant max-w-2xl mt-4">
+          <p className="text-sm sm:text-base text-on-surface-variant max-w-2xl mt-2 leading-relaxed">
             Explore cutting-edge hardware prototypes, SaaS applications, and IoT systems built by student innovators at Govt. Engineering College Thrissur.
           </p>
         </div>
         <a
           href={mailtoUrl}
-          className="bg-primary text-on-primary px-8 py-4 rounded-full text-label-bold font-label-bold uppercase border-2 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] transition-all shrink-0 flex items-center gap-2"
+          className="bg-primary text-on-primary px-5 py-2.5 rounded-full text-label-bold font-label-bold uppercase text-xs border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] transition-all shrink-0 flex items-center gap-1.5"
         >
-          <span className="material-symbols-outlined text-[20px]">mail</span>
+          <span className="material-symbols-outlined text-[18px]">mail</span>
           <span>Submit Your Project</span>
         </a>
       </div>
 
       {/* Submission Guidance Callout Banner */}
-      <div className="bg-surface-container-high rounded-2xl border-4 border-on-surface p-6 sm:p-8 shadow-[6px_6px_0px_0px_rgba(28,27,27,1)] flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <div className="flex flex-col gap-2 max-w-2xl">
-          <div className="flex items-center gap-2 text-xs font-label-bold uppercase text-secondary">
-            <span className="bg-secondary text-on-secondary px-2.5 py-0.5 rounded-full">Call for Submissions</span>
-            <span>• Open for All Departments</span>
+      <div className="bg-surface-container-high rounded-xl border-2 border-on-surface p-5 sm:p-6 shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5">
+        <div className="flex flex-col gap-1.5 max-w-2xl">
+          <div className="flex items-center gap-2 text-xs font-medium text-secondary">
+            <span className="bg-secondary text-on-secondary px-2.5 py-0.5 rounded-full text-[10px] font-label-bold uppercase">Call for Submissions</span>
+            <span>• Open for all departments</span>
           </div>
-          <h2 className="text-headline-md font-headline-md text-on-surface uppercase leading-tight">
+          <h2 className="text-lg sm:text-xl font-bold font-sans text-on-surface leading-tight">
             How to Submit Your Project
           </h2>
-          <p className="text-body-md text-on-surface-variant leading-relaxed">
+          <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
             Built an innovative hardware prototype, software application, or research model? Student projects can be submitted directly by emailing our official IEDC address at{' '}
-            <strong className="text-on-surface font-label-bold underline">iedc@gectcr.ac.in</strong> with your project title, team members, tech stack, and GitHub or demo links.
+            <strong className="text-on-surface font-semibold underline">iedc@gectcr.ac.in</strong> with your project title, team members, tech stack, and GitHub or demo links.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
           <a
             href={mailtoUrl}
-            className="bg-on-surface text-surface px-6 py-3.5 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-primary hover:text-on-primary transition-colors border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex items-center justify-center gap-2 whitespace-nowrap flex-1 sm:flex-initial"
+            className="bg-on-surface text-surface px-4 py-2 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-primary hover:text-on-primary transition-colors border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] flex items-center justify-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial"
           >
-            <span className="material-symbols-outlined text-[16px]">send</span>
+            <span className="material-symbols-outlined text-[15px]">send</span>
             <span>Send to iedc@gectcr.ac.in</span>
           </a>
           <button
             onClick={handleCopyEmail}
-            className="bg-surface text-on-surface px-5 py-3.5 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-surface-container transition-colors border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex items-center justify-center gap-2 whitespace-nowrap flex-1 sm:flex-initial"
+            className="bg-surface text-on-surface px-4 py-2 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-surface-container transition-colors border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] flex items-center justify-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial"
           >
-            <span className="material-symbols-outlined text-[16px]">{copied ? 'check' : 'content_copy'}</span>
-            <span>{copied ? 'Copied Email!' : 'Copy Email Address'}</span>
+            <span className="material-symbols-outlined text-[15px]">{copied ? 'check' : 'content_copy'}</span>
+            <span>{copied ? 'Copied!' : 'Copy Email'}</span>
           </button>
         </div>
       </div>
 
       {/* Grid of Projects */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
         {campusProjects.map((project) => (
           <div
             key={project.id}
-            className="bg-surface rounded-2xl border-4 border-on-surface shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-2 hover:-translate-x-2 hover:shadow-[16px_16px_0px_0px_rgba(28,27,27,1)] transition-all overflow-hidden flex flex-col justify-between"
+            className="bg-surface rounded-xl border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-1 hover:shadow-[5px_5px_0px_0px_rgba(28,27,27,1)] transition-all overflow-hidden flex flex-col justify-between"
           >
             <div>
               {/* Image Banner */}
-              <div className="w-full aspect-[16/9] bg-primary border-b-4 border-on-surface overflow-hidden relative">
+              <div className="w-full aspect-[16/9] bg-surface-container-high border-b-2 border-on-surface overflow-hidden relative">
                 <img src={project.imageUrl} alt={project.title} className="w-full h-full object-cover img-editorial" />
-                <span className={`absolute top-4 right-4 ${project.statusColor} px-4 py-1.5 rounded-full text-label-bold font-label-bold uppercase text-xs border-2 border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]`}>
+                <span className={`absolute top-3 right-3 ${project.statusColor} px-3 py-1 rounded-full text-label-bold font-label-bold uppercase text-[10px] border border-on-surface shadow-[1px_1px_0px_0px_rgba(28,27,27,1)]`}>
                   {project.status}
                 </span>
               </div>
 
               {/* Card Body */}
-              <div className="p-8 flex flex-col gap-6">
+              <div className="p-5 sm:p-6 flex flex-col gap-4">
                 <div>
-                  <div className="text-label-bold font-label-bold uppercase text-xs text-secondary mb-2">{project.department}</div>
-                  <h3 className="text-headline-md font-headline-md text-on-surface uppercase leading-tight">{project.title}</h3>
+                  <div className="text-xs font-medium text-secondary mb-1">{project.department}</div>
+                  <h3 className="text-lg sm:text-xl font-bold font-sans text-on-surface leading-snug">{project.title}</h3>
                 </div>
 
-                <p className="text-body-md text-on-surface-variant leading-relaxed">
+                <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
                   {project.summary}
                 </p>
 
                 {/* Tech Stack Pills */}
                 <div>
-                  <span className="text-xs font-label-bold text-secondary uppercase block mb-2">Technologies Used</span>
-                  <div className="flex flex-wrap gap-2">
+                  <span className="text-[11px] font-medium text-secondary block mb-1.5">Technologies Used</span>
+                  <div className="flex flex-wrap gap-1.5">
                     {project.techStack.map((tech) => (
-                      <span key={tech} className="bg-surface-container-high text-on-surface px-3 py-1 rounded-full text-xs font-label-bold border border-on-surface/40">
+                      <span key={tech} className="bg-surface-container-high text-on-surface px-2.5 py-0.5 rounded-full text-[11px] font-medium border border-on-surface/30">
                         {tech}
                       </span>
                     ))}
@@ -186,17 +186,18 @@ export default function Projects() {
             </div>
 
             {/* Card Footer */}
-            <div className="p-8 pt-0 border-t border-on-surface/10 mt-4 flex items-center justify-between">
+            <div className="p-5 sm:p-6 pt-0 border-t border-on-surface/10 mt-3 flex items-center justify-between">
               <div>
-                <span className="text-xs font-label-bold text-secondary uppercase block">Team</span>
-                <span className="text-sm font-label-bold text-on-surface">{project.team.join(', ')}</span>
+                <span className="text-[10px] font-label-bold uppercase text-secondary block">Team</span>
+                <span className="text-xs font-semibold text-on-surface">{project.team.join(', ')}</span>
               </div>
               {project.articleId && (
                 <Link
                   to={`/article/${project.articleId}`}
-                  className="text-xs font-label-bold uppercase text-primary hover:underline flex items-center gap-1"
+                  className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
                 >
-                  Read Story <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                  <span>Read story</span>
+                  <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                 </Link>
               )}
             </div>

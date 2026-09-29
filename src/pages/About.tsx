@@ -1,42 +1,42 @@
 export default function About() {
   return (
-    <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 flex flex-col gap-16 md:gap-24">
+    <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8 md:py-14 flex flex-col gap-10 md:gap-14">
       {/* Hero Section */}
-      <section className="border-b-4 border-on-surface pb-16 flex flex-col gap-8">
-        <div className="flex items-center gap-3">
-          <span className="bg-secondary text-on-secondary px-4 py-1.5 rounded-full text-label-bold font-label-bold uppercase text-xs">
+      <section className="border-b-2 border-on-surface pb-8 flex flex-col gap-4">
+        <div className="flex items-center gap-2">
+          <span className="bg-secondary text-on-secondary px-3 py-0.5 rounded-full text-label-bold font-label-bold uppercase text-[11px]">
             Govt. Engineering College Thrissur
           </span>
         </div>
-        <h1 className="text-display-lg-mobile md:text-display-lg font-display-lg-mobile md:font-display-lg text-on-surface uppercase leading-none max-w-4xl">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-headline-xl uppercase text-on-surface leading-tight max-w-3xl">
           Fostering Innovation & Entrepreneurship Since 2010
         </h1>
-        <p className="text-headline-md font-headline-md text-on-surface-variant max-w-3xl leading-relaxed">
+        <p className="text-sm sm:text-base text-on-surface-variant max-w-3xl leading-relaxed">
           The Innovation and Entrepreneurship Development Centre (IEDC) at GECT is a premier student-led initiative backed by Kerala Startup Mission (KSUM) and KSCSTE.
         </p>
       </section>
 
       {/* Stats Cards */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {[
           { number: '40+', label: 'Student Startups Incubated' },
           { number: '₹1.5Cr+', label: 'Seed Grants & Funding Raised' },
           { number: '1200+', label: 'Active Student Members' },
           { number: '15+', label: 'Patents & IP Filed' },
         ].map((stat) => (
-          <div key={stat.label} className="bg-surface-container-high p-8 rounded-2xl border-4 border-on-surface shadow-[6px_6px_0px_0px_rgba(28,27,27,1)] flex flex-col gap-2">
-            <span className="text-display-lg-mobile font-black text-primary leading-none">{stat.number}</span>
-            <span className="text-label-bold font-label-bold text-on-surface uppercase text-sm">{stat.label}</span>
+          <div key={stat.label} className="bg-surface-container-high p-4 sm:p-5 rounded-xl border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex flex-col gap-1">
+            <span className="text-2xl sm:text-3xl font-bold font-headline-md text-primary leading-none">{stat.number}</span>
+            <span className="text-xs font-semibold text-on-surface">{stat.label}</span>
           </div>
         ))}
       </section>
 
       {/* Core Initiatives */}
-      <section className="flex flex-col gap-12">
-        <h2 className="text-headline-xl font-headline-xl text-on-surface uppercase border-b-2 border-on-surface pb-4">
+      <section className="flex flex-col gap-6">
+        <h2 className="text-2xl md:text-3xl font-bold font-headline-md text-on-surface border-b-2 border-on-surface pb-3">
           What We Do
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             {
               title: 'Incubation & Mentorship',
@@ -54,39 +54,39 @@ export default function About() {
               desc: 'Full financial and administrative support for filing patents, trademarks, and copyright registration for student hardware and software innovations.',
             },
           ].map((init) => (
-            <div key={init.title} className="bg-surface p-8 rounded-2xl border-4 border-on-surface shadow-[6px_6px_0px_0px_rgba(28,27,27,1)] flex flex-col gap-6">
-              <div className="w-14 h-14 bg-tertiary text-on-tertiary rounded-2xl border-2 border-on-surface flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(28,27,27,1)]">
-                <span className="material-symbols-outlined text-[28px]">{init.icon}</span>
+            <div key={init.title} className="bg-surface p-5 sm:p-6 rounded-xl border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex flex-col gap-3">
+              <div className="w-10 h-10 bg-tertiary text-on-tertiary rounded-lg border border-on-surface flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]">
+                <span className="material-symbols-outlined text-[20px]">{init.icon}</span>
               </div>
-              <h3 className="text-headline-md font-headline-md text-on-surface uppercase leading-tight">{init.title}</h3>
-              <p className="text-body-md text-on-surface-variant leading-relaxed">{init.desc}</p>
+              <h3 className="text-base sm:text-lg font-bold font-sans text-on-surface leading-snug">{init.title}</h3>
+              <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">{init.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Leadership Committee — Nodal Officers & Student Leads */}
-      <section className="flex flex-col gap-12">
-        <h2 className="text-headline-xl font-headline-xl text-on-surface uppercase border-b-2 border-on-surface pb-4">
+      {/* Leadership Committee */}
+      <section className="flex flex-col gap-6">
+        <h2 className="text-2xl md:text-3xl font-bold font-headline-md text-on-surface border-b-2 border-on-surface pb-3">
           IEDC Leadership & Officers
         </h2>
 
         {/* Nodal Officers */}
-        <div className="flex flex-col gap-6">
-          <h3 className="text-headline-md font-headline-md text-primary uppercase">Nodal Officers</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+        <div className="flex flex-col gap-4">
+          <h3 className="text-lg font-bold font-headline-md text-primary">Nodal Officers</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {[
               { name: 'Dr. Vipinkumar K S', role: 'Nodal Officer I', dept: 'Faculty Advisor', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDp6-LO5wbh6CTC36gJGeJayrbGtizLZWUlH9INz99YIJjIvsgYIZWEI3FCpw0i_0qiTUtAr6wPwhbUntODV_DKp16HJ_i97nWITmL3RCUSGrO0UEQgfLjdcaub8MJ1eBmE7L8UKpcRIhK6qh2roHWO8mK9WHTiHouOVak3xxVFkkI027MEgVlLW2Wt-YE2_7_p67F0NuRnWR6AOvYY3tYmko7Kd-N5jpyO_R33j4KF_IVtKvrukoEY2Q' },
               { name: 'Prof. Asha J', role: 'Nodal Officer II', dept: 'Faculty Advisor', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDp6-LO5wbh6CTC36gJGeJayrbGtizLZWUlH9INz99YIJjIvsgYIZWEI3FCpw0i_0qiTUtAr6wPwhbUntODV_DKp16HJ_i97nWITmL3RCUSGrO0UEQgfLjdcaub8MJ1eBmE7L8UKpcRIhK6qh2roHWO8mK9WHTiHouOVak3xxVFkkI027MEgVlLW2Wt-YE2_7_p67F0NuRnWR6AOvYY3tYmko7Kd-N5jpyO_R33j4KF_IVtKvrukoEY2Q' },
             ].map((member) => (
-              <div key={member.name} className="bg-surface p-6 rounded-2xl border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] flex items-center gap-6">
-                <div className="w-20 h-20 rounded-full border-4 border-on-surface overflow-hidden shrink-0 bg-primary shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]">
+              <div key={member.name} className="bg-surface p-4 sm:p-5 rounded-xl border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex items-center gap-4">
+                <div className="w-14 h-14 rounded-full border-2 border-on-surface overflow-hidden shrink-0 bg-surface-container-high shadow-[1px_1px_0px_0px_rgba(28,27,27,1)]">
                   <img src={member.avatar} alt={member.name} className="w-full h-full object-cover img-editorial" />
                 </div>
                 <div>
-                  <h4 className="text-headline-md font-headline-md text-on-surface uppercase leading-tight">{member.name}</h4>
-                  <p className="text-label-bold font-label-bold text-primary text-xs uppercase mt-1">{member.role}</p>
-                  <p className="text-xs text-secondary mt-0.5">{member.dept}</p>
+                  <h4 className="text-base font-bold font-sans text-on-surface leading-snug">{member.name}</h4>
+                  <p className="text-xs font-semibold text-primary mt-0.5">{member.role}</p>
+                  <p className="text-[11px] text-secondary">{member.dept}</p>
                 </div>
               </div>
             ))}
@@ -94,21 +94,21 @@ export default function About() {
         </div>
 
         {/* Student Leads */}
-        <div className="flex flex-col gap-6 mt-4">
-          <h3 className="text-headline-md font-headline-md text-secondary uppercase">Student Leads</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+        <div className="flex flex-col gap-4 mt-2">
+          <h3 className="text-lg font-bold font-headline-md text-secondary">Student Leads</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {[
               { name: 'Nikhil Nizam C K', role: 'Student Lead', dept: 'GECT IEDC', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDp6-LO5wbh6CTC36gJGeJayrbGtizLZWUlH9INz99YIJjIvsgYIZWEI3FCpw0i_0qiTUtAr6wPwhbUntODV_DKp16HJ_i97nWITmL3RCUSGrO0UEQgfLjdcaub8MJ1eBmE7L8UKpcRIhK6qh2roHWO8mK9WHTiHouOVak3xxVFkkI027MEgVlLW2Wt-YE2_7_p67F0NuRnWR6AOvYY3tYmko7Kd-N5jpyO_R33j4KF_IVtKvrukoEY2Q' },
               { name: 'Shanum Gaddafi', role: 'Student Lead', dept: 'GECT IEDC', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDp6-LO5wbh6CTC36gJGeJayrbGtizLZWUlH9INz99YIJjIvsgYIZWEI3FCpw0i_0qiTUtAr6wPwhbUntODV_DKp16HJ_i97nWITmL3RCUSGrO0UEQgfLjdcaub8MJ1eBmE7L8UKpcRIhK6qh2roHWO8mK9WHTiHouOVak3xxVFkkI027MEgVlLW2Wt-YE2_7_p67F0NuRnWR6AOvYY3tYmko7Kd-N5jpyO_R33j4KF_IVtKvrukoEY2Q' },
             ].map((member) => (
-              <div key={member.name} className="bg-surface p-6 rounded-2xl border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] flex items-center gap-6">
-                <div className="w-20 h-20 rounded-full border-4 border-on-surface overflow-hidden shrink-0 bg-tertiary shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]">
+              <div key={member.name} className="bg-surface p-4 sm:p-5 rounded-xl border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex items-center gap-4">
+                <div className="w-14 h-14 rounded-full border-2 border-on-surface overflow-hidden shrink-0 bg-surface-container-high shadow-[1px_1px_0px_0px_rgba(28,27,27,1)]">
                   <img src={member.avatar} alt={member.name} className="w-full h-full object-cover img-editorial" />
                 </div>
                 <div>
-                  <h4 className="text-headline-md font-headline-md text-on-surface uppercase leading-tight">{member.name}</h4>
-                  <p className="text-label-bold font-label-bold text-secondary text-xs uppercase mt-1">{member.role}</p>
-                  <p className="text-xs text-secondary mt-0.5">{member.dept}</p>
+                  <h4 className="text-base font-bold font-sans text-on-surface leading-snug">{member.name}</h4>
+                  <p className="text-xs font-semibold text-secondary mt-0.5">{member.role}</p>
+                  <p className="text-[11px] text-secondary">{member.dept}</p>
                 </div>
               </div>
             ))}
@@ -117,16 +117,16 @@ export default function About() {
       </section>
 
       {/* Contact & Location Banner */}
-      <section className="bg-tertiary-container rounded-[2rem] p-12 md:p-16 border-4 border-on-surface shadow-[12px_12px_0px_0px_rgba(28,27,27,1)] flex flex-col md:flex-row justify-between items-center gap-8">
+      <section className="bg-tertiary-container/30 rounded-2xl p-6 sm:p-8 md:p-10 border-2 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] flex flex-col md:flex-row justify-between items-center gap-6">
         <div>
-          <h3 className="text-headline-xl font-headline-xl text-on-tertiary-container uppercase leading-none mb-3">Visit the IEDC Innovation Lab</h3>
-          <p className="text-body-lg text-on-tertiary-container/90 max-w-xl">
+          <h3 className="text-2xl md:text-3xl font-bold font-headline-md text-on-surface leading-tight mb-2">Visit the IEDC Innovation Lab</h3>
+          <p className="text-xs sm:text-sm text-on-surface-variant max-w-xl leading-relaxed">
             Room no. 413, First Floor, Main Block, Govt. Engineering College, Ramavarmapuram, Thrissur, Kerala - 680009
           </p>
         </div>
         <a
           href="mailto:iedc@gectcr.ac.in"
-          className="bg-on-surface text-surface px-8 py-4 rounded-full text-label-bold font-label-bold uppercase hover:bg-primary hover:text-on-primary transition-all whitespace-nowrap border-4 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)]"
+          className="bg-on-surface text-surface px-6 py-3 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-primary hover:text-on-primary transition-all whitespace-nowrap border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]"
         >
           Contact IEDC Team
         </a>

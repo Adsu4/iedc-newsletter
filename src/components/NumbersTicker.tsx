@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { monthlyStats, currentEditionInfo } from '../data/newsletterData';
+import { monthlyStats } from '../data/newsletterData';
 
 function useCountUp(target: string, duration = 1200) {
   const [display, setDisplay] = useState('0');
@@ -106,53 +106,50 @@ export default function NumbersTicker() {
   ];
 
   return (
-    <section className="flex flex-col gap-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b-4 border-on-surface pb-6 gap-4">
+    <section className="flex flex-col gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b-2 border-on-surface pb-3 gap-3">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="bg-tertiary text-on-tertiary px-3.5 py-1 rounded-full text-label-bold font-label-bold uppercase text-xs">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="bg-tertiary text-on-tertiary px-3 py-0.5 rounded-full text-label-bold font-label-bold uppercase text-[11px]">
               Monthly Impact
             </span>
-            <span className="text-secondary font-label-bold uppercase text-xs">
-              • {currentEditionInfo.monthYear}
-            </span>
           </div>
-          <h2 className="text-display-lg-mobile md:text-headline-xl font-display-lg-mobile md:font-headline-xl text-on-surface uppercase leading-none">
+          <h2 className="text-2xl md:text-3xl font-bold font-headline-md text-on-surface leading-tight">
             IEDC by the Numbers
           </h2>
         </div>
-        <div className="bg-surface px-6 py-3 rounded-2xl border-2 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] flex items-center gap-3">
-          <span className="material-symbols-outlined text-primary text-[22px]">account_balance_wallet</span>
+        <div className="bg-surface px-4 py-2 rounded-xl border-2 border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] flex items-center gap-2.5">
+          <span className="material-symbols-outlined text-primary text-[20px]">account_balance_wallet</span>
           <div>
-            <div className="text-[11px] font-label-bold uppercase text-secondary">Grants & Funding Mobilized</div>
-            <div className="text-headline-md font-headline-md text-on-surface leading-tight">{monthlyStats.totalGrantsMobilized}</div>
+            <div className="text-[10px] font-label-bold uppercase text-secondary">Grants & Funding Mobilized</div>
+            <div className="text-lg font-bold font-headline-md text-on-surface leading-tight">{monthlyStats.totalGrantsMobilized}</div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {statItems.map((item, index) => {
           const counter = useCountUp(item.value);
           return (
             <div
               key={item.label}
               ref={counter.ref}
-              className="bg-surface p-6 rounded-2xl border-4 border-on-surface shadow-[6px_6px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-1 hover:shadow-[10px_10px_0px_0px_rgba(28,27,27,1)] transition-all flex flex-col justify-between"
+              className="bg-surface p-4 rounded-xl border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_rgba(28,27,27,1)] transition-all flex flex-col justify-between"
               style={{ animationDelay: `${index * 80}ms` }}
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className={`w-10 h-10 rounded-xl border-2 border-on-surface ${item.color} flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]`}>
-                  <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+              <div className="flex items-center justify-between mb-3">
+                <div className={`w-8 h-8 rounded-lg border border-on-surface ${item.color} flex items-center justify-center shadow-[1px_1px_0px_0px_rgba(28,27,27,1)]`}>
+                  <span className="material-symbols-outlined text-[16px]">{item.icon}</span>
                 </div>
               </div>
               <div>
-                <div className="text-display-lg-mobile font-display-lg-mobile font-black text-on-surface leading-none mb-1 tabular-nums">
+                <div className="text-2xl sm:text-3xl font-bold font-headline-md text-on-surface leading-none mb-1 tabular-nums">
                   {counter.display}
                 </div>
-                <div className="text-label-bold font-label-bold uppercase text-on-surface text-xs leading-tight mb-1">
+                <div className="text-xs font-bold font-sans text-on-surface leading-tight mb-0.5">
                   {item.label}
                 </div>
-                <div className="text-[11px] text-secondary font-body-md">
+                <div className="text-[11px] text-secondary font-medium">
                   {item.subtext}
                 </div>
               </div>
