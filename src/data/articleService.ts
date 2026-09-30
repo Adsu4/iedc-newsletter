@@ -196,6 +196,19 @@ export function onArticlesChange(callback: () => void): () => void {
 
 // --- Supabase row mapper ---
 function mapSupabaseRow(item: Record<string, unknown>): Article {
+  let contentObj: any = { paragraphs: [], subheadings: [] };
+  try {
+    contentObj = typeof item.content === 'string' ? JSON.parse(item.content as string) : (item.content as any) || contentObj;
+  } catch (e) {
+    contentObj = { paragraphs: [], subheadings: [] };
+  }
+
+  const rawRank = contentObj.topStoryRank !== undefined && contentObj.topStoryRank !== null
+    ? contentObj.topStoryRank
+    : (item.top_story_rank !== undefined && item.top_story_rank !== null ? item.top_story_rank : undefined);
+  const parsedRank = rawRank ? Number(rawRank) : undefined;
+  const topStoryRank = parsedRank && !isNaN(parsedRank) && parsedRank > 0 ? parsedRank : undefined;
+
   return {
     id: String(item.id),
     title: (item.title as string) || '',
@@ -205,16 +218,22 @@ function mapSupabaseRow(item: Record<string, unknown>): Article {
     date: (item.date as string) || '',
     readTime: (item.read_time as string) || '',
     imageUrl: (item.image_url as string) || '',
-    featured: (item.featured as boolean) || false,
+    featured: Boolean(topStoryRank) || (item.featured as boolean) || false,
     status: (item.status as Article['status']) || 'published',
     scheduledFor: (item.scheduled_for as string) || undefined,
-    content: typeof item.content === 'string' ? JSON.parse(item.content as string) : (item.content as Article['content']),
+    content: contentObj,
     author: typeof item.author === 'string' ? JSON.parse(item.author as string) : (item.author as Article['author']),
     createdAt: (item.createdAt as string) || undefined,
+    topStoryRank,
   };
 }
 
 function toSupabaseRow(article: Article): Record<string, unknown> {
+  const contentPayload = {
+    ...article.content,
+    topStoryRank: article.topStoryRank && article.topStoryRank > 0 ? article.topStoryRank : null,
+  };
+
   return {
     id: String(article.id),
     title: article.title,
@@ -224,10 +243,10 @@ function toSupabaseRow(article: Article): Record<string, unknown> {
     date: article.date,
     read_time: article.readTime,
     image_url: article.imageUrl,
-    featured: article.featured || false,
+    featured: Boolean(article.topStoryRank && article.topStoryRank > 0) || article.featured || false,
     status: article.status,
     scheduled_for: article.scheduledFor || null,
-    content: JSON.stringify(article.content),
+    content: JSON.stringify(contentPayload),
     author: JSON.stringify(article.author),
     createdAt: article.createdAt || new Date().toISOString(),
   };
@@ -305,6 +324,7 @@ export interface CreateArticlePayload {
   status?: Article['status'];
   scheduledFor?: string;
   featured?: boolean;
+  topStoryRank?: number | null;
 }
 
 export async function publishArticle(payload: CreateArticlePayload): Promise<Article> {
@@ -317,6 +337,7 @@ export async function publishArticle(payload: CreateArticlePayload): Promise<Art
   const readTime = `${minutes} min read`;
 
   const isNewsletter = payload.category === 'Monthly Newsletter' || payload.category === 'Newsletter' || payload.category === 'Latest Edition';
+  const cleanRank = payload.topStoryRank && Number(payload.topStoryRank) > 0 ? Number(payload.topStoryRank) : undefined;
 
   const newArticle: Article = {
     id: newId,
@@ -327,9 +348,10 @@ export async function publishArticle(payload: CreateArticlePayload): Promise<Art
     date: formattedDate,
     readTime,
     imageUrl: payload.imageUrl || '',
-    featured: isNewsletter || payload.featured || false,
+    featured: Boolean(cleanRank) || isNewsletter || payload.featured || false,
     status: payload.status || 'published',
     scheduledFor: payload.scheduledFor || undefined,
+    topStoryRank: cleanRank,
     content: {
       paragraphs: payload.paragraphs.length > 0 ? sanitizeParagraphs(payload.paragraphs) : ['No content provided.'],
       subheadings: payload.subheadings || [],
@@ -373,6 +395,9 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
 
   const existing = all[idx];
   const isNewsletter = (payload.category || existing.category) === 'Monthly Newsletter' || (payload.category || existing.category) === 'Newsletter';
+  const cleanRank = payload.topStoryRank !== undefined
+    ? (payload.topStoryRank && Number(payload.topStoryRank) > 0 ? Number(payload.topStoryRank) : undefined)
+    : existing.topStoryRank;
 
   const updated: Article = {
     ...existing,
@@ -382,8 +407,9 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
     categoryColor: payload.categoryColor ?? existing.categoryColor,
     imageUrl: payload.imageUrl ?? existing.imageUrl,
     status: payload.status ?? existing.status,
-    featured: isNewsletter ? true : (payload.featured ?? existing.featured),
+    featured: Boolean(cleanRank) || isNewsletter || (payload.featured ?? existing.featured),
     scheduledFor: payload.scheduledFor ?? existing.scheduledFor,
+    topStoryRank: cleanRank,
     content: payload.paragraphs ? {
       paragraphs: sanitizeParagraphs(payload.paragraphs),
       subheadings: payload.subheadings || existing.content.subheadings,
@@ -422,6 +448,90 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
   }
 
   return updated;
+}
+
+/** Set single article top story rank (e.g. #1, #2, #3... or null to unrank) */
+export async function setArticleTopStoryRank(articleId: string, rank: number | null): Promise<Article | null> {
+  const all = getLocalArticles();
+  const targetId = String(articleId);
+  const target = all.find((a) => String(a.id) === targetId);
+  if (!target) return null;
+
+  const cleanRank = rank && Number(rank) > 0 ? Number(rank) : undefined;
+  const affectedArticles: Article[] = [];
+
+  const updatedList = all.map((a) => {
+    if (String(a.id) === targetId) {
+      const updated = {
+        ...a,
+        topStoryRank: cleanRank,
+        featured: Boolean(cleanRank) || a.featured,
+      };
+      affectedArticles.push(updated);
+      return updated;
+    }
+    // If setting a specific rank and another article already had it, clear it to avoid duplicate ranks
+    if (cleanRank && a.topStoryRank === cleanRank) {
+      const cleared = {
+        ...a,
+        topStoryRank: undefined,
+      };
+      affectedArticles.push(cleared);
+      return cleared;
+    }
+    return a;
+  });
+
+  saveLocalArticles(updatedList);
+  notifyArticlesUpdated();
+
+  // Sync affected to Supabase
+  if (isSupabaseConfigured && supabase && affectedArticles.length > 0) {
+    try {
+      for (const art of affectedArticles) {
+        await supabase.from('articles').upsert(toSupabaseRow(art));
+      }
+    } catch (err) {
+      console.warn('Failed to sync top story rank to Supabase:', err);
+    }
+  }
+
+  return updatedList.find((a) => String(a.id) === targetId) || null;
+}
+
+/** Batch reorder top stories by setting an array of article IDs in rank order [idFor#1, idFor#2, idFor#3, ...] */
+export async function reorderTopStories(orderedIds: string[]): Promise<void> {
+  const all = getLocalArticles();
+  const affectedArticles: Article[] = [];
+
+  const updatedList = all.map((a) => {
+    const idx = orderedIds.indexOf(String(a.id));
+    const newRank = idx !== -1 ? idx + 1 : undefined;
+    if (a.topStoryRank !== newRank) {
+      const updatedArt: Article = {
+        ...a,
+        topStoryRank: newRank,
+        featured: newRank !== undefined ? true : (a.category === 'Monthly Newsletter'),
+      };
+      affectedArticles.push(updatedArt);
+      return updatedArt;
+    }
+    return a;
+  });
+
+  saveLocalArticles(updatedList);
+  notifyArticlesUpdated();
+
+  // Sync all changed articles to Supabase
+  if (isSupabaseConfigured && supabase && affectedArticles.length > 0) {
+    try {
+      for (const art of affectedArticles) {
+        await supabase.from('articles').upsert(toSupabaseRow(art));
+      }
+    } catch (err) {
+      console.warn('Failed to batch sync top stories to Supabase:', err);
+    }
+  }
 }
 
 // --- Delete ---

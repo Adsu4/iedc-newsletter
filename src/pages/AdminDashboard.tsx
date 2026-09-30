@@ -31,6 +31,7 @@ export default function AdminDashboard() {
   const [initialHtml, setInitialHtml] = useState<string>('');
   const [loaded, setLoaded] = useState(!isEditMode);
   const [serverStatus, setServerStatus] = useState<{ configured: boolean; online: boolean; statusText: string; url: string } | null>(null);
+  const [topStoryRank, setTopStoryRank] = useState<number | null>(null);
 
   // Email Newsletter broadcast states
   const [sendEmailToSubscribers, setSendEmailToSubscribers] = useState(true);
@@ -87,6 +88,7 @@ export default function AdminDashboard() {
         setScheduledFor(art.scheduledFor || '');
         if (art.author?.name) setAuthorName(art.author.name);
         if (art.author?.role) setAuthorRole(art.author.role);
+        if (art.topStoryRank) setTopStoryRank(art.topStoryRank);
         if (art.content?.html) {
           setInitialHtml(art.content.html);
         } else {
@@ -341,6 +343,7 @@ export default function AdminDashboard() {
       subheadings: ['Key Takeaways'],
       status: publishStatus,
       scheduledFor: publishStatus === 'scheduled' ? scheduledFor : undefined,
+      topStoryRank: topStoryRank && topStoryRank > 0 ? topStoryRank : null,
     };
 
     try {
@@ -412,6 +415,7 @@ export default function AdminDashboard() {
       authorRole: authorRole.trim() || 'IEDC Editorial',
       subheadings: ['Key Takeaways'],
       status: 'draft' as const,
+      topStoryRank: topStoryRank && topStoryRank > 0 ? topStoryRank : null,
     };
 
     try {
@@ -955,9 +959,54 @@ export default function AdminDashboard() {
             </div>
             {category === 'Monthly Newsletter' && (
               <p className="text-[11px] text-primary font-medium mt-2.5 bg-primary/10 p-2.5 rounded-xl border border-primary/20 leading-relaxed">
-                ⭐ <strong>Official Newsletter Tag:</strong> Publishing with this tag will feature this article as the active monthly edition and lead cover story across the home page.
+                ⭐ <strong>Official Newsletter Tag:</strong> Publishing with this tag will feature this article as the active monthly edition headline across the portal.
               </p>
             )}
+          </div>
+
+          {/* Top Stories Ranking (#1, #2, #3, ...) */}
+          <div className="p-4 rounded-xl border-2 border-on-surface bg-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-label-bold font-label-bold uppercase text-on-surface text-xs flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[17px] text-primary">hotel_class</span>
+                Top Story Slot
+              </span>
+              {topStoryRank ? (
+                <span className="bg-primary text-on-primary text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                  #{String(topStoryRank).padStart(2, '0')}
+                </span>
+              ) : (
+                <span className="text-[10px] text-secondary font-medium">Standard</span>
+              )}
+            </div>
+
+            <p className="text-[11px] text-secondary leading-snug">
+              Pin this story to a top slot on the Home page (#1 Cover, #2 & #3 Briefs) & Top Stories:
+            </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { rank: null, label: 'None' },
+                { rank: 1, label: '#1 Cover Story' },
+                { rank: 2, label: '#2 Brief #1' },
+                { rank: 3, label: '#3 Brief #2' },
+                { rank: 4, label: '#4 Spotlight' },
+                { rank: 5, label: '#5 Spotlight' },
+              ].map((item) => (
+                <button
+                  key={String(item.rank)}
+                  type="button"
+                  onClick={() => setTopStoryRank(item.rank)}
+                  className={`px-2.5 py-1.5 rounded-lg border text-xs font-medium text-left transition-all ${
+                    topStoryRank === item.rank
+                      ? 'border-primary bg-primary text-on-primary font-bold shadow-sm'
+                      : 'border-outline-variant bg-surface text-on-surface hover:border-on-surface'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Email Broadcast Section (Active for Monthly Newsletter) */}

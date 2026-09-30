@@ -16,11 +16,27 @@ export default function TopStories() {
     return unsubscribe;
   }, []);
 
-  const newsletterArticle = articlesList.find(
-    (a) => a.category === 'Monthly Newsletter' || a.category === 'Newsletter' || a.category === 'Latest Edition'
+  // Helper to identify Monthly Newsletter
+  const isMonthlyNewsletter = (a: Article) => {
+    const cat = a.category?.trim().toLowerCase();
+    return cat === 'monthly newsletter' || cat === 'newsletter' || cat === 'latest edition';
+  };
+
+  // 1. Top Pick (#1): Prioritize explicit rank 1
+  const rankedTopPick = articlesList.find((a) => a.topStoryRank === 1);
+  const latestNewsletter = articlesList.find(isMonthlyNewsletter);
+  const topPick = rankedTopPick || latestNewsletter || articlesList[0];
+
+  // 2. Spotlight Stories (#2, #3, #4, #5...): Prioritize explicitly ranked articles
+  const otherRanked = articlesList
+    .filter((a) => a.id !== topPick?.id && a.topStoryRank && a.topStoryRank > 1)
+    .sort((a, b) => (a.topStoryRank || 999) - (b.topStoryRank || 999));
+
+  const unrankedStories = articlesList.filter(
+    (a) => a.id !== topPick?.id && (!a.topStoryRank || a.topStoryRank <= 1)
   );
-  const topPick = newsletterArticle || articlesList[0];
-  const spotlightStories = articlesList.filter((a) => a.id !== topPick?.id).slice(0, 4);
+
+  const spotlightStories = [...otherRanked, ...unrankedStories].slice(0, 4);
 
   return (
     <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8 md:py-14 flex flex-col gap-8 md:gap-12">
@@ -87,7 +103,9 @@ export default function TopStories() {
             className="flex flex-col gap-4 group cursor-pointer bg-surface p-5 sm:p-6 rounded-xl border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-1 hover:shadow-[5px_5px_0px_0px_rgba(28,27,27,1)] transition-all"
           >
             <div className="flex items-center justify-between">
-              <span className="text-lg font-bold font-headline-md text-primary">#0{idx + 2}</span>
+              <span className="text-lg font-bold font-headline-md text-primary">
+                #{String(article.topStoryRank || idx + 2).padStart(2, '0')}
+              </span>
               <span className="bg-surface-container-high text-on-surface px-2.5 py-0.5 rounded-full text-[10px] font-label-bold uppercase border border-on-surface">
                 {article.category}
               </span>

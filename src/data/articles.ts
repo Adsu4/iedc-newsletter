@@ -22,6 +22,7 @@ export interface Article {
     avatarUrl: string;
   };
   createdAt?: string;
+  topStoryRank?: number;
 }
 
 export const articles: Article[] = [

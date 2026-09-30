@@ -82,11 +82,32 @@ export default function Home() {
   // The latest published Monthly Newsletter edition (null if none published yet)
   const latestMonthlyNewsletter = monthlyNewsletters[0] || null;
 
-  // The primary coverStory: if a monthly newsletter exists, use it. Otherwise fallback to the latest general article.
-  const coverStory = latestMonthlyNewsletter || articlesList[0] || null;
-  const otherStories = articlesList.filter((a) => a.id !== coverStory?.id);
-  const executiveBriefs = otherStories.slice(0, 2);
-  const moreStories = otherStories.slice(2, 6);
+  // TOP STORIES RESOLUTION (#1, #2, #3...):
+  // #1 Story: If admin explicitly assigned rank 1, that is Cover Story.
+  // Otherwise, default to latestMonthlyNewsletter, or articlesList[0].
+  const rankedStory1 = articlesList.find((a) => a.topStoryRank === 1);
+  const coverStory = rankedStory1 || latestMonthlyNewsletter || articlesList[0] || null;
+
+  // Executive Briefs (#02, #03): Prioritize explicit rank 2 and rank 3
+  const rankedStory2 = articlesList.find((a) => a.topStoryRank === 2 && a.id !== coverStory?.id);
+  const rankedStory3 = articlesList.find((a) => a.topStoryRank === 3 && a.id !== coverStory?.id && a.id !== rankedStory2?.id);
+
+  // Pool of remaining stories
+  const remainingStories = articlesList.filter(
+    (a) => a.id !== coverStory?.id && a.id !== rankedStory2?.id && a.id !== rankedStory3?.id
+  );
+
+  const executiveBriefs: Article[] = [];
+  if (rankedStory2) executiveBriefs.push(rankedStory2);
+  if (rankedStory3) executiveBriefs.push(rankedStory3);
+
+  // Fill any empty brief slots from remaining stories
+  while (executiveBriefs.length < 2 && remainingStories.length > 0) {
+    const nextStory = remainingStories.shift();
+    if (nextStory) executiveBriefs.push(nextStory);
+  }
+
+  const moreStories = remainingStories.slice(0, 4);
 
   // Dynamic Month & Edition resolution (Zero hardcoding)
   const activeMonthYear = formatFullMonthYear(latestMonthlyNewsletter?.date || coverStory?.date || editionInfo?.monthYear);
