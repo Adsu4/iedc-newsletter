@@ -1,18 +1,94 @@
 import { articles as initialArticles, type Article } from './articles';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { supabase, isSupabaseConfigured, supabaseUrl } from '../lib/supabase';
 
 const LOCAL_STORAGE_KEY = 'iedc_published_articles_v2';
 const DELETED_IDS_KEY = 'iedc_deleted_article_ids_v2';
 const UPDATE_EVENT = 'iedc_articles_updated';
 
-// --- Fast Network Timeout Helper (Max 1200ms guard to prevent UI hanging) ---
-function withTimeout<T = any>(promise: any, ms = 1200): Promise<T> {
+// --- Fast Network Timeout Helper ---
+function withTimeout<T = any>(promise: any, ms = 2500): Promise<T> {
   return Promise.race([
     Promise.resolve(promise),
     new Promise<T>((_, reject) =>
       setTimeout(() => reject(new Error(`Network timeout after ${ms}ms`)), ms)
     ),
   ]);
+}
+
+// --- Live Server Health Check ---
+export async function checkServerConnection(): Promise<{
+  configured: boolean;
+  online: boolean;
+  statusText: string;
+  url: string;
+}> {
+  if (!isSupabaseConfigured || !supabase) {
+    return {
+      configured: false,
+      online: false,
+      statusText: 'No cloud database configured (Missing VITE_SUPABASE_URL).',
+      url: supabaseUrl,
+    };
+  }
+
+  try {
+    const res = await withTimeout<any>(
+      supabase.from('articles').select('id').limit(1),
+      3000
+    );
+    if (res.error) {
+      if (res.error.message?.includes('relation "articles" does not exist') || res.error.code === '42P01') {
+        return {
+          configured: true,
+          online: false,
+          statusText: 'Connected, but the "articles" SQL table does not exist yet. Run schema.sql in Supabase.',
+          url: supabaseUrl,
+        };
+      }
+      return {
+        configured: true,
+        online: false,
+        statusText: `Database error: ${res.error.message}`,
+        url: supabaseUrl,
+      };
+    }
+    return {
+      configured: true,
+      online: true,
+      statusText: 'Cloud Server Online (All devices syncing)',
+      url: supabaseUrl,
+    };
+  } catch (err: any) {
+    return {
+      configured: true,
+      online: false,
+      statusText: 'Cloud Server Unreachable (Project paused or domain non-existent)',
+      url: supabaseUrl,
+    };
+  }
+}
+
+// --- Real-time Cross-Device Listener ---
+const client = supabase;
+if (typeof window !== 'undefined' && isSupabaseConfigured && client) {
+  try {
+    client
+      .channel('public:articles')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'articles' }, async () => {
+        try {
+          const res = await client.from('articles').select('*').order('createdAt', { ascending: false });
+          if (!res.error && res.data && res.data.length > 0) {
+            saveLocalArticles(res.data.map(mapSupabaseRow));
+            notifyArticlesUpdated();
+          }
+        } catch (e) {
+          // ignore
+        }
+      })
+      .subscribe();
+  } catch (e) {
+    // Realtime not supported or connection dropped
+  }
 }
 
 // --- HTML Sanitization ---
@@ -171,14 +247,16 @@ export async function getAllArticlesAdmin(): Promise<Article[]> {
           .from('articles')
           .select('*')
           .order('createdAt', { ascending: false }),
-        1200
+        1500
       );
 
       if (!res.error && res.data && res.data.length > 0) {
         list = res.data.map(mapSupabaseRow);
+        // Persist to local cache so visitor devices immediately have server articles offline/instant
+        saveLocalArticles(list);
       }
     } catch (err) {
-      console.warn('Supabase fetch failed or timed out, using local storage:', err);
+      console.warn('Supabase fetch failed or timed out, using local storage cache:', err);
     }
   }
 
@@ -264,15 +342,21 @@ export async function publishArticle(payload: CreateArticlePayload): Promise<Art
     createdAt: now.toISOString(),
   };
 
-  // 1. SAVE LOCALLY IMMEDIATELY (0ms, synchronous, instant UI!)
+  // 1. SAVE LOCALLY (Instant local fallback)
   const currentLocal = getLocalArticles();
   saveLocalArticles([newArticle, ...currentLocal]);
   notifyArticlesUpdated();
 
-  // 2. BACKGROUND SYNC TO SUPABASE (Non-blocking with timeout)
+  // 2. SAVE TO SUPABASE CLOUD SERVER (Sync across all devices)
   if (isSupabaseConfigured && supabase) {
-    withTimeout(supabase.from('articles').insert([toSupabaseRow(newArticle)]), 2000)
-      .catch((err) => console.warn('Background Supabase insert skipped/failed:', err));
+    const res = await withTimeout<any>(
+      supabase.from('articles').insert([toSupabaseRow(newArticle)]),
+      3500
+    );
+    if (res.error) {
+      console.error('Supabase cloud insert failed:', res.error);
+      throw new Error(`Cloud server error: ${res.error.message || 'Database insert failed'}`);
+    }
   }
 
   return newArticle;
@@ -315,15 +399,18 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
   saveLocalArticles(all);
   notifyArticlesUpdated();
 
-  // 2. Background sync to Supabase
+  // 2. Save to Supabase cloud server
   if (isSupabaseConfigured && supabase) {
-    withTimeout(
+    const res = await withTimeout<any>(
       supabase
         .from('articles')
-        .update(toSupabaseRow(updated))
-        .eq('id', targetId),
-      2000
-    ).catch((err) => console.warn('Background Supabase update skipped/failed:', err));
+        .upsert(toSupabaseRow(updated)),
+      3500
+    );
+    if (res.error) {
+      console.error('Supabase cloud update failed:', res.error);
+      throw new Error(`Cloud server error: ${res.error.message || 'Database update failed'}`);
+    }
   }
 
   return updated;
@@ -342,10 +429,13 @@ export async function deleteArticle(id: string): Promise<boolean> {
   saveLocalArticles(filteredLocal);
   notifyArticlesUpdated();
 
-  // Delete from Supabase in background
+  // Delete from Supabase cloud server
   if (isSupabaseConfigured && supabase) {
-    withTimeout(supabase.from('articles').delete().eq('id', targetId), 2000)
-      .catch((err) => console.warn('Background Supabase delete skipped/failed:', err));
+    try {
+      await withTimeout(supabase.from('articles').delete().eq('id', targetId), 3500);
+    } catch (err) {
+      console.warn('Supabase delete failed on cloud server:', err);
+    }
   }
 
   return true;

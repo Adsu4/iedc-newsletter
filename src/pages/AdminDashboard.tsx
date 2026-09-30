@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect, useCallback, type ChangeEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { publishArticle, updateArticle, uploadCoverImage, fetchArticleByIdAdmin } from '../data/articleService';
+import {
+  publishArticle,
+  updateArticle,
+  uploadCoverImage,
+  fetchArticleByIdAdmin,
+  checkServerConnection,
+} from '../data/articleService';
 import type { Article } from '../data/articles';
 
 export default function AdminDashboard() {
@@ -19,6 +25,7 @@ export default function AdminDashboard() {
   const [scheduledFor, setScheduledFor] = useState('');
   const [initialParagraphs, setInitialParagraphs] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(!isEditMode);
+  const [serverStatus, setServerStatus] = useState<{ configured: boolean; online: boolean; statusText: string; url: string } | null>(null);
 
   const [showToolbar, setShowToolbar] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date>(new Date());
@@ -26,6 +33,11 @@ export default function AdminDashboard() {
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Check live cloud server connection
+  useEffect(() => {
+    checkServerConnection().then(setServerStatus);
+  }, []);
 
   // Load existing article in edit mode
   useEffect(() => {
@@ -146,18 +158,21 @@ export default function AdminDashboard() {
     try {
       if (isEditMode && articleId) {
         await updateArticle(articleId, payload);
+        alert('Story updated on cloud server! Changes are live across all devices.');
         navigate('/admin/articles');
       } else {
         const published = await publishArticle(payload);
+        alert('Story published to cloud server! It is now live across all devices.');
         if (publishStatus === 'published') {
           navigate(`/article/${published.id}`);
         } else {
           navigate('/admin/articles');
         }
       }
-    } catch (err) {
-      console.error('Publishing failed:', err);
-      alert('Failed to save article. Please check your inputs.');
+    } catch (err: any) {
+      console.error('Publishing failed on cloud server:', err);
+      alert(`⚠️ Cloud Server Warning: ${err.message || err}\n\nThe story was saved locally in this browser, but could not be sent to the cloud database. It will NOT be visible on other devices until your Supabase project is active.`);
+      navigate('/admin/articles');
     } finally {
       setIsPublishing(false);
     }
@@ -246,6 +261,32 @@ export default function AdminDashboard() {
 
       {/* Editor Area */}
       <div className="max-w-3xl mx-auto mt-24 px-4 md:pr-80 lg:pr-0">
+        {/* Server Connection Banner */}
+        {serverStatus && (
+          <div className={`p-4 rounded-xl border-2 flex items-start gap-3 text-sm mb-6 ${
+            serverStatus.online
+              ? 'bg-emerald-50 border-emerald-500 text-emerald-900'
+              : 'bg-amber-50 border-amber-500 text-amber-950'
+          }`}>
+            <span className="material-symbols-outlined text-[20px] mt-0.5 shrink-0">
+              {serverStatus.online ? 'cloud_done' : 'cloud_off'}
+            </span>
+            <div className="flex-1">
+              <div className="font-bold flex items-center justify-between flex-wrap gap-2">
+                <span>{serverStatus.online ? 'Cloud Database Connected (Multi-device live)' : 'Cloud Server Disconnected'}</span>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-surface/50 border border-outline-variant">
+                  {serverStatus.url ? new URL(serverStatus.url).hostname : 'No URL'}
+                </span>
+              </div>
+              <p className="text-xs mt-1">
+                {serverStatus.online
+                  ? 'All published stories will immediately be stored in the cloud database and visible across all visitor devices.'
+                  : `${serverStatus.statusText}. Stories published now will only save to your current browser and will NOT show on other devices. Restore your Supabase project to enable multi-device sync.`}
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="mb-12">
           <input
             className="w-full bg-transparent text-headline-xl font-headline-xl text-on-surface border-none focus:ring-0 p-0 placeholder:text-surface-variant mb-6"

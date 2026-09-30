@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getAllArticlesAdmin, getLocalArticlesAdminSync, deleteArticle, onArticlesChange } from '../data/articleService';
+import {
+  getAllArticlesAdmin,
+  getLocalArticlesAdminSync,
+  deleteArticle,
+  onArticlesChange,
+  checkServerConnection,
+} from '../data/articleService';
 import type { Article } from '../data/articles';
 
 const statusConfig = {
@@ -15,6 +21,7 @@ export default function AdminArticles() {
   const [loading, setLoading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Article | null>(null);
   const [filter, setFilter] = useState<'all' | Article['status']>('all');
+  const [serverStatus, setServerStatus] = useState<{ configured: boolean; online: boolean; statusText: string; url: string } | null>(null);
 
   const loadArticles = async () => {
     const all = await getAllArticlesAdmin();
@@ -24,6 +31,7 @@ export default function AdminArticles() {
 
   useEffect(() => {
     loadArticles();
+    checkServerConnection().then(setServerStatus);
     const unsubscribe = onArticlesChange(() => {
       setArticlesList(getLocalArticlesAdminSync());
     });
@@ -62,6 +70,32 @@ export default function AdminArticles() {
           New Article
         </Link>
       </div>
+
+      {/* Server Connection Banner */}
+      {serverStatus && (
+        <div className={`p-4 rounded-xl border-2 flex items-start gap-3 text-sm mb-8 ${
+          serverStatus.online
+            ? 'bg-emerald-50 border-emerald-500 text-emerald-900'
+            : 'bg-amber-50 border-amber-500 text-amber-950'
+        }`}>
+          <span className="material-symbols-outlined text-[20px] mt-0.5 shrink-0">
+            {serverStatus.online ? 'cloud_done' : 'cloud_off'}
+          </span>
+          <div className="flex-1">
+            <div className="font-bold flex items-center justify-between flex-wrap gap-2">
+              <span>{serverStatus.online ? 'Cloud Server Online (Multi-Device Active)' : 'Cloud Server Disconnected'}</span>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-surface/50 border border-outline-variant">
+                {serverStatus.url ? new URL(serverStatus.url).hostname : 'No URL'}
+              </span>
+            </div>
+            <p className="text-xs mt-1">
+              {serverStatus.online
+                ? 'All devices loading the website receive stories from the cloud database instantly.'
+                : `${serverStatus.statusText}. New articles will only exist in this browser until the Supabase project is active.`}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Filter Tabs */}
       <div className="flex gap-2 mb-8 flex-wrap">
