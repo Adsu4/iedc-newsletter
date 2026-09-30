@@ -298,6 +298,7 @@ export interface CreateArticlePayload {
   paragraphs: string[];
   subheadings: string[];
   blockquote?: string;
+  html?: string;
   authorName?: string;
   authorRole?: string;
   authorAvatar?: string;
@@ -333,6 +334,7 @@ export async function publishArticle(payload: CreateArticlePayload): Promise<Art
       paragraphs: payload.paragraphs.length > 0 ? sanitizeParagraphs(payload.paragraphs) : ['No content provided.'],
       subheadings: payload.subheadings || [],
       blockquote: payload.blockquote ? sanitizeHtml(payload.blockquote) : undefined,
+      html: payload.html || undefined,
     },
     author: {
       name: payload.authorName || 'Admin User',
@@ -386,6 +388,7 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
       paragraphs: sanitizeParagraphs(payload.paragraphs),
       subheadings: payload.subheadings || existing.content.subheadings,
       blockquote: payload.blockquote !== undefined ? (payload.blockquote ? sanitizeHtml(payload.blockquote) : undefined) : existing.content.blockquote,
+      html: payload.html !== undefined ? payload.html : existing.content.html,
     } : existing.content,
   };
 

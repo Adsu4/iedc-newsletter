@@ -90,7 +90,7 @@ export async function broadcastNewsletter(article: {
   date?: string;
   readTime?: string;
   imageUrl?: string;
-  content?: { paragraphs: string[] };
+  content?: { paragraphs?: string[]; html?: string };
 }): Promise<boolean> {
   if (!WEBHOOK_URL) {
     console.warn('Cannot broadcast newsletter: VITE_GOOGLE_SHEET_WEBHOOK is not configured.');

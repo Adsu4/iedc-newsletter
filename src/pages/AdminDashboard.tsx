@@ -26,6 +26,7 @@ export default function AdminDashboard() {
   const [publishStatus, setPublishStatus] = useState<Article['status']>('published');
   const [scheduledFor, setScheduledFor] = useState('');
   const [initialParagraphs, setInitialParagraphs] = useState<string[]>([]);
+  const [initialHtml, setInitialHtml] = useState<string>('');
   const [loaded, setLoaded] = useState(!isEditMode);
   const [serverStatus, setServerStatus] = useState<{ configured: boolean; online: boolean; statusText: string; url: string } | null>(null);
 
@@ -39,9 +40,31 @@ export default function AdminDashboard() {
   const [showToolbar, setShowToolbar] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date>(new Date());
   const [savedText, setSavedText] = useState('Just now');
+  const [activeFormats, setActiveFormats] = useState({
+    bold: false,
+    italic: false,
+    underline: false,
+    strikeThrough: false,
+    h1: false,
+    h2: false,
+    h3: false,
+    blockquote: false,
+    ul: false,
+    ol: false,
+  });
+
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Set default paragraph separator to <p> so Enter key produces standard clean paragraphs
+  useEffect(() => {
+    try {
+      document.execCommand('defaultParagraphSeparator', false, 'p');
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Check live cloud server connection
   useEffect(() => {
@@ -60,7 +83,11 @@ export default function AdminDashboard() {
         setCoverImageUrl(art.imageUrl);
         setPublishStatus(art.status);
         setScheduledFor(art.scheduledFor || '');
-        setInitialParagraphs(art.content?.paragraphs || []);
+        if (art.content?.html) {
+          setInitialHtml(art.content.html);
+        } else {
+          setInitialParagraphs(art.content?.paragraphs || []);
+        }
       }
       setLoaded(true);
     });
@@ -68,10 +95,14 @@ export default function AdminDashboard() {
 
   // Populate contentEditable after component mounts
   useEffect(() => {
-    if (loaded && initialParagraphs.length > 0 && editorRef.current) {
-      editorRef.current.innerHTML = initialParagraphs.map((p) => `<p class="mb-6">${p}</p>`).join('');
+    if (loaded && editorRef.current) {
+      if (initialHtml) {
+        editorRef.current.innerHTML = initialHtml;
+      } else if (initialParagraphs.length > 0) {
+        editorRef.current.innerHTML = initialParagraphs.map((p) => `<p>${p}</p>`).join('');
+      }
     }
-  }, [loaded, initialParagraphs]);
+  }, [loaded, initialHtml, initialParagraphs]);
 
   // Auto-save timer display
   useEffect(() => {
@@ -93,27 +124,155 @@ export default function AdminDashboard() {
     }, 1500);
   }, []);
 
-  // Contextual toolbar
-  useEffect(() => {
-    const handleMouseUp = () => {
+  // Query formatting states under active selection
+  const updateActiveFormats = useCallback(() => {
+    if (!editorRef.current) return;
+    try {
+      const bold = document.queryCommandState('bold');
+      const italic = document.queryCommandState('italic');
+      const underline = document.queryCommandState('underline');
+      const strikeThrough = document.queryCommandState('strikeThrough');
+      const ul = document.queryCommandState('insertUnorderedList');
+      const ol = document.queryCommandState('insertOrderedList');
+
+      let blockTag = 'p';
       const selection = window.getSelection();
-      setShowToolbar(!!selection && selection.toString().length > 0);
-    };
-    const handleMouseDown = (e: MouseEvent) => {
-      if (editorRef.current && !editorRef.current.contains(e.target as Node)) {
-        const toolbar = document.querySelector('.context-menu');
-        if (toolbar && !toolbar.contains(e.target as Node)) {
-          setShowToolbar(false);
+      if (selection && selection.rangeCount > 0) {
+        let node: Node | null = selection.anchorNode;
+        while (node && node !== editorRef.current) {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const tag = (node as HTMLElement).tagName.toLowerCase();
+            if (['h1', 'h2', 'h3', 'blockquote', 'p'].includes(tag)) {
+              blockTag = tag;
+              break;
+            }
+          }
+          node = node.parentNode;
         }
       }
-    };
-    document.addEventListener('mouseup', handleMouseUp);
-    document.addEventListener('mousedown', handleMouseDown);
-    return () => {
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.removeEventListener('mousedown', handleMouseDown);
-    };
+
+      setActiveFormats({
+        bold,
+        italic,
+        underline,
+        strikeThrough,
+        h1: blockTag === 'h1',
+        h2: blockTag === 'h2',
+        h3: blockTag === 'h3',
+        blockquote: blockTag === 'blockquote',
+        ul,
+        ol,
+      });
+    } catch {
+      // ignore
+    }
   }, []);
+
+  // Contextual toolbar & active selection listener
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      updateActiveFormats();
+      const selection = window.getSelection();
+      const hasSelection = !!selection && selection.toString().trim().length > 0;
+      if (editorRef.current && selection && selection.anchorNode && editorRef.current.contains(selection.anchorNode)) {
+        setShowToolbar(hasSelection);
+      } else if (!hasSelection) {
+        setShowToolbar(false);
+      }
+    };
+
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => {
+      document.removeEventListener('selectionchange', handleSelectionChange);
+    };
+  }, [updateActiveFormats]);
+
+  // Execute standard inline or block formatting command safely without losing focus
+  const applyFormat = (command: string, value: string | undefined = undefined) => {
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+
+    if (command === 'createLink') {
+      const url = window.prompt('Enter link URL (e.g. https://iedc.ac.in):', 'https://');
+      if (url && url.trim() && url !== 'https://') {
+        document.execCommand('createLink', false, url.trim());
+      }
+    } else {
+      document.execCommand(command, false, value);
+    }
+    updateActiveFormats();
+    handleInput();
+  };
+
+  // Switch or toggle block formats (Normal P vs H2 vs H3 vs Blockquote)
+  const toggleBlock = (tag: 'p' | 'h1' | 'h2' | 'h3' | 'blockquote') => {
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+
+    const isCurrentActive =
+      (tag === 'h1' && activeFormats.h1) ||
+      (tag === 'h2' && activeFormats.h2) ||
+      (tag === 'h3' && activeFormats.h3) ||
+      (tag === 'blockquote' && activeFormats.blockquote);
+
+    if (isCurrentActive || tag === 'p') {
+      document.execCommand('formatBlock', false, '<p>');
+    } else {
+      document.execCommand('formatBlock', false, `<${tag}>`);
+    }
+    updateActiveFormats();
+    handleInput();
+  };
+
+  // Keyboard navigation: single line-break on Shift+Enter, exit heading on normal Enter
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    // 1. Shift + Enter: Insert a clean line break (<br>) without starting a new paragraph
+    if (e.key === 'Enter' && e.shiftKey) {
+      e.preventDefault();
+      document.execCommand('insertLineBreak');
+      handleInput();
+      return;
+    }
+
+    // 2. Normal Enter: If inside a heading (H1, H2, H3), start a normal paragraph <p> next!
+    if (e.key === 'Enter') {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        let node: Node | null = selection.anchorNode;
+        let headingNode: HTMLElement | null = null;
+        while (node && node !== editorRef.current) {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const tag = (node as HTMLElement).tagName.toLowerCase();
+            if (['h1', 'h2', 'h3'].includes(tag)) {
+              headingNode = node as HTMLElement;
+              break;
+            }
+          }
+          node = node.parentNode;
+        }
+
+        if (headingNode) {
+          e.preventDefault();
+          const p = document.createElement('p');
+          p.innerHTML = '<br>';
+          if (headingNode.nextSibling) {
+            headingNode.parentNode?.insertBefore(p, headingNode.nextSibling);
+          } else {
+            headingNode.parentNode?.appendChild(p);
+          }
+
+          const newRange = document.createRange();
+          newRange.setStart(p, 0);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+          updateActiveFormats();
+          handleInput();
+          return;
+        }
+      }
+    }
+  };
 
   const handleImageFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -129,19 +288,32 @@ export default function AdminDashboard() {
     }
   };
 
-  const extractParagraphs = (): string[] => {
+  const extractContent = () => {
+    if (!editorRef.current) return { html: '', paragraphs: [] };
+    const html = editorRef.current.innerHTML.trim();
     const paragraphs: string[] = [];
-    if (editorRef.current) {
-      const pElements = editorRef.current.querySelectorAll('p');
-      pElements.forEach((p) => {
-        const text = p.innerText.trim();
+
+    // Query all semantic text blocks
+    const blocks = editorRef.current.querySelectorAll('p, h1, h2, h3, h4, li, blockquote');
+    if (blocks.length > 0) {
+      blocks.forEach((el) => {
+        const text = (el as HTMLElement).innerText.trim();
         if (text) paragraphs.push(text);
       });
-      if (paragraphs.length === 0 && editorRef.current.innerText.trim()) {
-        paragraphs.push(editorRef.current.innerText.trim());
+    }
+
+    if (paragraphs.length === 0) {
+      const raw = editorRef.current.innerText.trim();
+      if (raw) {
+        raw.split('\n').map((l) => l.trim()).filter(Boolean).forEach((l) => paragraphs.push(l));
       }
     }
-    return paragraphs;
+
+    return { html, paragraphs };
+  };
+
+  const extractParagraphs = (): string[] => {
+    return extractContent().paragraphs;
   };
 
   const handlePublish = async () => {
@@ -151,7 +323,7 @@ export default function AdminDashboard() {
     }
 
     setIsPublishing(true);
-    const paragraphs = extractParagraphs();
+    const { html, paragraphs } = extractContent();
     const payload = {
       title: title.trim(),
       subtitle: subtitle.trim(),
@@ -159,6 +331,7 @@ export default function AdminDashboard() {
       categoryColor,
       imageUrl: coverImageUrl,
       paragraphs,
+      html,
       subheadings: ['Key Takeaways'],
       status: publishStatus,
       scheduledFor: publishStatus === 'scheduled' ? scheduledFor : undefined,
@@ -176,7 +349,7 @@ export default function AdminDashboard() {
               subtitle: payload.subtitle,
               category: payload.category,
               imageUrl: payload.imageUrl,
-              content: { paragraphs: payload.paragraphs },
+              content: { paragraphs: payload.paragraphs, html: payload.html },
             });
             emailMsg = '\n\n📧 Newsletter broadcast sent to all active subscribers in your Google Sheet!';
           } catch (e) {
@@ -220,7 +393,7 @@ export default function AdminDashboard() {
       return;
     }
     setIsPublishing(true);
-    const paragraphs = extractParagraphs();
+    const { html, paragraphs } = extractContent();
     const payload = {
       title: title.trim(),
       subtitle: subtitle.trim(),
@@ -228,6 +401,7 @@ export default function AdminDashboard() {
       categoryColor,
       imageUrl: coverImageUrl,
       paragraphs,
+      html,
       subheadings: ['Key Takeaways'],
       status: 'draft' as const,
     };
@@ -391,31 +565,275 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Contextual Toolbar */}
-        <div className={`context-menu ${showToolbar ? 'active' : ''} fixed top-32 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface rounded-lg shadow-xl flex items-center p-1 gap-1 z-50`}>
-          <button className="w-8 h-8 flex items-center justify-center hover:bg-surface-variant/20 rounded text-inverse-on-surface transition-colors"><span className="material-symbols-outlined text-[18px]">format_bold</span></button>
-          <button className="w-8 h-8 flex items-center justify-center hover:bg-surface-variant/20 rounded text-inverse-on-surface transition-colors"><span className="material-symbols-outlined text-[18px]">format_italic</span></button>
+        {/* Sticky Editorial Formatting Toolbar */}
+        <div className="sticky top-20 z-30 mb-6 bg-surface/95 backdrop-blur-md p-2 rounded-xl border-2 border-on-surface shadow-[3px_3px_0px_0px_#1c1b1b] flex items-center justify-between flex-wrap gap-1 transition-all">
+          <div className="flex items-center flex-wrap gap-1">
+            {/* Block Level Formats */}
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); toggleBlock('p'); }}
+              title="Normal Paragraph text"
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors border ${
+                !activeFormats.h1 && !activeFormats.h2 && !activeFormats.h3 && !activeFormats.blockquote
+                  ? 'bg-on-surface text-surface border-on-surface shadow-sm'
+                  : 'bg-surface hover:bg-surface-variant/30 text-on-surface border-transparent'
+              }`}
+            >
+              Normal
+            </button>
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); toggleBlock('h2'); }}
+              title="Section Heading (H2)"
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors border ${
+                activeFormats.h2
+                  ? 'bg-on-surface text-surface border-on-surface shadow-sm'
+                  : 'bg-surface hover:bg-surface-variant/30 text-on-surface border-transparent'
+              }`}
+            >
+              H2
+            </button>
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); toggleBlock('h3'); }}
+              title="Subheading (H3)"
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors border ${
+                activeFormats.h3
+                  ? 'bg-on-surface text-surface border-on-surface shadow-sm'
+                  : 'bg-surface hover:bg-surface-variant/30 text-on-surface border-transparent'
+              }`}
+            >
+              H3
+            </button>
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); toggleBlock('blockquote'); }}
+              title="Quote block"
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors border ${
+                activeFormats.blockquote
+                  ? 'bg-on-surface text-surface border-on-surface shadow-sm'
+                  : 'bg-surface hover:bg-surface-variant/30 text-on-surface border-transparent'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">format_quote</span>
+            </button>
+
+            <div className="w-px h-5 bg-on-surface/20 mx-1"></div>
+
+            {/* Inline Styles */}
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); applyFormat('bold'); }}
+              title="Bold (Ctrl+B)"
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors border ${
+                activeFormats.bold
+                  ? 'bg-on-surface text-surface border-on-surface shadow-sm'
+                  : 'bg-surface hover:bg-surface-variant/30 text-on-surface border-transparent'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">format_bold</span>
+            </button>
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); applyFormat('italic'); }}
+              title="Italic (Ctrl+I)"
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors border ${
+                activeFormats.italic
+                  ? 'bg-on-surface text-surface border-on-surface shadow-sm'
+                  : 'bg-surface hover:bg-surface-variant/30 text-on-surface border-transparent'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">format_italic</span>
+            </button>
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); applyFormat('underline'); }}
+              title="Underline (Ctrl+U)"
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors border ${
+                activeFormats.underline
+                  ? 'bg-on-surface text-surface border-on-surface shadow-sm'
+                  : 'bg-surface hover:bg-surface-variant/30 text-on-surface border-transparent'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">format_underlined</span>
+            </button>
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); applyFormat('strikeThrough'); }}
+              title="Strikethrough"
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors border ${
+                activeFormats.strikeThrough
+                  ? 'bg-on-surface text-surface border-on-surface shadow-sm'
+                  : 'bg-surface hover:bg-surface-variant/30 text-on-surface border-transparent'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">strikethrough_s</span>
+            </button>
+
+            <div className="w-px h-5 bg-on-surface/20 mx-1"></div>
+
+            {/* Lists */}
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); applyFormat('insertUnorderedList'); }}
+              title="Bulleted List"
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors border ${
+                activeFormats.ul
+                  ? 'bg-on-surface text-surface border-on-surface shadow-sm'
+                  : 'bg-surface hover:bg-surface-variant/30 text-on-surface border-transparent'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">format_list_bulleted</span>
+            </button>
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); applyFormat('insertOrderedList'); }}
+              title="Numbered List"
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors border ${
+                activeFormats.ol
+                  ? 'bg-on-surface text-surface border-on-surface shadow-sm'
+                  : 'bg-surface hover:bg-surface-variant/30 text-on-surface border-transparent'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">format_list_numbered</span>
+            </button>
+
+            <div className="w-px h-5 bg-on-surface/20 mx-1"></div>
+
+            {/* Dividers & Links */}
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); applyFormat('insertHorizontalRule'); }}
+              title="Insert Divider Line"
+              className="w-8 h-8 rounded-lg flex items-center justify-center bg-surface hover:bg-surface-variant/30 text-on-surface transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">horizontal_rule</span>
+            </button>
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); applyFormat('createLink'); }}
+              title="Insert Link"
+              className="w-8 h-8 rounded-lg flex items-center justify-center bg-surface hover:bg-surface-variant/30 text-on-surface transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">link</span>
+            </button>
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); applyFormat('removeFormat'); toggleBlock('p'); }}
+              title="Clear Formatting / Reset to normal"
+              className="w-8 h-8 rounded-lg flex items-center justify-center bg-surface hover:bg-surface-variant/30 text-secondary hover:text-error transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">format_clear</span>
+            </button>
+          </div>
+
+          <div className="text-[11px] font-medium text-secondary hidden sm:flex items-center gap-1.5 pr-2">
+            <kbd className="px-1.5 py-0.5 rounded bg-surface-container border border-outline-variant font-mono text-[10px]">Shift+Enter</kbd>
+            <span>tight line break</span>
+          </div>
+        </div>
+
+        {/* Contextual Bubble Toolbar (Active on text selection) */}
+        <div
+          className={`context-menu ${showToolbar ? 'active' : ''} fixed top-32 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface rounded-xl shadow-2xl flex items-center p-1.5 gap-1 z-50 border border-inverse-on-surface/20`}
+        >
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); applyFormat('bold'); }}
+            title="Bold"
+            className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
+              activeFormats.bold ? 'bg-primary text-on-primary' : 'hover:bg-surface-variant/30 text-inverse-on-surface'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">format_bold</span>
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); applyFormat('italic'); }}
+            title="Italic"
+            className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
+              activeFormats.italic ? 'bg-primary text-on-primary' : 'hover:bg-surface-variant/30 text-inverse-on-surface'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">format_italic</span>
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); applyFormat('underline'); }}
+            title="Underline"
+            className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
+              activeFormats.underline ? 'bg-primary text-on-primary' : 'hover:bg-surface-variant/30 text-inverse-on-surface'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">format_underlined</span>
+          </button>
+
           <div className="w-px h-5 bg-inverse-on-surface/30 mx-1"></div>
-          <button className="w-8 h-8 flex items-center justify-center hover:bg-surface-variant/20 rounded text-inverse-on-surface transition-colors"><span className="material-symbols-outlined text-[18px]">format_h2</span></button>
-          <button className="w-8 h-8 flex items-center justify-center hover:bg-surface-variant/20 rounded text-inverse-on-surface transition-colors"><span className="material-symbols-outlined text-[18px]">format_quote</span></button>
+
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); toggleBlock('p'); }}
+            title="Normal Paragraph"
+            className="px-2 h-8 flex items-center justify-center hover:bg-surface-variant/30 rounded text-inverse-on-surface text-xs font-bold transition-colors"
+          >
+            Normal
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); toggleBlock('h2'); }}
+            title="Heading 2"
+            className={`w-8 h-8 flex items-center justify-center rounded text-xs font-bold transition-colors ${
+              activeFormats.h2 ? 'bg-primary text-on-primary' : 'hover:bg-surface-variant/30 text-inverse-on-surface'
+            }`}
+          >
+            H2
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); toggleBlock('h3'); }}
+            title="Heading 3"
+            className={`w-8 h-8 flex items-center justify-center rounded text-xs font-bold transition-colors ${
+              activeFormats.h3 ? 'bg-primary text-on-primary' : 'hover:bg-surface-variant/30 text-inverse-on-surface'
+            }`}
+          >
+            H3
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); toggleBlock('blockquote'); }}
+            title="Quote"
+            className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
+              activeFormats.blockquote ? 'bg-primary text-on-primary' : 'hover:bg-surface-variant/30 text-inverse-on-surface'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">format_quote</span>
+          </button>
+
           <div className="w-px h-5 bg-inverse-on-surface/30 mx-1"></div>
-          <button className="w-8 h-8 flex items-center justify-center hover:bg-surface-variant/20 rounded text-inverse-on-surface transition-colors"><span className="material-symbols-outlined text-[18px]">link</span></button>
+
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); applyFormat('createLink'); }}
+            title="Insert Link"
+            className="w-8 h-8 flex items-center justify-center hover:bg-surface-variant/30 rounded text-inverse-on-surface transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px]">link</span>
+          </button>
         </div>
 
         {/* Content Area */}
         <div className="relative group">
-          <div className="absolute -left-12 top-0 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-2">
-            <button className="w-8 h-8 rounded-full border border-outline flex items-center justify-center text-secondary hover:border-secondary transition-colors bg-surface-container-lowest">
-              <span className="material-symbols-outlined text-[18px]">add</span>
-            </button>
-          </div>
-          <div ref={editorRef} className="rich-text-area prose text-body-lg font-body-lg text-on-surface min-h-[400px] focus:outline-none leading-relaxed" contentEditable suppressContentEditableWarning data-placeholder="Start writing..." onInput={handleInput}>
-            {!isEditMode && (
-              <>
-                <p className="mb-6">Start writing your story here...</p>
-              </>
-            )}
-          </div>
+          <div
+            ref={editorRef}
+            className="rich-text-area prose text-base md:text-lg font-body-lg text-on-surface min-h-[460px] focus:outline-none leading-relaxed p-6 bg-surface rounded-2xl border-2 border-on-surface shadow-[4px_4px_0px_0px_#1c1b1b] focus:shadow-[6px_6px_0px_0px_#1c1b1b] transition-all"
+            contentEditable
+            suppressContentEditableWarning
+            data-placeholder="Start writing your story or monthly newsletter..."
+            onInput={handleInput}
+            onKeyDown={handleKeyDown}
+            onKeyUp={updateActiveFormats}
+            onMouseUp={updateActiveFormats}
+          />
         </div>
       </div>
 

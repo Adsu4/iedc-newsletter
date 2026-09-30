@@ -136,19 +136,26 @@ export default function ArticleDetail() {
         )}
 
         {/* Content */}
-        <div className="prose text-base md:text-lg font-body-lg text-on-surface leading-relaxed">
-          {article.content?.paragraphs?.map((p, idx) => (
-            <div key={idx}>
-              {article.content?.subheadings?.[idx] && (
-                <h2 className="text-xl sm:text-2xl font-bold font-sans text-on-surface mt-8 mb-3">{article.content.subheadings[idx]}</h2>
-              )}
-              <p className="mb-5">{p}</p>
-              {idx === 1 && article.content?.blockquote && (
-                <blockquote className="my-6 border-l-4 border-secondary bg-secondary-container/40 p-4 rounded-xl text-base sm:text-lg italic text-on-surface font-serif">{article.content.blockquote}</blockquote>
-              )}
-            </div>
-          ))}
-        </div>
+        {article.content?.html ? (
+          <div
+            className="prose article-rich-content text-base md:text-lg font-body-lg text-on-surface leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: article.content.html }}
+          />
+        ) : (
+          <div className="prose text-base md:text-lg font-body-lg text-on-surface leading-relaxed">
+            {article.content?.paragraphs?.map((p, idx) => (
+              <div key={idx}>
+                {article.content?.subheadings?.[idx] && (
+                  <h2 className="text-xl sm:text-2xl font-bold font-sans text-on-surface mt-8 mb-3">{article.content.subheadings[idx]}</h2>
+                )}
+                <p className="mb-5">{p}</p>
+                {idx === 1 && article.content?.blockquote && (
+                  <blockquote className="my-6 border-l-4 border-secondary bg-secondary-container/40 p-4 rounded-xl text-base sm:text-lg italic text-on-surface font-serif">{article.content.blockquote}</blockquote>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </article>
 
       {/* Recommended Articles Section */}

@@ -14,6 +14,7 @@ export interface Article {
     paragraphs: string[];
     subheadings: string[];
     blockquote?: string;
+    html?: string;
   };
   author: {
     name: string;
