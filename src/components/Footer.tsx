@@ -4,9 +4,13 @@ export default function Footer() {
   return (
     <footer className="border-t-2 border-on-surface w-full mt-auto bg-[#F9F7F1]">
       <div className="flex flex-col md:flex-row items-center justify-between py-10 md:py-12 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto gap-8">
-        <div className="flex flex-col items-center md:items-start gap-1">
-          <Link to="/" className="text-xl font-bold font-headline-md text-on-surface uppercase hover:text-primary transition-colors">
-            IEDC GECT News
+        <div className="flex flex-col items-center md:items-start gap-2">
+          <Link to="/" className="flex items-center gap-2 group" title="IEDC News">
+            <img
+              alt="IEDC News"
+              className="h-8 md:h-10 w-auto object-contain mix-blend-multiply transition-transform group-hover:scale-[1.02]"
+              src="/iedc-logo.png"
+            />
           </Link>
           <span className="text-xs text-secondary font-medium">Govt. Engineering College Thrissur</span>
         </div>

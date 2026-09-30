@@ -34,9 +34,12 @@ export default function NavBar() {
       <nav className="bg-[#F9F7F1] border-b-2 border-on-surface sticky top-0 z-50 transition-all duration-300">
         <div className="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto h-16 md:h-20">
           {/* Brand */}
-          <Link to="/" className="text-xl md:text-2xl font-bold font-headline-md text-on-surface flex items-center gap-2.5 shrink-0">
-            <img alt="IEDC GECT News Logo" className="h-7 md:h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHKRxcE9Ed8x3wYOF1kyFDSaNRh6PgtM6ssY67o9-M63_JK_JOVRo-4IR3Kt5THkxRVo6AObLTRZew82ulEqoCHBn12qBV7F2ZOngRwx--1REAQZPew0XoubWcY1kXPEeDzELTjzmYWxca3gdGBCxJBUBj7KPfhYelmoyA0p0zAK3hZTaQItRjKFO2rrAE6VI_NeNXPiq05OfgDsleKXafbcamh3wYQBN_s0do_t_LnluPdbqvDjz-JXwuByBamv8en-0"/>
-            <span className="tracking-tight uppercase">IEDC News</span>
+          <Link to="/" className="flex items-center gap-2.5 shrink-0 group py-1" title="IEDC News">
+            <img
+              alt="IEDC News"
+              className="h-9 md:h-12 w-auto object-contain mix-blend-multiply transition-transform group-hover:scale-[1.02]"
+              src="/iedc-logo.png"
+            />
           </Link>
 
           {/* Navigation Links (Desktop) */}
