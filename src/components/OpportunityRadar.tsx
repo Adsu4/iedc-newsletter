@@ -104,8 +104,8 @@ export default function OpportunityRadar({ showAll = false }: OpportunityRadarPr
             {/* Footer / Apply Button */}
             <div className="pt-3 border-t border-on-surface/10 flex items-center justify-between gap-4">
               <div className="flex flex-col">
-                <span className="text-[10px] font-label-bold uppercase text-secondary">Deadline</span>
-                <span className="text-xs font-bold text-error">{item.deadline}</span>
+                <span className="text-[10px] font-label-bold uppercase text-secondary">Timeline / Deadline</span>
+                <span className="text-xs font-bold text-primary">{item.deadline}</span>
               </div>
 
               <a

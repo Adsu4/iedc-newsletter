@@ -14,7 +14,7 @@ export default function OpportunityRadarPage() {
           Opportunity Radar
         </h1>
         <p className="text-sm sm:text-base text-on-surface-variant max-w-2xl mt-2 leading-relaxed">
-          Discover verified funding calls from Kerala Startup Mission (KSUM), DST NIDHI-PRAYAS grants, national hackathons, and incubation programs for student innovators.
+          Discover grants, competitions, hackathons and incubation opportunities for student innovators and aspiring startups.
         </p>
       </div>
 
