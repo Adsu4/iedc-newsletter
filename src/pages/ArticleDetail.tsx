@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useParams, Navigate } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { fetchArticleById, getAllArticles, getLocalArticlesSync } from '../data/articleService';
 import type { Article } from '../data/articles';
 
@@ -15,6 +15,15 @@ export default function ArticleDetail() {
 
   useEffect(() => {
     if (id) {
+      if (id === 'latest' || id === 'test-edition' || id === 'preview') {
+        getAllArticles().then((all) => {
+          const newsletter = all.find((a) => a.category === 'Monthly Newsletter' || a.category === 'Newsletter') || all[0];
+          setArticle(newsletter || null);
+          setRecommended(all.filter((a) => a.id !== newsletter?.id).slice(0, 2));
+        });
+        return;
+      }
+
       const immediate = getLocalArticlesSync().find((a) => String(a.id) === String(id));
       if (immediate) setArticle(immediate);
 
@@ -28,7 +37,19 @@ export default function ArticleDetail() {
   }, [id]);
 
   if (article === null) {
-    return <Navigate to="/" replace />;
+    return (
+      <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-20 text-center flex flex-col items-center justify-center gap-4">
+        <span className="material-symbols-outlined text-6xl text-secondary opacity-50">article</span>
+        <h1 className="text-3xl font-headline-xl uppercase text-on-surface">Story Not Found</h1>
+        <p className="text-secondary max-w-md">This edition may have been moved, updated, or not published yet.</p>
+        <Link
+          to="/"
+          className="px-6 py-3 bg-primary text-on-primary rounded-full text-label-bold font-label-bold uppercase border-2 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-1 transition-all mt-4"
+        >
+          Return to Portal
+        </Link>
+      </main>
+    );
   }
 
   if (article === undefined) {
