@@ -4,7 +4,8 @@ import { getAllArticles, getLocalArticlesSync, onArticlesChange } from '../data/
 import { subscribe } from '../data/subscriptionService';
 import { currentEditionInfo, type NewsletterEditionInfo } from '../data/newsletterData';
 import { fetchCurrentEdition } from '../data/editionService';
-import NumbersTicker from '../components/NumbersTicker';
+// Archived for upcoming numbers update:
+// import NumbersTicker from '../components/NumbersTicker';
 import ComingUpSection from '../components/ComingUpSection';
 import OpportunityRadar from '../components/OpportunityRadar';
 import type { Article } from '../data/articles';
@@ -282,8 +283,8 @@ export default function Home() {
         </section>
       )}
 
-      {/* 3. Campus Innovation Impact: Numbers Ticker */}
-      <NumbersTicker />
+      {/* 3. Campus Innovation Impact: Numbers Ticker (Archived temporarily for upcoming data update) */}
+      {/* <NumbersTicker /> */}
 
       {/* 4. Verified Grants & Funding: Opportunity Radar */}
       <OpportunityRadar />
