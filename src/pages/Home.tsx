@@ -7,7 +7,6 @@ import { fetchCurrentEdition } from '../data/editionService';
 import NumbersTicker from '../components/NumbersTicker';
 import ComingUpSection from '../components/ComingUpSection';
 import OpportunityRadar from '../components/OpportunityRadar';
-import MonthInMoments from '../components/MonthInMoments';
 import type { Article } from '../data/articles';
 
 const categoryColorMap = {
@@ -286,10 +285,7 @@ export default function Home() {
       {/* 3. Campus Innovation Impact: Numbers Ticker */}
       <NumbersTicker />
 
-      {/* 4. Visual Digest: Month in Moments (Campus in Pictures) */}
-      <MonthInMoments />
-
-      {/* 5. Verified Grants & Funding: Opportunity Radar */}
+      {/* 4. Verified Grants & Funding: Opportunity Radar */}
       <OpportunityRadar />
 
       {/* 6. Upcoming Events Calendar: Coming Up at IEDC (Featuring the Meme Card) */}

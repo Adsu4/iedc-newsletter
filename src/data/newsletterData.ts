@@ -229,41 +229,5 @@ export const opportunitiesList: Opportunity[] = [
 export const startupSpotlights: StartupSpotlight[] = [];
 
 
-export const monthMoments: MonthMoment[] = [
-  {
-    id: 'mm-1',
-    title: 'Cloud & AI Hands-On Sprint',
-    caption: 'Over 80 students deploying serverless microservices at the Central Computing Facility.',
-    date: 'Aug 12, 2026',
-    location: 'CCF Lab 2, GECT',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBGMRl1dRUP3Cr1L5leksQUJB_6c_VVlTZv2dO5tLx-fYZZ6gkVzoYboO4xveDoPswMmnl3c8I5P7Zs0FOstO6anVNSlLGGkKjxmSZmMFxT2vM5j55AgK_RV3dHFlZlLa1roL2etkVICbJUdYD2VxeoOv4vXpxWS35HSK9-7X_KMcqfjIKEhG7QdX5Xw-ulKANh_szfaD9A7hlUqSc2kXDv4gkcJDrEhKUwLLjbUkk4VLMdGa4yKJ7vHA',
-    tag: 'Workshop',
-  },
-  {
-    id: 'mm-2',
-    title: 'EV Chassis Weld & Fitment',
-    caption: 'GECT Racing team verifying tubular spaceframe alignment in the fabrication bay.',
-    date: 'Aug 16, 2026',
-    location: 'Mechanical Workshop',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCO3gZzUKko1uW4sbl158JBCKDjmGxsr_Z_JjWzCDJjiZN3PfVzqCtCGUh2BtDaq2vrXLnIn1-GEHcE8Xs6KWyCkjxV7dpSzaw0MUQel4gh9xknUzFt5q1u1czsq3T5FZhazub_WOUubM6UWK1nwJky_SLUwxtJP0TgWJqGD2kEyekH7YK7DCH-T8f75uK13v44HGSg_13dEVkgdz8x7ZRMQj2AePG75JSQorXSbEJMlk53Nm5XwW54kw',
-    tag: 'R&D',
-  },
-  {
-    id: 'mm-3',
-    title: 'Idea Pitch & Critique Night',
-    caption: 'Student teams pitching hardware innovations before the faculty & KSUM advisory panel.',
-    date: 'Aug 20, 2026',
-    location: 'Seminar Hall, Main Block',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBGMRl1dRUP3Cr1L5leksQUJB_6c_VVlTZv2dO5tLx-fYZZ6gkVzoYboO4xveDoPswMmnl3c8I5P7Zs0FOstO6anVNSlLGGkKjxmSZmMFxT2vM5j55AgK_RV3dHFlZlLa1roL2etkVICbJUdYD2VxeoOv4vXpxWS35HSK9-7X_KMcqfjIKEhG7QdX5Xw-ulKANh_szfaD9A7hlUqSc2kXDv4gkcJDrEhKUwLLjbUkk4VLMdGa4yKJ7vHA',
-    tag: 'Pitching',
-  },
-  {
-    id: 'mm-4',
-    title: 'Robotics & ROS2 Automation Lab',
-    caption: 'Student engineers tuning autonomous robotic arm trajectories for SMD component sorting.',
-    date: 'Aug 24, 2026',
-    location: 'Mechatronics Lab',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCO3gZzUKko1uW4sbl158JBCKDjmGxsr_Z_JjWzCDJjiZN3PfVzqCtCGUh2BtDaq2vrXLnIn1-GEHcE8Xs6KWyCkjxV7dpSzaw0MUQel4gh9xknUzFt5q1u1czsq3T5FZhazub_WOUubM6UWK1nwJky_SLUwxtJP0TgWJqGD2kEyekH7YK7DCH-T8f75uK13v44HGSg_13dEVkgdz8x7ZRMQj2AePG75JSQorXSbEJMlk53Nm5XwW54kw',
-    tag: 'Lab Session',
-  },
-];
+export const monthMoments: MonthMoment[] = [];
+
