@@ -22,6 +22,8 @@ export default function AdminDashboard() {
   const [categoryColor, setCategoryColor] = useState<Article['categoryColor']>('primary');
   const [coverImageUrl, setCoverImageUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [authorName, setAuthorName] = useState('Admin User');
+  const [authorRole, setAuthorRole] = useState('IEDC Editorial');
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishStatus, setPublishStatus] = useState<Article['status']>('published');
   const [scheduledFor, setScheduledFor] = useState('');
@@ -83,6 +85,8 @@ export default function AdminDashboard() {
         setCoverImageUrl(art.imageUrl);
         setPublishStatus(art.status);
         setScheduledFor(art.scheduledFor || '');
+        if (art.author?.name) setAuthorName(art.author.name);
+        if (art.author?.role) setAuthorRole(art.author.role);
         if (art.content?.html) {
           setInitialHtml(art.content.html);
         } else {
@@ -332,6 +336,8 @@ export default function AdminDashboard() {
       imageUrl: coverImageUrl,
       paragraphs,
       html,
+      authorName: authorName.trim() || 'Admin User',
+      authorRole: authorRole.trim() || 'IEDC Editorial',
       subheadings: ['Key Takeaways'],
       status: publishStatus,
       scheduledFor: publishStatus === 'scheduled' ? scheduledFor : undefined,
@@ -402,6 +408,8 @@ export default function AdminDashboard() {
       imageUrl: coverImageUrl,
       paragraphs,
       html,
+      authorName: authorName.trim() || 'Admin User',
+      authorRole: authorRole.trim() || 'IEDC Editorial',
       subheadings: ['Key Takeaways'],
       status: 'draft' as const,
     };
@@ -541,10 +549,36 @@ export default function AdminDashboard() {
               value={subtitle}
               onChange={(e) => { setSubtitle(e.target.value); handleInput(); }}
             />
-            <div className="flex items-center gap-4 text-secondary pt-4 border-t border-surface-variant/30">
-              <span className="text-label-bold font-label-bold uppercase">By Admin User</span>
+            <div className="flex items-center gap-3 text-secondary pt-4 border-t border-surface-variant/30 flex-wrap">
+              {/* Writer Name Input */}
+              <div className="flex items-center gap-1.5 bg-surface-container/60 hover:bg-surface-container px-3 py-1.5 rounded-full border border-outline-variant/60 transition-colors group">
+                <span className="material-symbols-outlined text-[16px] text-secondary group-hover:text-primary transition-colors">person</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-secondary">By</span>
+                <input
+                  type="text"
+                  value={authorName}
+                  onChange={(e) => { setAuthorName(e.target.value); handleInput(); }}
+                  placeholder="Writer's Name"
+                  className="bg-transparent border-none text-xs font-bold text-on-surface focus:ring-0 p-0 placeholder:text-surface-variant w-32 sm:w-44"
+                  title="Click to edit writer's name"
+                />
+              </div>
+
+              {/* Writer Role Input */}
+              <div className="flex items-center gap-1.5 bg-surface-container/60 hover:bg-surface-container px-3 py-1.5 rounded-full border border-outline-variant/60 transition-colors group">
+                <span className="material-symbols-outlined text-[16px] text-secondary group-hover:text-primary transition-colors">badge</span>
+                <input
+                  type="text"
+                  value={authorRole}
+                  onChange={(e) => { setAuthorRole(e.target.value); handleInput(); }}
+                  placeholder="Designation / Role"
+                  className="bg-transparent border-none text-xs font-medium text-secondary focus:ring-0 p-0 placeholder:text-surface-variant w-28 sm:w-40"
+                  title="Click to edit writer's role"
+                />
+              </div>
+
               <span className="text-secondary/30">•</span>
-              <span className="text-label-bold font-label-bold uppercase">
+              <span className="text-label-bold font-label-bold uppercase text-secondary text-xs">
                 {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
             </div>
@@ -857,6 +891,39 @@ export default function AdminDashboard() {
               <span className="text-label-bold font-label-bold uppercase text-secondary group-hover:text-on-surface transition-colors">
                 {isUploading ? 'Uploading...' : coverImageUrl ? 'Change cover' : 'Add cover'}
               </span>
+            </div>
+          </div>
+
+          {/* Writer / Author Details */}
+          <div>
+            <span className="block text-label-bold font-label-bold uppercase text-secondary mb-3">Writer / Author</span>
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="text-[11px] font-semibold text-secondary block mb-1">Writer's Name</label>
+                <div className="flex items-center gap-2 border border-outline-variant rounded-lg px-3 py-2 bg-surface-container-lowest focus-within:border-primary transition-colors">
+                  <span className="material-symbols-outlined text-secondary text-[18px]">person</span>
+                  <input
+                    type="text"
+                    value={authorName}
+                    onChange={(e) => { setAuthorName(e.target.value); handleInput(); }}
+                    placeholder="e.g. Sarah Jenkins or John Doe"
+                    className="bg-transparent border-none text-xs font-medium text-on-surface focus:ring-0 p-0 w-full"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-secondary block mb-1">Designation / Role</label>
+                <div className="flex items-center gap-2 border border-outline-variant rounded-lg px-3 py-2 bg-surface-container-lowest focus-within:border-primary transition-colors">
+                  <span className="material-symbols-outlined text-secondary text-[18px]">badge</span>
+                  <input
+                    type="text"
+                    value={authorRole}
+                    onChange={(e) => { setAuthorRole(e.target.value); handleInput(); }}
+                    placeholder="e.g. Lead Tech Reporter"
+                    className="bg-transparent border-none text-xs font-medium text-on-surface focus:ring-0 p-0 w-full"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 

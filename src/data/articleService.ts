@@ -390,6 +390,11 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
       blockquote: payload.blockquote !== undefined ? (payload.blockquote ? sanitizeHtml(payload.blockquote) : undefined) : existing.content.blockquote,
       html: payload.html !== undefined ? payload.html : existing.content.html,
     } : existing.content,
+    author: {
+      name: payload.authorName !== undefined ? sanitizeHtml(payload.authorName) : (existing.author?.name || 'Admin User'),
+      role: payload.authorRole !== undefined ? sanitizeHtml(payload.authorRole) : (existing.author?.role || (isNewsletter ? 'IEDC Chief Editor' : 'IEDC Editorial')),
+      avatarUrl: payload.authorAvatar || existing.author?.avatarUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuDp6-LO5wbh6CTC36gJGeJayrbGtizLZWUlH9INz99YIJjIvsgYIZWEI3FCpw0i_0qiTUtAr6wPwhbUntODV_DKp16HJ_i97nWITmL3RCUSGrO0UEQgfLjdcaub8MJ1eBmE7L8UKpcRIhK6qh2roHWO8mK9WHTiHouOVak3xxVFkkI027MEgVlLW2Wt-YE2_7_p67F0NuRnWR6AOvYY3tYmko7Kd-N5jpyO_R33j4KF_IVtKvrukoEY2Q',
+    },
   };
 
   if (payload.paragraphs) {

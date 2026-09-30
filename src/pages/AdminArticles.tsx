@@ -151,6 +151,15 @@ export default function AdminArticles() {
                     <span className="text-label-md text-secondary">{article.category}</span>
                     <span className="text-secondary/30">•</span>
                     <span className="text-label-md text-secondary">{article.date}</span>
+                    {article.author?.name && (
+                      <>
+                        <span className="text-secondary/30">•</span>
+                        <span className="text-label-md text-on-surface font-medium flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[13px] text-secondary">person</span>
+                          {article.author.name}
+                        </span>
+                      </>
+                    )}
                     {article.status === 'scheduled' && article.scheduledFor && (
                       <>
                         <span className="text-secondary/30">•</span>
