@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { getAllArticles } from '../data/articleService';
 import { subscribe } from '../data/subscriptionService';
-import { currentEditionInfo } from '../data/newsletterData';
+import { currentEditionInfo, type NewsletterEditionInfo } from '../data/newsletterData';
+import { fetchCurrentEdition } from '../data/editionService';
 import NumbersTicker from '../components/NumbersTicker';
 import ComingUpSection from '../components/ComingUpSection';
 import OpportunityRadar from '../components/OpportunityRadar';
@@ -15,14 +16,39 @@ const categoryColorMap = {
   tertiary: { badge: 'bg-tertiary text-on-tertiary', card: 'bg-tertiary-container' },
 };
 
+function formatFullMonthYear(dateStr?: string): string {
+  if (!dateStr) {
+    return new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }
+  const monthMap: Record<string, string> = {
+    jan: 'January', feb: 'February', mar: 'March', apr: 'April',
+    may: 'May', jun: 'June', jul: 'July', aug: 'August',
+    sep: 'September', oct: 'October', nov: 'November', dec: 'December'
+  };
+  const parts = dateStr.trim().split(/\s+/);
+  if (parts.length === 2) {
+    const key = parts[0].toLowerCase().slice(0, 3);
+    if (monthMap[key]) {
+      return `${monthMap[key]} ${parts[1]}`;
+    }
+  }
+  const parsed = new Date(dateStr);
+  if (!isNaN(parsed.getTime())) {
+    return parsed.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }
+  return dateStr;
+}
+
 export default function Home() {
   const [articlesList, setArticlesList] = useState<Article[]>([]);
+  const [editionInfo, setEditionInfo] = useState<NewsletterEditionInfo>(currentEditionInfo);
   const [subEmail, setSubEmail] = useState('');
   const [subStatus, setSubStatus] = useState<'idle' | 'sending' | 'success' | 'already_subscribed' | 'resubscribed' | 'error'>('idle');
   const newsletterRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     getAllArticles().then(setArticlesList);
+    fetchCurrentEdition().then(setEditionInfo);
     if (window.location.hash === '#newsletter') {
       setTimeout(() => {
         newsletterRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -34,6 +60,14 @@ export default function Home() {
   const coverStory = articlesList[0];
   const executiveBriefs = articlesList.slice(1, 3);
   const moreStories = articlesList.slice(3, 7);
+
+  // Dynamic Month & Edition resolution (Zero hardcoding)
+  const activeMonthYear = formatFullMonthYear(coverStory?.date || editionInfo?.monthYear);
+  const activeEdition = editionInfo?.edition && editionInfo.edition !== 'Vol. 32'
+    ? editionInfo.edition
+    : `Vol. ${articlesList.length > 0 ? articlesList.length : 1}`;
+  const activeTheme = coverStory?.title || editionInfo?.theme || 'Campus Innovation & Tech Dispatch';
+  const activeSummary = coverStory?.subtitle || editionInfo?.summary || "Govt. Engineering College Thrissur's official monthly report on student projects, grants, and startup breakthroughs.";
 
   const briefCardColors = [
     'bg-secondary-container',
@@ -61,7 +95,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-2">
             <span className="bg-surface-container-high text-on-surface px-2.5 py-0.5 rounded-full text-[11px] font-medium border border-on-surface">
-              {currentEditionInfo.monthYear}
+              {activeMonthYear}
             </span>
           </div>
         </div>
@@ -72,7 +106,7 @@ export default function Home() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-on-surface/15 pb-4">
             <div className="flex items-center gap-2">
               <span className="bg-primary text-on-primary px-3 py-0.5 rounded-full text-[11px] font-label-bold uppercase border border-on-surface shadow-[1px_1px_0px_0px_rgba(28,27,27,1)]">
-                {currentEditionInfo.edition}
+                {activeEdition}
               </span>
               <span className="text-secondary font-medium text-xs">
                 Official Newsletter Dispatch
@@ -100,12 +134,26 @@ export default function Home() {
           {/* Edition Theme Highlight Banner */}
           <div className="bg-tertiary-container/30 rounded-xl p-4 sm:p-5 border border-on-surface flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col gap-0.5">
-              <span className="text-[11px] font-label-bold uppercase text-secondary">Current Monthly Theme</span>
-              <div className="text-lg sm:text-xl font-bold font-sans text-on-surface">{currentEditionInfo.theme}</div>
-              <p className="text-xs text-on-surface-variant max-w-2xl">{currentEditionInfo.summary}</p>
+              <span className="text-[11px] font-label-bold uppercase text-secondary">
+                {coverStory ? 'Monthly Edition Headline' : 'Current Monthly Theme'}
+              </span>
+              <div className="text-lg sm:text-xl font-bold font-sans text-on-surface">
+                {activeTheme}
+              </div>
+              <p className="text-xs text-on-surface-variant max-w-2xl leading-relaxed">
+                {activeSummary}
+              </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {coverStory && (
+                <Link
+                  to={`/article/${coverStory.id}`}
+                  className="bg-primary text-on-primary hover:opacity-90 px-3.5 py-1.5 rounded-full text-xs font-label-bold uppercase border border-on-surface shadow-[1px_1px_0px_0px_rgba(28,27,27,1)] transition-all flex items-center gap-1"
+                >
+                  <span>Read Edition →</span>
+                </Link>
+              )}
               <a
                 href="#cover-story"
                 className="bg-surface hover:bg-surface-container-high text-on-surface px-3.5 py-1.5 rounded-full text-xs font-medium border border-on-surface shadow-[1px_1px_0px_0px_rgba(28,27,27,1)] transition-all"

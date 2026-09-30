@@ -70,11 +70,13 @@ export interface NewsletterEditionInfo {
   summary: string;
 }
 
+const currentDefaultMonthYear = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
 export const currentEditionInfo: NewsletterEditionInfo = {
   edition: 'Vol. 32',
-  monthYear: 'August 2026',
+  monthYear: currentDefaultMonthYear,
   theme: 'Autonomous Systems & Deeptech Prototyping',
-  summary: 'Celebrating a record-breaking month of hands-on innovation: 4 major events, national hackathon triumphs, and expanding the frontier of student entrepreneurship at GECT.',
+  summary: 'Celebrating a record-breaking month of hands-on innovation: major events, national hackathon triumphs, and expanding the frontier of student entrepreneurship at GECT.',
 };
 
 export const monthlyStats: MonthlyStats = {
