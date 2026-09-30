@@ -16,20 +16,6 @@ export default function About() {
         </p>
       </section>
 
-      {/* Stats Cards */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {[
-          { number: '40+', label: 'Student Startups Incubated' },
-          { number: '₹1.5Cr+', label: 'Seed Grants & Funding Raised' },
-          { number: '1200+', label: 'Active Student Members' },
-          { number: '15+', label: 'Patents & IP Filed' },
-        ].map((stat) => (
-          <div key={stat.label} className="bg-surface-container-high p-4 sm:p-5 rounded-xl border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex flex-col gap-1">
-            <span className="text-2xl sm:text-3xl font-bold font-headline-md text-primary leading-none">{stat.number}</span>
-            <span className="text-xs font-semibold text-on-surface">{stat.label}</span>
-          </div>
-        ))}
-      </section>
 
       {/* Core Initiatives */}
       <section className="flex flex-col gap-6">
