@@ -1,3 +1,5 @@
+import { generateNewsletterEmailHtml } from './emailTemplateService';
+
 const WEBHOOK_URL = import.meta.env.VITE_GOOGLE_SHEET_WEBHOOK || '';
 
 export type SubscribeResult = 'created' | 'already_subscribed' | 'resubscribed' | 'error';
@@ -74,4 +76,121 @@ export async function unsubscribe(email: string, reason?: string, feedback?: str
   }
 
   return true;
+}
+
+/**
+ * Broadcasts an editorial HTML newsletter email to all active subscribers
+ * in the connected Google Sheet via Google Apps Script.
+ */
+export async function broadcastNewsletter(article: {
+  id: string;
+  title: string;
+  subtitle?: string;
+  category?: string;
+  date?: string;
+  readTime?: string;
+  imageUrl?: string;
+  content?: { paragraphs: string[] };
+}): Promise<boolean> {
+  if (!WEBHOOK_URL) {
+    console.warn('Cannot broadcast newsletter: VITE_GOOGLE_SHEET_WEBHOOK is not configured.');
+    return false;
+  }
+
+  try {
+    const htmlBody = generateNewsletterEmailHtml({
+      id: String(article.id),
+      title: article.title,
+      subtitle: article.subtitle,
+      category: article.category || 'Monthly Newsletter',
+      date: article.date,
+      readTime: article.readTime,
+      imageUrl: article.imageUrl,
+      paragraphs: article.content?.paragraphs,
+      articleUrl: `https://iedc-newsletter.vercel.app/article/${article.id}`,
+      unsubscribeUrl: `https://iedc-newsletter.vercel.app/unsubscribe?email={{EMAIL}}`,
+    });
+
+    await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'broadcast_newsletter',
+        subject: `IEDC GECT Chronicle: ${article.title}`,
+        articleId: String(article.id),
+        title: article.title,
+        subtitle: article.subtitle || '',
+        category: article.category || 'Monthly Newsletter',
+        date: article.date || '',
+        readTime: article.readTime || '',
+        imageUrl: article.imageUrl || '',
+        articleUrl: `https://iedc-newsletter.vercel.app/article/${article.id}`,
+        unsubscribeUrl: `https://iedc-newsletter.vercel.app/unsubscribe`,
+        htmlBody,
+        timestamp: new Date().toISOString(),
+      }),
+    });
+    return true;
+  } catch (err) {
+    console.error('Failed to trigger newsletter broadcast:', err);
+    return false;
+  }
+}
+
+/**
+ * Sends a single test email of the newsletter to the admin for visual inspection.
+ */
+export async function sendTestNewsletterEmail(
+  testEmail: string,
+  article: {
+    id: string;
+    title: string;
+    subtitle?: string;
+    category?: string;
+    date?: string;
+    readTime?: string;
+    imageUrl?: string;
+    content?: { paragraphs: string[] };
+  }
+): Promise<boolean> {
+  if (!WEBHOOK_URL) {
+    alert('Google Sheet Webhook URL is not configured.');
+    return false;
+  }
+
+  const normalized = testEmail.trim().toLowerCase();
+  if (!normalized) return false;
+
+  try {
+    const htmlBody = generateNewsletterEmailHtml({
+      id: String(article.id),
+      title: article.title,
+      subtitle: article.subtitle,
+      category: article.category || 'Monthly Newsletter',
+      date: article.date,
+      readTime: article.readTime,
+      imageUrl: article.imageUrl,
+      paragraphs: article.content?.paragraphs,
+      articleUrl: `https://iedc-newsletter.vercel.app/article/${article.id}`,
+      unsubscribeUrl: `https://iedc-newsletter.vercel.app/unsubscribe?email=${encodeURIComponent(normalized)}`,
+    });
+
+    await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'test_email',
+        recipient: normalized,
+        subject: `[PREVIEW] IEDC GECT Chronicle: ${article.title}`,
+        htmlBody,
+        timestamp: new Date().toISOString(),
+      }),
+    });
+    return true;
+  } catch (err) {
+    console.error('Failed to send test email:', err);
+    return false;
+  }
 }

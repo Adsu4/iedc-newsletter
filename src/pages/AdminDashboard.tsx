@@ -7,6 +7,8 @@ import {
   fetchArticleByIdAdmin,
   checkServerConnection,
 } from '../data/articleService';
+import { broadcastNewsletter, sendTestNewsletterEmail } from '../data/subscriptionService';
+import { generateNewsletterEmailHtml } from '../data/emailTemplateService';
 import type { Article } from '../data/articles';
 
 export default function AdminDashboard() {
@@ -26,6 +28,13 @@ export default function AdminDashboard() {
   const [initialParagraphs, setInitialParagraphs] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(!isEditMode);
   const [serverStatus, setServerStatus] = useState<{ configured: boolean; online: boolean; statusText: string; url: string } | null>(null);
+
+  // Email Newsletter broadcast states
+  const [sendEmailToSubscribers, setSendEmailToSubscribers] = useState(true);
+  const [showEmailPreviewModal, setShowEmailPreviewModal] = useState(false);
+  const [testEmailAddress, setTestEmailAddress] = useState('');
+  const [isSendingTest, setIsSendingTest] = useState(false);
+  const [testSendResult, setTestSendResult] = useState<string | null>(null);
 
   const [showToolbar, setShowToolbar] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date>(new Date());
@@ -158,11 +167,38 @@ export default function AdminDashboard() {
     try {
       if (isEditMode && articleId) {
         await updateArticle(articleId, payload);
-        alert('Story updated on cloud server! Changes are live across all devices.');
+        let emailMsg = '';
+        if (category === 'Monthly Newsletter' && publishStatus === 'published' && sendEmailToSubscribers) {
+          try {
+            await broadcastNewsletter({
+              id: articleId,
+              title: payload.title,
+              subtitle: payload.subtitle,
+              category: payload.category,
+              imageUrl: payload.imageUrl,
+              content: { paragraphs: payload.paragraphs },
+            });
+            emailMsg = '\n\n📧 Newsletter broadcast sent to all active subscribers in your Google Sheet!';
+          } catch (e) {
+            console.error('Email broadcast failed:', e);
+            emailMsg = '\n\n⚠️ Story updated, but email broadcast to Google Sheet failed.';
+          }
+        }
+        alert(`Story updated on cloud server! Changes are live across all devices.${emailMsg}`);
         navigate('/admin/articles');
       } else {
         const published = await publishArticle(payload);
-        alert('Story published to cloud server! It is now live across all devices.');
+        let emailMsg = '';
+        if (category === 'Monthly Newsletter' && publishStatus === 'published' && sendEmailToSubscribers) {
+          try {
+            await broadcastNewsletter(published);
+            emailMsg = '\n\n📧 Newsletter broadcast sent to all active subscribers in your Google Sheet!';
+          } catch (e) {
+            console.error('Email broadcast failed:', e);
+            emailMsg = '\n\n⚠️ Story published, but email broadcast to Google Sheet failed.';
+          }
+        }
+        alert(`Story published to cloud server! It is now live across all devices.${emailMsg}`);
         if (publishStatus === 'published') {
           navigate(`/article/${published.id}`);
         } else {
@@ -207,6 +243,34 @@ export default function AdminDashboard() {
       console.error('Save draft failed:', err);
     } finally {
       setIsPublishing(false);
+    }
+  };
+
+  const handleSendTestEmail = async () => {
+    if (!testEmailAddress.trim() || !testEmailAddress.includes('@')) {
+      alert('Please enter a valid email address to send the test email to.');
+      return;
+    }
+    setIsSendingTest(true);
+    setTestSendResult(null);
+    const paragraphs = extractParagraphs();
+    const testArticle = {
+      id: articleId || 'test-edition',
+      title: title.trim() || 'Untitled Monthly Edition',
+      subtitle: subtitle.trim() || 'Official Innovation & Startup Report from GECT',
+      category,
+      date: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+      readTime: '3 min read',
+      imageUrl: coverImageUrl,
+      content: { paragraphs },
+    };
+
+    const success = await sendTestNewsletterEmail(testEmailAddress, testArticle);
+    setIsSendingTest(false);
+    if (success) {
+      setTestSendResult(`✅ Preview email dispatched to ${testEmailAddress}! Check your inbox in 10-30 seconds.`);
+    } else {
+      setTestSendResult('❌ Failed to send preview email. Verify your Google Sheet Webhook URL.');
     }
   };
 
@@ -411,6 +475,50 @@ export default function AdminDashboard() {
             )}
           </div>
 
+          {/* Email Broadcast Section (Active for Monthly Newsletter) */}
+          {category === 'Monthly Newsletter' && (
+            <div className="p-4 rounded-xl border-2 border-primary/30 bg-primary/5 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <span className="text-label-bold font-label-bold uppercase text-primary text-xs flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px]">forward_to_inbox</span>
+                  Subscriber Broadcast
+                </span>
+                <span className="text-[10px] bg-primary text-on-primary px-2 py-0.5 rounded-full font-bold uppercase">
+                  Google Sheet
+                </span>
+              </div>
+
+              <label className="flex items-start gap-2.5 text-xs text-on-surface cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={sendEmailToSubscribers}
+                  onChange={(e) => setSendEmailToSubscribers(e.target.checked)}
+                  className="mt-0.5 rounded border-outline-variant text-primary focus:ring-primary accent-primary"
+                />
+                <span className="leading-snug">
+                  <strong>Send HTML email</strong> to all active subscribers in Google Sheet upon publishing.
+                </span>
+              </label>
+
+              <div className="flex flex-col gap-2 pt-2 border-t border-primary/20">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTestSendResult(null);
+                    setShowEmailPreviewModal(true);
+                  }}
+                  className="w-full py-2 px-3 bg-surface border-2 border-primary text-primary hover:bg-primary hover:text-on-primary rounded-lg text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 shadow-[2px_2px_0px_0px_rgba(194,94,55,1)] hover:shadow-none"
+                >
+                  <span className="material-symbols-outlined text-[16px]">visibility</span>
+                  Preview Email & Send Test
+                </button>
+                <p className="text-[10px] text-secondary leading-tight">
+                  Styled with GECT banner, Read More button, and Unsubscribe link.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Schedule */}
           <div>
             <span className="block text-label-bold font-label-bold uppercase text-secondary mb-3">Schedule</span>
@@ -450,6 +558,113 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Email Preview & Test Send Modal */}
+      {showEmailPreviewModal && (
+        <div
+          className="fixed inset-0 bg-on-surface/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 md:p-6"
+          onClick={() => setShowEmailPreviewModal(false)}
+        >
+          <div
+            className="bg-surface rounded-2xl border-4 border-on-surface shadow-[10px_10px_0px_0px_rgba(28,27,27,1)] max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-4 md:p-6 border-b-2 border-on-surface bg-surface-container flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 bg-primary text-on-primary rounded-lg flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[18px]">mail</span>
+                </span>
+                <div>
+                  <h3 className="font-bold text-base uppercase text-on-surface leading-tight">
+                    HTML Newsletter Email Preview
+                  </h3>
+                  <p className="text-xs text-secondary">
+                    Exact formatting delivered to subscribers with Read More and Unsubscribe buttons
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowEmailPreviewModal(false)}
+                className="w-8 h-8 rounded-full border border-on-surface flex items-center justify-center text-on-surface hover:bg-on-surface hover:text-surface transition-colors"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+
+            {/* Test Send Bar */}
+            <div className="px-4 md:px-6 py-3 bg-surface-container-high border-b border-outline-variant flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs">
+              <div className="flex-1 flex items-center gap-2">
+                <span className="font-bold text-on-surface whitespace-nowrap">Send Test Preview:</span>
+                <input
+                  type="email"
+                  placeholder="admin@iedc.ac.in"
+                  value={testEmailAddress}
+                  onChange={(e) => setTestEmailAddress(e.target.value)}
+                  className="flex-1 px-3 py-1.5 rounded-lg border border-on-surface bg-surface text-xs focus:outline-none focus:border-primary"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleSendTestEmail}
+                disabled={isSendingTest}
+                className="px-4 py-1.5 bg-primary text-on-primary font-bold uppercase rounded-lg border border-on-surface hover:bg-surface-tint transition-all disabled:opacity-50 flex items-center justify-center gap-1 shrink-0"
+              >
+                {isSendingTest ? (
+                  <>
+                    <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[14px]">send</span>
+                    Send Test Email
+                  </>
+                )}
+              </button>
+            </div>
+
+            {testSendResult && (
+              <div className="px-6 py-2 text-xs font-medium border-b border-outline-variant bg-surface">
+                {testSendResult}
+              </div>
+            )}
+
+            {/* Preview Iframe */}
+            <div className="flex-1 overflow-y-auto p-4 bg-[#F6F4ED] min-h-[420px]">
+              <iframe
+                title="Email Preview"
+                srcDoc={generateNewsletterEmailHtml({
+                  id: articleId || 'preview',
+                  title: title.trim() || 'Untitled Monthly Edition',
+                  subtitle: subtitle.trim() || 'Innovation & Entrepreneurship Development Centre monthly report',
+                  category: category || 'Monthly Newsletter',
+                  date: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+                  readTime: '3 min read',
+                  imageUrl: coverImageUrl,
+                  paragraphs: extractParagraphs(),
+                  articleUrl: `https://iedc-newsletter.vercel.app/article/${articleId || 'preview'}`,
+                  unsubscribeUrl: 'https://iedc-newsletter.vercel.app/unsubscribe?email=test@example.com',
+                })}
+                className="w-full h-full min-h-[480px] border-none rounded-xl bg-transparent"
+              />
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t-2 border-on-surface bg-surface flex justify-between items-center text-xs">
+              <span className="text-secondary">
+                Subscribers list fetched from your connected Google Sheet.
+              </span>
+              <button
+                onClick={() => setShowEmailPreviewModal(false)}
+                className="px-5 py-2 bg-on-surface text-surface rounded-full font-bold uppercase hover:bg-primary hover:text-on-primary transition-colors border border-on-surface"
+              >
+                Done Previewing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
