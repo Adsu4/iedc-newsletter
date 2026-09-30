@@ -3,32 +3,91 @@
  * IEDC GECT Innovation Chronicle - Google Apps Script Backend
  * ==============================================================================
  * 
- * Instructions:
- * 1. Open your Google Sheet where subscribers are collected.
- * 2. In the menu, go to: Extensions > Apps Script
- * 3. Replace all existing code in the editor with this entire file.
- * 4. Click "Save" (disk icon).
- * 5. Click "Deploy" > "Manage deployments" > Edit current deployment (or "New deployment").
- *    - Type: Web app
- *    - Description: IEDC Newsletter & Broadcast v2
- *    - Execute as: Me (your Google account)
- *    - Who has access: Anyone
- * 6. Click "Deploy" and authorize the script permissions (Gmail and Sheets).
- * 7. Copy the Web App URL (ends with /exec).
+ * IMPORTANT: ONE-TIME PERMISSION AUTHORIZATION (Takes 30 seconds)
+ * 1. In the Apps Script toolbar at the top, find the function dropdown.
+ * 2. Select "testAuth" from the dropdown.
+ * 3. Click "▷ Run".
+ * 4. Google will show a popup: "Authorization required".
+ * 5. Click "Review permissions" -> Select your Google account (iedc@gectcr.ac.in or your account).
+ * 6. Click "Advanced" (small link at bottom left of popup) -> Click "Go to Untitled project (unsafe)".
+ * 7. Click "Allow".
+ * 
+ * SENDER EMAIL:
+ * - If this script is run from the iedc@gectcr.ac.in Google account, emails will
+ *   automatically be sent FROM iedc@gectcr.ac.in.
+ * - If run from another account, it sets the sender display name to
+ *   "IEDC GECT Innovation Chronicle" and replyTo to "iedc@gectcr.ac.in".
+ *   (You can also add iedc@gectcr.ac.in as a 'Send mail as' alias in Gmail settings).
  * ==============================================================================
  */
 
 // Name of sheets inside your spreadsheet
 const SUBSCRIBERS_SHEET_NAME = 'Subscribers';
 const LOGS_SHEET_NAME = 'Broadcast_Logs';
+const OFFICIAL_EMAIL = 'iedc@gectcr.ac.in';
+
+/**
+ * ⚡ RUN THIS FUNCTION ONCE INSIDE APPS SCRIPT TO GRANT EMAIL PERMISSION
+ * In the top dropdown, select "testAuth", then click "▷ Run".
+ */
+function testAuth() {
+  Logger.log('Starting authorization check...');
+  const activeUser = Session.getActiveUser().getEmail();
+  Logger.log('Active executing user: ' + activeUser);
+
+  const testSubject = '[VERIFICATION] IEDC GECT Chronicle - Email Authorization';
+  const testHtml = '<div style="font-family: sans-serif; padding: 20px; border: 2px solid #1C1B1B; border-radius: 8px;">' +
+    '<h2 style="color: #C25E37; margin-top: 0;">Authorization Successful!</h2>' +
+    '<p>Your Google Apps Script is now fully authorized to send newsletter emails.</p>' +
+    '<p><strong>Sender:</strong> ' + activeUser + '</p>' +
+    '<p><strong>Official Contact:</strong> ' + OFFICIAL_EMAIL + '</p>' +
+    '</div>';
+
+  sendInnovationEmail(activeUser, testSubject, testHtml);
+  Logger.log('Success! Test verification email sent to: ' + activeUser);
+}
+
+/**
+ * Robust Email Sender: Sets official name, replyTo, and from alias when available
+ */
+function sendInnovationEmail(recipient, subject, htmlBody) {
+  const options = {
+    htmlBody: htmlBody,
+    name: 'IEDC GECT Innovation Chronicle',
+    replyTo: OFFICIAL_EMAIL,
+  };
+
+  // If executing account has iedc@gectcr.ac.in configured as an alias, use it as 'from'
+  try {
+    const aliases = GmailApp.getAliases();
+    if (aliases && aliases.indexOf(OFFICIAL_EMAIL) > -1) {
+      options.from = OFFICIAL_EMAIL;
+    }
+  } catch (aliasErr) {
+    Logger.log('Alias check note: ' + aliasErr.toString());
+  }
+
+  try {
+    GmailApp.sendEmail(recipient, subject, '', options);
+  } catch (gmailErr) {
+    Logger.log('GmailApp send error, falling back to MailApp: ' + gmailErr.toString());
+    MailApp.sendEmail({
+      to: recipient,
+      subject: subject,
+      htmlBody: htmlBody,
+      name: 'IEDC GECT Innovation Chronicle',
+      replyTo: OFFICIAL_EMAIL,
+    });
+  }
+}
 
 /**
  * Handle GET requests (health check, subscriber verification, count)
  */
 function doGet(e) {
   try {
-    const action = e.parameter.action;
-    const email = (e.parameter.email || '').trim().toLowerCase();
+    const action = e ? e.parameter.action : '';
+    const email = e && e.parameter.email ? e.parameter.email.trim().toLowerCase() : '';
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = getOrCreateSheet(ss, SUBSCRIBERS_SHEET_NAME, ['Email', 'Status', 'Subscribed At', 'Unsubscribed At', 'Reason', 'Feedback']);
@@ -90,14 +149,8 @@ function doPost(e) {
       const subject = data.subject || '[PREVIEW] IEDC GECT Innovation Chronicle';
       const htmlBody = data.htmlBody || '<p>Test email preview</p>';
 
-      MailApp.sendEmail({
-        to: recipient,
-        subject: subject,
-        htmlBody: htmlBody,
-        name: 'IEDC GECT Innovation Chronicle',
-      });
-
-      return jsonResponse({ success: true, message: 'Test email sent to ' + recipient });
+      sendInnovationEmail(recipient, subject, htmlBody);
+      return jsonResponse({ success: true, message: 'Test email successfully dispatched to ' + recipient });
     }
 
     // 4. BROADCAST NEWSLETTER TO ALL SUBSCRIBERS
@@ -124,15 +177,10 @@ function doPost(e) {
             .replace(/\{\{EMAIL\}\}/g, encodeURIComponent(subscriberEmail))
             .replace(/\{\{UNSUBSCRIBE_URL\}\}/g, 'https://iedc-newsletter.vercel.app/unsubscribe?email=' + encodeURIComponent(subscriberEmail));
 
-          MailApp.sendEmail({
-            to: subscriberEmail,
-            subject: subject,
-            htmlBody: personalizedHtml,
-            name: 'IEDC GECT Innovation Chronicle',
-          });
+          sendInnovationEmail(subscriberEmail, subject, personalizedHtml);
 
           sentCount++;
-          // Pause slightly between sends to respect Google quota
+          // Pause slightly between sends to respect Google rate limits
           Utilities.sleep(150);
         } catch (mailErr) {
           failedCount++;
