@@ -17,7 +17,16 @@ export default function ArticleDetail() {
     if (id) {
       if (id === 'latest' || id === 'test-edition' || id === 'preview') {
         getAllArticles().then((all) => {
-          const newsletter = all.find((a) => a.category === 'Monthly Newsletter' || a.category === 'Newsletter') || all[0];
+          const isNewsletter = (a: Article) => {
+            const cat = a.category?.trim().toLowerCase();
+            return cat === 'monthly newsletter' || cat === 'newsletter' || cat === 'latest edition';
+          };
+          const newsletters = all.filter(isNewsletter).sort((a, b) => {
+            const timeA = a.createdAt ? new Date(a.createdAt).getTime() : Number(a.id) || 0;
+            const timeB = b.createdAt ? new Date(b.createdAt).getTime() : Number(b.id) || 0;
+            return timeB - timeA;
+          });
+          const newsletter = newsletters[0] || all[0];
           setArticle(newsletter || null);
           setRecommended(all.filter((a) => a.id !== newsletter?.id).slice(0, 2));
         });

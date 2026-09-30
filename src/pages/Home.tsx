@@ -63,22 +63,44 @@ export default function Home() {
     return unsubscribe;
   }, []);
 
-  // Priority: If there is an article with category 'Monthly Newsletter' or 'Latest Edition', prefer it as coverStory
-  const newsletterArticle = articlesList.find(
-    (a) => a.category === 'Monthly Newsletter' || a.category === 'Newsletter' || a.category === 'Latest Edition'
-  );
-  const coverStory = newsletterArticle || articlesList[0];
+  // Helper to identify Monthly Newsletter articles
+  const isMonthlyNewsletter = (a?: Article | null): boolean => {
+    if (!a || !a.category) return false;
+    const cat = a.category.trim().toLowerCase();
+    return cat === 'monthly newsletter' || cat === 'newsletter' || cat === 'latest edition';
+  };
+
+  // STRICT: Only articles with 'Monthly Newsletter' tag, sorted by newest first
+  const monthlyNewsletters = articlesList
+    .filter(isMonthlyNewsletter)
+    .sort((a, b) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : Number(a.id) || 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : Number(b.id) || 0;
+      return timeB - timeA;
+    });
+
+  // The latest published Monthly Newsletter edition (null if none published yet)
+  const latestMonthlyNewsletter = monthlyNewsletters[0] || null;
+
+  // The primary coverStory: if a monthly newsletter exists, use it. Otherwise fallback to the latest general article.
+  const coverStory = latestMonthlyNewsletter || articlesList[0] || null;
   const otherStories = articlesList.filter((a) => a.id !== coverStory?.id);
   const executiveBriefs = otherStories.slice(0, 2);
   const moreStories = otherStories.slice(2, 6);
 
   // Dynamic Month & Edition resolution (Zero hardcoding)
-  const activeMonthYear = formatFullMonthYear(coverStory?.date || editionInfo?.monthYear);
+  const activeMonthYear = formatFullMonthYear(latestMonthlyNewsletter?.date || coverStory?.date || editionInfo?.monthYear);
   const activeEdition = editionInfo?.edition && editionInfo.edition !== 'Vol. 32'
     ? editionInfo.edition
-    : `Vol. ${articlesList.length > 0 ? articlesList.length : 1}`;
-  const activeTheme = coverStory?.title || editionInfo?.theme || 'Campus Innovation & Tech Dispatch';
-  const activeSummary = coverStory?.subtitle || editionInfo?.summary || "Govt. Engineering College Thrissur's official monthly report on student projects, grants, and startup breakthroughs.";
+    : `Vol. ${monthlyNewsletters.length > 0 ? monthlyNewsletters.length : 1}`;
+
+  // STRICT REQUIREMENT: Only the latest article tagged with 'Monthly Newsletter' appears in this headline slot!
+  const heroEditionTitle = latestMonthlyNewsletter
+    ? latestMonthlyNewsletter.title
+    : (editionInfo?.theme || 'Campus Innovation & Tech Dispatch');
+  const heroEditionSummary = latestMonthlyNewsletter
+    ? latestMonthlyNewsletter.subtitle
+    : (editionInfo?.summary || "Govt. Engineering College Thrissur's official monthly report on student projects, grants, and startup breakthroughs.");
 
   const briefCardColors = [
     'bg-secondary-container',
@@ -146,23 +168,30 @@ export default function Home() {
           <div className="bg-tertiary-container/30 rounded-xl p-4 sm:p-5 border border-on-surface flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col gap-0.5">
               <span className="text-[11px] font-label-bold uppercase text-secondary">
-                {coverStory ? 'Monthly Edition Headline' : 'Current Monthly Theme'}
+                {latestMonthlyNewsletter ? 'Monthly Edition Headline' : 'Current Monthly Theme'}
               </span>
               <div className="text-lg sm:text-xl font-bold font-sans text-on-surface">
-                {activeTheme}
+                {heroEditionTitle}
               </div>
               <p className="text-xs text-on-surface-variant max-w-2xl leading-relaxed">
-                {activeSummary}
+                {heroEditionSummary}
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2 shrink-0">
-              {coverStory && (
+              {latestMonthlyNewsletter ? (
                 <Link
-                  to={`/article/${coverStory.id}`}
+                  to={`/article/${latestMonthlyNewsletter.id}`}
                   className="bg-primary text-on-primary hover:opacity-90 px-3.5 py-1.5 rounded-full text-xs font-label-bold uppercase border border-on-surface shadow-[1px_1px_0px_0px_rgba(28,27,27,1)] transition-all flex items-center gap-1"
                 >
                   <span>Read Edition →</span>
+                </Link>
+              ) : (
+                <Link
+                  to="/archive"
+                  className="bg-primary text-on-primary hover:opacity-90 px-3.5 py-1.5 rounded-full text-xs font-label-bold uppercase border border-on-surface shadow-[1px_1px_0px_0px_rgba(28,27,27,1)] transition-all flex items-center gap-1"
+                >
+                  <span>Explore Archive →</span>
                 </Link>
               )}
               <a
