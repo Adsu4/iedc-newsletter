@@ -3,6 +3,17 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const LOCAL_STORAGE_KEY = 'iedc_published_articles_v2';
 const DELETED_IDS_KEY = 'iedc_deleted_article_ids_v2';
+const UPDATE_EVENT = 'iedc_articles_updated';
+
+// --- Fast Network Timeout Helper (Max 1200ms guard to prevent UI hanging) ---
+function withTimeout<T = any>(promise: any, ms = 1200): Promise<T> {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Network timeout after ${ms}ms`)), ms)
+    ),
+  ]);
+}
 
 // --- HTML Sanitization ---
 function sanitizeHtml(input: string): string {
@@ -58,15 +69,53 @@ function saveLocalArticles(articlesList: Article[]): void {
   }
 }
 
-// --- Cross-tab sync ---
+/** Instant synchronous retrieval of publicly visible articles (0ms, no network delay) */
+export function getLocalArticlesSync(): Article[] {
+  const deletedIds = getDeletedIds();
+  const all = getLocalArticles();
+  const now = new Date();
+  return all
+    .filter((a) => !deletedIds.includes(String(a.id)))
+    .filter((a) => {
+      if (a.status === 'draft') return false;
+      if (a.status === 'scheduled') {
+        if (!a.scheduledFor) return false;
+        return new Date(a.scheduledFor) <= now;
+      }
+      return true;
+    });
+}
+
+/** Instant synchronous retrieval of all articles for Admin (0ms, no network delay) */
+export function getLocalArticlesAdminSync(): Article[] {
+  const deletedIds = getDeletedIds();
+  const all = getLocalArticles();
+  return all.filter((a) => !deletedIds.includes(String(a.id)));
+}
+
+/** Notify active views across tabs and in the current window */
+export function notifyArticlesUpdated(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(UPDATE_EVENT));
+  }
+}
+
+// --- Cross-tab & In-App Sync ---
 export function onArticlesChange(callback: () => void): () => void {
+  if (typeof window === 'undefined') return () => {};
   const handler = (e: StorageEvent) => {
     if (e.key === LOCAL_STORAGE_KEY || e.key === DELETED_IDS_KEY) {
       callback();
     }
   };
+  const inAppHandler = () => callback();
+
   window.addEventListener('storage', handler);
-  return () => window.removeEventListener('storage', handler);
+  window.addEventListener(UPDATE_EVENT, inAppHandler);
+  return () => {
+    window.removeEventListener('storage', handler);
+    window.removeEventListener(UPDATE_EVENT, inAppHandler);
+  };
 }
 
 // --- Supabase row mapper ---
@@ -113,26 +162,24 @@ function toSupabaseRow(article: Article): Record<string, unknown> {
 /** Get all articles for admin (filters out deleted IDs) */
 export async function getAllArticlesAdmin(): Promise<Article[]> {
   const deletedIds = getDeletedIds();
-  let list: Article[] = [];
+  let list: Article[] = getLocalArticles();
 
   if (isSupabaseConfigured && supabase) {
     try {
-      const { data, error } = await supabase
-        .from('articles')
-        .select('*')
-        .order('createdAt', { ascending: false });
+      const res = await withTimeout<any>(
+        supabase
+          .from('articles')
+          .select('*')
+          .order('createdAt', { ascending: false }),
+        1200
+      );
 
-      if (!error && data && data.length > 0) {
-        list = data.map(mapSupabaseRow);
-      } else {
-        list = getLocalArticles();
+      if (!res.error && res.data && res.data.length > 0) {
+        list = res.data.map(mapSupabaseRow);
       }
     } catch (err) {
-      console.warn('Supabase fetch failed, falling back to local:', err);
-      list = getLocalArticles();
+      console.warn('Supabase fetch failed or timed out, using local storage:', err);
     }
-  } else {
-    list = getLocalArticles();
   }
 
   // Filter out any IDs marked as deleted
@@ -178,6 +225,7 @@ export interface CreateArticlePayload {
   authorAvatar?: string;
   status?: Article['status'];
   scheduledFor?: string;
+  featured?: boolean;
 }
 
 export async function publishArticle(payload: CreateArticlePayload): Promise<Article> {
@@ -189,16 +237,18 @@ export async function publishArticle(payload: CreateArticlePayload): Promise<Art
   const minutes = Math.max(1, Math.ceil(totalWords / 200));
   const readTime = `${minutes} min read`;
 
+  const isNewsletter = payload.category === 'Monthly Newsletter' || payload.category === 'Newsletter' || payload.category === 'Latest Edition';
+
   const newArticle: Article = {
     id: newId,
     title: sanitizeHtml(payload.title || 'Untitled Story'),
     subtitle: sanitizeHtml(payload.subtitle || 'No subtitle provided.'),
     category: payload.category || 'Tech Update',
-    categoryColor: payload.categoryColor || 'primary',
+    categoryColor: payload.categoryColor || (isNewsletter ? 'primary' : 'primary'),
     date: formattedDate,
     readTime,
     imageUrl: payload.imageUrl || '',
-    featured: false,
+    featured: isNewsletter || payload.featured || false,
     status: payload.status || 'published',
     scheduledFor: payload.scheduledFor || undefined,
     content: {
@@ -208,34 +258,36 @@ export async function publishArticle(payload: CreateArticlePayload): Promise<Art
     },
     author: {
       name: payload.authorName || 'Admin User',
-      role: payload.authorRole || 'IEDC Editorial',
+      role: isNewsletter ? 'IEDC Chief Editor' : (payload.authorRole || 'IEDC Editorial'),
       avatarUrl: payload.authorAvatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuDp6-LO5wbh6CTC36gJGeJayrbGtizLZWUlH9INz99YIJjIvsgYIZWEI3FCpw0i_0qiTUtAr6wPwhbUntODV_DKp16HJ_i97nWITmL3RCUSGrO0UEQgfLjdcaub8MJ1eBmE7L8UKpcRIhK6qh2roHWO8mK9WHTiHouOVak3xxVFkkI027MEgVlLW2Wt-YE2_7_p67F0NuRnWR6AOvYY3tYmko7Kd-N5jpyO_R33j4KF_IVtKvrukoEY2Q',
     },
     createdAt: now.toISOString(),
   };
 
-  if (isSupabaseConfigured && supabase) {
-    try {
-      const { error } = await supabase.from('articles').insert([toSupabaseRow(newArticle)]);
-      if (error) console.error('Supabase insert error:', error);
-    } catch (err) {
-      console.error('Supabase insert exception:', err);
-    }
-  }
-
+  // 1. SAVE LOCALLY IMMEDIATELY (0ms, synchronous, instant UI!)
   const currentLocal = getLocalArticles();
   saveLocalArticles([newArticle, ...currentLocal]);
+  notifyArticlesUpdated();
+
+  // 2. BACKGROUND SYNC TO SUPABASE (Non-blocking with timeout)
+  if (isSupabaseConfigured && supabase) {
+    withTimeout(supabase.from('articles').insert([toSupabaseRow(newArticle)]), 2000)
+      .catch((err) => console.warn('Background Supabase insert skipped/failed:', err));
+  }
+
   return newArticle;
 }
 
 // --- Update ---
 export async function updateArticle(id: string, payload: Partial<CreateArticlePayload>): Promise<Article | null> {
   const targetId = String(id);
-  const all = await getAllArticlesAdmin();
+  const all = getLocalArticles();
   const idx = all.findIndex((a) => String(a.id) === targetId);
   if (idx === -1) return null;
 
   const existing = all[idx];
+  const isNewsletter = (payload.category || existing.category) === 'Monthly Newsletter' || (payload.category || existing.category) === 'Newsletter';
+
   const updated: Article = {
     ...existing,
     title: payload.title !== undefined ? sanitizeHtml(payload.title) : existing.title,
@@ -244,6 +296,7 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
     categoryColor: payload.categoryColor ?? existing.categoryColor,
     imageUrl: payload.imageUrl ?? existing.imageUrl,
     status: payload.status ?? existing.status,
+    featured: isNewsletter ? true : (payload.featured ?? existing.featured),
     scheduledFor: payload.scheduledFor ?? existing.scheduledFor,
     content: payload.paragraphs ? {
       paragraphs: sanitizeParagraphs(payload.paragraphs),
@@ -257,20 +310,22 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
     updated.readTime = `${Math.max(1, Math.ceil(totalWords / 200))} min read`;
   }
 
-  if (isSupabaseConfigured && supabase) {
-    try {
-      const { error } = await supabase
-        .from('articles')
-        .update(toSupabaseRow(updated))
-        .eq('id', targetId);
-      if (error) console.error('Supabase update error:', error);
-    } catch (err) {
-      console.error('Supabase update exception:', err);
-    }
-  }
-
+  // 1. Save locally immediately
   all[idx] = updated;
   saveLocalArticles(all);
+  notifyArticlesUpdated();
+
+  // 2. Background sync to Supabase
+  if (isSupabaseConfigured && supabase) {
+    withTimeout(
+      supabase
+        .from('articles')
+        .update(toSupabaseRow(updated))
+        .eq('id', targetId),
+      2000
+    ).catch((err) => console.warn('Background Supabase update skipped/failed:', err));
+  }
+
   return updated;
 }
 
@@ -281,19 +336,16 @@ export async function deleteArticle(id: string): Promise<boolean> {
   // Mark as deleted in local persistent tracking
   addDeletedId(targetId);
 
-  // Update local storage array
+  // Update local storage array immediately
   const allLocal = getLocalArticles();
   const filteredLocal = allLocal.filter((a) => String(a.id) !== targetId);
   saveLocalArticles(filteredLocal);
+  notifyArticlesUpdated();
 
-  // Delete from Supabase cloud table if connected
+  // Delete from Supabase in background
   if (isSupabaseConfigured && supabase) {
-    try {
-      const { error } = await supabase.from('articles').delete().eq('id', targetId);
-      if (error) console.error('Supabase delete error:', error);
-    } catch (err) {
-      console.error('Supabase delete exception:', err);
-    }
+    withTimeout(supabase.from('articles').delete().eq('id', targetId), 2000)
+      .catch((err) => console.warn('Background Supabase delete skipped/failed:', err));
   }
 
   return true;
@@ -307,17 +359,18 @@ export async function uploadCoverImage(file: File): Promise<string> {
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `covers/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      const uploadPromise = supabase.storage
         .from('article-covers')
         .upload(filePath, file);
 
-      if (!uploadError) {
+      const res = await withTimeout(uploadPromise, 1500);
+
+      if (!res.error) {
         const { data } = supabase.storage.from('article-covers').getPublicUrl(filePath);
         return data.publicUrl;
       }
-      console.error('Storage upload error:', uploadError);
     } catch (e) {
-      console.error('Storage upload exception:', e);
+      console.warn('Storage upload fallback to base64 data URL:', e);
     }
   }
 

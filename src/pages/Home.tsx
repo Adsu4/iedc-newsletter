@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { getAllArticles } from '../data/articleService';
+import { getAllArticles, getLocalArticlesSync, onArticlesChange } from '../data/articleService';
 import { subscribe } from '../data/subscriptionService';
 import { currentEditionInfo, type NewsletterEditionInfo } from '../data/newsletterData';
 import { fetchCurrentEdition } from '../data/editionService';
@@ -40,7 +40,7 @@ function formatFullMonthYear(dateStr?: string): string {
 }
 
 export default function Home() {
-  const [articlesList, setArticlesList] = useState<Article[]>([]);
+  const [articlesList, setArticlesList] = useState<Article[]>(() => getLocalArticlesSync());
   const [editionInfo, setEditionInfo] = useState<NewsletterEditionInfo>(currentEditionInfo);
   const [subEmail, setSubEmail] = useState('');
   const [subStatus, setSubStatus] = useState<'idle' | 'sending' | 'success' | 'already_subscribed' | 'resubscribed' | 'error'>('idle');
@@ -49,17 +49,28 @@ export default function Home() {
   useEffect(() => {
     getAllArticles().then(setArticlesList);
     fetchCurrentEdition().then(setEditionInfo);
+
+    const unsubscribe = onArticlesChange(() => {
+      setArticlesList(getLocalArticlesSync());
+    });
+
     if (window.location.hash === '#newsletter') {
       setTimeout(() => {
         newsletterRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 200);
     }
+
+    return unsubscribe;
   }, []);
 
-  // Strict non-overlapping article slicing so nothing appears twice
-  const coverStory = articlesList[0];
-  const executiveBriefs = articlesList.slice(1, 3);
-  const moreStories = articlesList.slice(3, 7);
+  // Priority: If there is an article with category 'Monthly Newsletter' or 'Latest Edition', prefer it as coverStory
+  const newsletterArticle = articlesList.find(
+    (a) => a.category === 'Monthly Newsletter' || a.category === 'Newsletter' || a.category === 'Latest Edition'
+  );
+  const coverStory = newsletterArticle || articlesList[0];
+  const otherStories = articlesList.filter((a) => a.id !== coverStory?.id);
+  const executiveBriefs = otherStories.slice(0, 2);
+  const moreStories = otherStories.slice(2, 6);
 
   // Dynamic Month & Edition resolution (Zero hardcoding)
   const activeMonthYear = formatFullMonthYear(coverStory?.date || editionInfo?.monthYear);

@@ -24,14 +24,23 @@ export function saveLocalEditions(editions: NewsletterEditionInfo[]) {
 }
 
 export async function fetchCurrentEdition(): Promise<NewsletterEditionInfo> {
+  const localEditions = getLocalEditions();
+  const defaultEdition = localEditions[0] || currentEditionInfo;
+
   if (isSupabaseConfigured && supabase) {
     try {
-      const { data, error } = await supabase
+      const editionPromise = supabase
         .from('editions')
         .select('*')
         .order('createdAt', { ascending: false })
         .limit(1)
         .single();
+
+      const timeoutPromise = new Promise<{ data: any; error: any }>((_, reject) =>
+        setTimeout(() => reject(new Error('Edition fetch timeout')), 1000)
+      );
+
+      const { data, error } = await Promise.race([editionPromise, timeoutPromise]);
 
       if (!error && data) {
         return {
@@ -42,10 +51,9 @@ export async function fetchCurrentEdition(): Promise<NewsletterEditionInfo> {
         };
       }
     } catch (err) {
-      console.warn('Supabase fetch failed for editions, falling back to local:', err);
+      console.warn('Supabase fetch failed or timed out for editions, using local:', err);
     }
   }
   
-  const localEditions = getLocalEditions();
-  return localEditions[0] || currentEditionInfo;
+  return defaultEdition;
 }

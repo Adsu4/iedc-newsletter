@@ -1,15 +1,23 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, Navigate } from 'react-router-dom';
-import { fetchArticleById, getAllArticles } from '../data/articleService';
+import { fetchArticleById, getAllArticles, getLocalArticlesSync } from '../data/articleService';
 import type { Article } from '../data/articles';
 
 export default function ArticleDetail() {
   const { id } = useParams<{ id: string }>();
-  const [article, setArticle] = useState<Article | null | undefined>(undefined);
-  const [recommended, setRecommended] = useState<Article[]>([]);
+  const [article, setArticle] = useState<Article | null | undefined>(() => {
+    if (!id) return undefined;
+    return getLocalArticlesSync().find((a) => String(a.id) === String(id));
+  });
+  const [recommended, setRecommended] = useState<Article[]>(() => {
+    return getLocalArticlesSync().filter((a) => String(a.id) !== String(id)).slice(0, 2);
+  });
 
   useEffect(() => {
     if (id) {
+      const immediate = getLocalArticlesSync().find((a) => String(a.id) === String(id));
+      if (immediate) setArticle(immediate);
+
       fetchArticleById(id).then((art) => {
         setArticle(art || null);
       });

@@ -1,17 +1,26 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getAllArticles } from '../data/articleService';
+import { getAllArticles, getLocalArticlesSync, onArticlesChange } from '../data/articleService';
 import type { Article } from '../data/articles';
 
 export default function TopStories() {
-  const [articlesList, setArticlesList] = useState<Article[]>([]);
+  const [articlesList, setArticlesList] = useState<Article[]>(() => getLocalArticlesSync());
 
   useEffect(() => {
     getAllArticles().then(setArticlesList);
+
+    const unsubscribe = onArticlesChange(() => {
+      setArticlesList(getLocalArticlesSync());
+    });
+
+    return unsubscribe;
   }, []);
 
-  const topPick = articlesList[0];
-  const spotlightStories = articlesList.slice(1, 5);
+  const newsletterArticle = articlesList.find(
+    (a) => a.category === 'Monthly Newsletter' || a.category === 'Newsletter' || a.category === 'Latest Edition'
+  );
+  const topPick = newsletterArticle || articlesList[0];
+  const spotlightStories = articlesList.filter((a) => a.id !== topPick?.id).slice(0, 4);
 
   return (
     <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8 md:py-14 flex flex-col gap-8 md:gap-12">

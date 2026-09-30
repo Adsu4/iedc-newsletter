@@ -10,7 +10,7 @@ export default function AdminDashboard() {
 
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
-  const [category, setCategory] = useState('Tech Update');
+  const [category, setCategory] = useState('Monthly Newsletter');
   const [categoryColor, setCategoryColor] = useState<Article['categoryColor']>('primary');
   const [coverImageUrl, setCoverImageUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
@@ -339,28 +339,35 @@ export default function AdminDashboard() {
 
           {/* Topic */}
           <div>
-            <span className="block text-label-bold font-label-bold uppercase text-secondary mb-3">Topic</span>
+            <span className="block text-label-bold font-label-bold uppercase text-secondary mb-3">Topic / Tag</span>
             <div className="flex flex-wrap gap-2">
               {[
-                { name: 'Tech Update', color: 'primary' as const },
-                { name: 'Event', color: 'secondary' as const },
-                { name: 'Project', color: 'tertiary' as const },
-                { name: 'Robotics', color: 'primary' as const },
+                { name: 'Monthly Newsletter', label: '⭐ Monthly Newsletter', color: 'primary' as const },
+                { name: 'Tech Update', label: 'Tech Update', color: 'secondary' as const },
+                { name: 'Event', label: 'Event', color: 'secondary' as const },
+                { name: 'Project', label: 'Project', color: 'tertiary' as const },
+                { name: 'Robotics', label: 'Robotics', color: 'primary' as const },
+                { name: 'Alumni', label: 'Alumni', color: 'tertiary' as const },
               ].map((t) => (
                 <button
                   key={t.name}
                   type="button"
                   onClick={() => { setCategory(t.name); setCategoryColor(t.color); }}
-                  className={`px-3 py-1.5 rounded-full border text-label-md font-label-md transition-colors ${
+                  className={`px-3 py-1.5 rounded-full border text-label-md font-label-md transition-all ${
                     category === t.name
-                      ? 'border-primary bg-primary text-on-primary shadow-sm'
+                      ? 'border-primary bg-primary text-on-primary shadow-sm font-bold scale-105'
                       : 'border-outline-variant text-secondary hover:bg-surface-container'
                   }`}
                 >
-                  {t.name}
+                  {t.label || t.name}
                 </button>
               ))}
             </div>
+            {category === 'Monthly Newsletter' && (
+              <p className="text-[11px] text-primary font-medium mt-2.5 bg-primary/10 p-2.5 rounded-xl border border-primary/20 leading-relaxed">
+                ⭐ <strong>Official Newsletter Tag:</strong> Publishing with this tag will feature this article as the active monthly edition and lead cover story across the home page.
+              </p>
+            )}
           </div>
 
           {/* Schedule */}

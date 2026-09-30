@@ -1,15 +1,21 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { getAllArticles } from '../data/articleService';
+import { getAllArticles, getLocalArticlesSync, onArticlesChange } from '../data/articleService';
 import type { Article } from '../data/articles';
 
 export default function Archive() {
-  const [articlesList, setArticlesList] = useState<Article[]>([]);
+  const [articlesList, setArticlesList] = useState<Article[]>(() => getLocalArticlesSync());
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
     getAllArticles().then(setArticlesList);
+
+    const unsubscribe = onArticlesChange(() => {
+      setArticlesList(getLocalArticlesSync());
+    });
+
+    return unsubscribe;
   }, []);
 
   const categories = useMemo(() => {

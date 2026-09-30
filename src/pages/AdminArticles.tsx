@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getAllArticlesAdmin, deleteArticle } from '../data/articleService';
+import { getAllArticlesAdmin, getLocalArticlesAdminSync, deleteArticle, onArticlesChange } from '../data/articleService';
 import type { Article } from '../data/articles';
 
 const statusConfig = {
@@ -11,13 +11,12 @@ const statusConfig = {
 
 export default function AdminArticles() {
   const navigate = useNavigate();
-  const [articlesList, setArticlesList] = useState<Article[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [articlesList, setArticlesList] = useState<Article[]>(() => getLocalArticlesAdminSync());
+  const [loading, setLoading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Article | null>(null);
   const [filter, setFilter] = useState<'all' | Article['status']>('all');
 
   const loadArticles = async () => {
-    setLoading(true);
     const all = await getAllArticlesAdmin();
     setArticlesList(all);
     setLoading(false);
@@ -25,6 +24,10 @@ export default function AdminArticles() {
 
   useEffect(() => {
     loadArticles();
+    const unsubscribe = onArticlesChange(() => {
+      setArticlesList(getLocalArticlesAdminSync());
+    });
+    return unsubscribe;
   }, []);
 
   const handleDelete = async () => {
