@@ -1,287 +1,271 @@
-/**
- * ==============================================================================
- * IEDC GECT Innovation Chronicle - Google Apps Script Backend
- * ==============================================================================
- * 
- * IMPORTANT: ONE-TIME PERMISSION AUTHORIZATION (Takes 30 seconds)
- * 1. In the Apps Script toolbar at the top, find the function dropdown.
- * 2. Select "testAuth" from the dropdown.
- * 3. Click "▷ Run".
- * 4. Google will show a popup: "Authorization required".
- * 5. Click "Review permissions" -> Select your Google account (iedc@gectcr.ac.in or your account).
- * 6. Click "Advanced" (small link at bottom left of popup) -> Click "Go to Untitled project (unsafe)".
- * 7. Click "Allow".
- * 
- * SENDER EMAIL:
- * - If this script is run from the iedc@gectcr.ac.in Google account, emails will
- *   automatically be sent FROM iedc@gectcr.ac.in.
- * - If run from another account, it sets the sender display name to
- *   "IEDC GECT Innovation Chronicle" and replyTo to "iedc@gectcr.ac.in".
- *   (You can also add iedc@gectcr.ac.in as a 'Send mail as' alias in Gmail settings).
- * ==============================================================================
- */
-
-// Name of sheets inside your spreadsheet
-const SUBSCRIBERS_SHEET_NAME = 'Subscribers';
-const LOGS_SHEET_NAME = 'Broadcast_Logs';
-const OFFICIAL_EMAIL = 'iedc@gectcr.ac.in';
+// ==============================================================================
+// IEDC GECT Innovation Chronicle — Google Apps Script (Live Sheet & Email Broadcast)
+// Official Account: iedc@gectcr.ac.in
+// ==============================================================================
 
 /**
- * ⚡ RUN THIS FUNCTION ONCE INSIDE APPS SCRIPT TO GRANT EMAIL PERMISSION
- * In the top dropdown, select "testAuth", then click "▷ Run".
+ * ⚡ RUN THIS FUNCTION ONCE IN APPS SCRIPT EDITOR TO AUTHORIZE EMAIL SENDING:
+ * 1. In the top dropdown (where it says doGet), select "testAuth".
+ * 2. Click "▷ Run".
+ * 3. Click "Review permissions" -> Choose iedc@gectcr.ac.in -> "Advanced" -> "Go to Untitled project (unsafe)" -> "Allow".
+ * 4. Deploy > Manage deployments > Edit > New version > Deploy.
  */
 function testAuth() {
-  Logger.log('Starting authorization check...');
-  const activeUser = Session.getActiveUser().getEmail();
-  Logger.log('Active executing user: ' + activeUser);
-
-  const testSubject = '[VERIFICATION] IEDC GECT Chronicle - Email Authorization';
-  const testHtml = '<div style="font-family: sans-serif; padding: 20px; border: 2px solid #1C1B1B; border-radius: 8px;">' +
-    '<h2 style="color: #C25E37; margin-top: 0;">Authorization Successful!</h2>' +
-    '<p>Your Google Apps Script is now fully authorized to send newsletter emails.</p>' +
-    '<p><strong>Sender:</strong> ' + activeUser + '</p>' +
-    '<p><strong>Official Contact:</strong> ' + OFFICIAL_EMAIL + '</p>' +
-    '</div>';
-
-  sendInnovationEmail(activeUser, testSubject, testHtml);
-  Logger.log('Success! Test verification email sent to: ' + activeUser);
+  Logger.log("Testing authorization...");
+  var email = Session.getActiveUser().getEmail() || "iedc@gectcr.ac.in";
+  sendInnovationEmail(
+    email,
+    "IEDC GECT Innovation Chronicle - Authorization Test",
+    "<div style='font-family: sans-serif; padding: 24px; border: 3px solid #1C1B1B; border-radius: 12px; background-color: #FFFFFF; max-width: 500px;'>" +
+    "<span style='background-color: #C25E37; color: #FFFFFF; font-size: 10px; font-weight: bold; padding: 3px 8px; border-radius: 9999px; text-transform: uppercase;'>Verified</span>" +
+    "<h2 style='color: #1C1B1B; margin-top: 10px;'>Authorization Successful!</h2>" +
+    "<p style='color: #555555; line-height: 1.5;'>Your Google Apps Script is now fully authorized to send newsletter emails from <strong>" + email + "</strong>.</p>" +
+    "<p style='font-size: 12px; color: #888888;'>Official Sender: IEDC GECT Innovation Chronicle &lt;iedc@gectcr.ac.in&gt;</p>" +
+    "</div>"
+  );
+  Logger.log("Test email successfully sent to: " + email);
 }
 
-/**
- * Robust Email Sender: Sets official name, replyTo, and from alias when available
- */
 function sendInnovationEmail(recipient, subject, htmlBody) {
-  const options = {
+  var options = {
     htmlBody: htmlBody,
-    name: 'IEDC GECT Innovation Chronicle',
-    replyTo: OFFICIAL_EMAIL,
+    name: "IEDC GECT Innovation Chronicle",
+    replyTo: "iedc@gectcr.ac.in"
   };
 
-  // If executing account has iedc@gectcr.ac.in configured as an alias, use it as 'from'
   try {
-    const aliases = GmailApp.getAliases();
-    if (aliases && aliases.indexOf(OFFICIAL_EMAIL) > -1) {
-      options.from = OFFICIAL_EMAIL;
+    var aliases = GmailApp.getAliases();
+    if (aliases && aliases.indexOf("iedc@gectcr.ac.in") > -1) {
+      options.from = "iedc@gectcr.ac.in";
     }
-  } catch (aliasErr) {
-    Logger.log('Alias check note: ' + aliasErr.toString());
+  } catch (e) {
+    // default to active user account
   }
 
-  try {
-    GmailApp.sendEmail(recipient, subject, '', options);
-  } catch (gmailErr) {
-    Logger.log('GmailApp send error, falling back to MailApp: ' + gmailErr.toString());
-    MailApp.sendEmail({
-      to: recipient,
-      subject: subject,
-      htmlBody: htmlBody,
-      name: 'IEDC GECT Innovation Chronicle',
-      replyTo: OFFICIAL_EMAIL,
-    });
-  }
+  GmailApp.sendEmail(recipient, subject, "", options);
 }
 
-/**
- * Handle GET requests (health check, subscriber verification, count)
- */
 function doGet(e) {
   try {
-    const action = e ? e.parameter.action : '';
-    const email = e && e.parameter.email ? e.parameter.email.trim().toLowerCase() : '';
+    var params = e ? e.parameter : {};
+    var email = (params.email || '').toString().trim().toLowerCase();
+    var action = (params.action || '').toString().trim().toLowerCase();
+    
+    var sheet = getSubscribersSheet();
 
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = getOrCreateSheet(ss, SUBSCRIBERS_SHEET_NAME, ['Email', 'Status', 'Subscribed At', 'Unsubscribed At', 'Reason', 'Feedback']);
-
-    if (action === 'check') {
-      const status = checkSubscriberStatus(sheet, email);
-      return jsonResponse({ status: status });
-    }
-
+    // Check subscriber count
     if (action === 'count') {
-      const count = countActiveSubscribers(sheet);
-      return jsonResponse({ count: count });
+      var count = getActiveSubscribers(sheet).length;
+      return jsonOutput({ status: 'ok', count: count });
     }
 
-    return jsonResponse({ status: 'ok', message: 'IEDC Newsletter Webhook is active' });
+    if (!email) {
+      return jsonOutput({ status: 'ok', message: 'IEDC Newsletter webhook active' });
+    }
+
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) {
+      return jsonOutput({ status: 'none' });
+    }
+
+    var cols = getColumnIndexes(sheet);
+    var emailValues = sheet.getRange(2, cols.emailCol, lastRow - 1, 1).getValues();
+    var actionValues = sheet.getRange(2, cols.actionCol, lastRow - 1, 1).getValues();
+
+    for (var r = 0; r < emailValues.length; r++) {
+      if (emailValues[r][0].toString().trim().toLowerCase() === email) {
+        var currentAction = actionValues[r][0].toString().trim().toLowerCase();
+        return jsonOutput({ status: currentAction === 'subscribe' ? 'already_subscribed' : 'unsubscribed' });
+      }
+    }
+
+    return jsonOutput({ status: 'none' });
+
   } catch (err) {
-    return jsonResponse({ error: err.toString() });
+    return jsonOutput({ status: 'none', error: err.toString() });
   }
 }
 
-/**
- * Handle POST requests (Subscribe, Unsubscribe, Test Email, Broadcast Newsletter)
- */
 function doPost(e) {
   try {
-    if (!e || !e.postData || !e.postData.contents) {
-      return jsonResponse({ error: 'No post data received' });
+    var sheet = getSubscribersSheet();
+    var data = {};
+    
+    if (e && e.postData && e.postData.contents) {
+      try {
+        data = JSON.parse(e.postData.contents);
+      } catch (parseErr) {
+        data = e.parameter || {};
+      }
+    } else if (e && e.parameter) {
+      data = e.parameter;
     }
+    
+    var action = (data.action || 'subscribe').toString().trim().toLowerCase();
+    var timestamp = data.timestamp || new Date().toISOString();
 
-    const data = JSON.parse(e.postData.contents);
-    const action = data.action;
-
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const subSheet = getOrCreateSheet(ss, SUBSCRIBERS_SHEET_NAME, ['Email', 'Status', 'Subscribed At', 'Unsubscribed At', 'Reason', 'Feedback']);
-
-    // 1. SUBSCRIBE
-    if (action === 'subscribe') {
-      const email = (data.email || '').trim().toLowerCase();
-      if (!email) return jsonResponse({ error: 'Missing email' });
-
-      handleSubscribe(subSheet, email);
-      return jsonResponse({ success: true, message: 'Subscribed successfully' });
-    }
-
-    // 2. UNSUBSCRIBE
-    if (action === 'unsubscribe') {
-      const email = (data.email || '').trim().toLowerCase();
-      if (!email) return jsonResponse({ error: 'Missing email' });
-
-      handleUnsubscribe(subSheet, email, data.reason || '', data.feedback || '');
-      return jsonResponse({ success: true, message: 'Unsubscribed successfully' });
-    }
-
-    // 3. SEND TEST EMAIL
+    // -------------------------------------------------------------
+    // ACTION 1: SEND TEST PREVIEW EMAIL
+    // -------------------------------------------------------------
     if (action === 'test_email') {
-      const recipient = (data.recipient || '').trim().toLowerCase();
-      if (!recipient) return jsonResponse({ error: 'Missing recipient' });
-
-      const subject = data.subject || '[PREVIEW] IEDC GECT Innovation Chronicle';
-      const htmlBody = data.htmlBody || '<p>Test email preview</p>';
-
-      sendInnovationEmail(recipient, subject, htmlBody);
-      return jsonResponse({ success: true, message: 'Test email successfully dispatched to ' + recipient });
-    }
-
-    // 4. BROADCAST NEWSLETTER TO ALL SUBSCRIBERS
-    if (action === 'broadcast_newsletter') {
-      const subject = data.subject || 'IEDC GECT Innovation Chronicle - Monthly Newsletter';
-      const rawHtml = data.htmlBody || '';
-      const articleTitle = data.title || 'Untitled Monthly Edition';
-      const articleId = data.articleId || '';
-
-      const activeSubscribers = getActiveSubscribers(subSheet);
-
-      if (activeSubscribers.length === 0) {
-        return jsonResponse({ success: false, message: 'No active subscribers found in sheet' });
+      var recipient = (data.recipient || '').toString().trim().toLowerCase();
+      if (!recipient) {
+        return jsonOutput({ result: 'error', message: 'No recipient email provided' });
       }
 
-      let sentCount = 0;
-      let failedCount = 0;
+      var subject = data.subject || '[PREVIEW] IEDC GECT Innovation Chronicle';
+      var htmlBody = data.htmlBody || '<p>IEDC Newsletter Test Preview</p>';
 
-      for (let i = 0; i < activeSubscribers.length; i++) {
-        const subscriberEmail = activeSubscribers[i];
+      sendInnovationEmail(recipient, subject, htmlBody);
+      return jsonOutput({ result: 'success', message: 'Test email sent to ' + recipient });
+    }
+
+    // -------------------------------------------------------------
+    // ACTION 2: BROADCAST NEWSLETTER TO ALL ACTIVE SUBSCRIBERS
+    // -------------------------------------------------------------
+    if (action === 'broadcast_newsletter') {
+      var subject = data.subject || 'IEDC GECT Innovation Chronicle - Monthly Newsletter';
+      var rawHtml = data.htmlBody || '';
+      var activeSubscribers = getActiveSubscribers(sheet);
+
+      if (activeSubscribers.length === 0) {
+        return jsonOutput({ result: 'error', message: 'No active subscribers found in sheet' });
+      }
+
+      var sentCount = 0;
+      var failedCount = 0;
+
+      for (var i = 0; i < activeSubscribers.length; i++) {
+        var subEmail = activeSubscribers[i];
         try {
-          // Personalize the unsubscribe link for this recipient
-          const personalizedHtml = rawHtml
-            .replace(/\{\{EMAIL\}\}/g, encodeURIComponent(subscriberEmail))
-            .replace(/\{\{UNSUBSCRIBE_URL\}\}/g, 'https://iedc-newsletter.vercel.app/unsubscribe?email=' + encodeURIComponent(subscriberEmail));
+          // Replace {{EMAIL}} token with recipient email for personalized 1-click unsubscribe
+          var personalizedHtml = rawHtml
+            .replace(/\{\{EMAIL\}\}/g, encodeURIComponent(subEmail))
+            .replace(/\{\{UNSUBSCRIBE_URL\}\}/g, 'https://iedc-newsletter.vercel.app/unsubscribe?email=' + encodeURIComponent(subEmail));
 
-          sendInnovationEmail(subscriberEmail, subject, personalizedHtml);
-
+          sendInnovationEmail(subEmail, subject, personalizedHtml);
           sentCount++;
-          // Pause slightly between sends to respect Google rate limits
-          Utilities.sleep(150);
+          Utilities.sleep(120); // Small pause to respect Google sending rate
         } catch (mailErr) {
           failedCount++;
-          Logger.log('Failed to send to ' + subscriberEmail + ': ' + mailErr.toString());
+          Logger.log('Error sending to ' + subEmail + ': ' + mailErr.toString());
         }
       }
 
-      // Log the broadcast in the Broadcast_Logs sheet
-      const logSheet = getOrCreateSheet(ss, LOGS_SHEET_NAME, ['Timestamp', 'Article ID', 'Title', 'Sent Count', 'Failed Count', 'Subject']);
-      logSheet.appendRow([
-        new Date().toISOString(),
-        articleId,
-        articleTitle,
-        sentCount,
-        failedCount,
-        subject,
-      ]);
+      // Record in Broadcast_Logs sheet if desired
+      logBroadcast(data.articleId || '', data.title || '', sentCount, failedCount, subject);
 
-      return jsonResponse({
-        success: true,
+      return jsonOutput({
+        result: 'success',
         sentCount: sentCount,
         failedCount: failedCount,
         total: activeSubscribers.length,
-        message: 'Successfully broadcasted newsletter to ' + sentCount + ' subscribers',
+        message: 'Successfully broadcasted newsletter to ' + sentCount + ' subscribers'
       });
     }
 
-    return jsonResponse({ error: 'Unknown action: ' + action });
-  } catch (err) {
-    Logger.log('Webhook error: ' + err.toString());
-    return jsonResponse({ error: err.toString() });
+    // -------------------------------------------------------------
+    // ACTION 3 & 4: SUBSCRIBE / UNSUBSCRIBE (YOUR EXACT LOGIC)
+    // -------------------------------------------------------------
+    var email = (data.email || '').toString().trim().toLowerCase();
+    var reason = data.reason || '';
+    var feedback = data.feedback || '';
+
+    if (!email) {
+      return jsonOutput({ result: 'error', message: 'No email provided' });
+    }
+
+    var lastRow = sheet.getLastRow();
+    var cols = getColumnIndexes(sheet);
+
+    var existingRow = -1;
+    if (lastRow > 1) {
+      var emailValues = sheet.getRange(2, cols.emailCol, lastRow - 1, 1).getValues();
+      for (var r = 0; r < emailValues.length; r++) {
+        if (emailValues[r][0].toString().trim().toLowerCase() === email) {
+          existingRow = r + 2;
+          break;
+        }
+      }
+    }
+
+    if (existingRow > -1) {
+      // Edit existing row in-place (keeps your exact sheet format)
+      sheet.getRange(existingRow, cols.timeCol).setValue(timestamp);
+      sheet.getRange(existingRow, cols.actionCol).setValue(action);
+      if (reason) sheet.getRange(existingRow, cols.reasonCol).setValue(reason);
+      if (feedback) sheet.getRange(existingRow, cols.feedbackCol).setValue(feedback);
+
+      return jsonOutput({ result: 'updated', row: existingRow, action: action });
+    } else {
+      // Append new row matching your column order: [Timestamp, Email, Action, Reason, Feedback]
+      var newRowData = [];
+      var maxCol = Math.max(cols.emailCol, cols.timeCol, cols.actionCol, cols.reasonCol, cols.feedbackCol);
+      for (var c = 1; c <= maxCol; c++) {
+        if (c === cols.emailCol) newRowData.push(email);
+        else if (c === cols.timeCol) newRowData.push(timestamp);
+        else if (c === cols.actionCol) newRowData.push(action);
+        else if (c === cols.reasonCol) newRowData.push(reason);
+        else if (c === cols.feedbackCol) newRowData.push(feedback);
+        else newRowData.push('');
+      }
+      sheet.appendRow(newRowData);
+
+      return jsonOutput({ result: 'created', action: action });
+    }
+  } catch (error) {
+    return jsonOutput({ result: 'error', message: error.toString() });
   }
 }
 
-// ------------------------------------------------------------------------------
-// Helper Functions
-// ------------------------------------------------------------------------------
+// -------------------------------------------------------------
+// HELPER FUNCTIONS (MATCHES SHEET1 EXACTLY)
+// -------------------------------------------------------------
 
-function getOrCreateSheet(ss, sheetName, headers) {
-  let sheet = ss.getSheetByName(sheetName);
-  if (!sheet) {
-    sheet = ss.insertSheet(sheetName);
-    if (headers && headers.length > 0) {
-      sheet.appendRow(headers);
-      sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
-    }
-  }
+function getSubscribersSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  // Automatically finds 'Sheet1' or 'Subscribers' or active sheet
+  var sheet = ss.getSheetByName('Sheet1') || ss.getSheetByName('Subscribers') || ss.getActiveSheet();
   return sheet;
 }
 
-function checkSubscriberStatus(sheet, email) {
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    const rowEmail = (data[i][0] || '').toString().trim().toLowerCase();
-    const rowStatus = (data[i][1] || '').toString().trim().toLowerCase();
-    if (rowEmail === email) {
-      return rowStatus === 'unsubscribed' ? 'unsubscribed' : 'already_subscribed';
-    }
-  }
-  return 'none';
-}
+function getColumnIndexes(sheet) {
+  var lastRow = sheet.getLastRow();
+  var headers = lastRow > 0 ? sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 5)).getValues()[0] : [];
+  
+  var emailCol = 2; // Column B: Email
+  var timeCol = 1;  // Column A: Timestamp
+  var actionCol = 3; // Column C: Action
+  var reasonCol = 4; // Column D: Reason
+  var feedbackCol = 5; // Column E: Feedback
 
-function handleSubscribe(sheet, email) {
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    const rowEmail = (data[i][0] || '').toString().trim().toLowerCase();
-    if (rowEmail === email) {
-      // Re-activate if was unsubscribed
-      sheet.getRange(i + 1, 2).setValue('subscribed');
-      sheet.getRange(i + 1, 3).setValue(new Date().toISOString());
-      return;
-    }
+  for (var h = 0; h < headers.length; h++) {
+    var headerText = headers[h].toString().trim().toLowerCase();
+    if (headerText.indexOf('email') !== -1) emailCol = h + 1;
+    if (headerText.indexOf('time') !== -1) timeCol = h + 1;
+    if (headerText.indexOf('action') !== -1) actionCol = h + 1;
+    if (headerText.indexOf('reason') !== -1) reasonCol = h + 1;
+    if (headerText.indexOf('feedback') !== -1) feedbackCol = h + 1;
   }
-  // New subscriber
-  sheet.appendRow([email, 'subscribed', new Date().toISOString(), '', '', '']);
-}
 
-function handleUnsubscribe(sheet, email, reason, feedback) {
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    const rowEmail = (data[i][0] || '').toString().trim().toLowerCase();
-    if (rowEmail === email) {
-      sheet.getRange(i + 1, 2).setValue('unsubscribed');
-      sheet.getRange(i + 1, 4).setValue(new Date().toISOString());
-      sheet.getRange(i + 1, 5).setValue(reason);
-      sheet.getRange(i + 1, 6).setValue(feedback);
-      return;
-    }
-  }
-  // If not found, add record as unsubscribed
-  sheet.appendRow([email, 'unsubscribed', '', new Date().toISOString(), reason, feedback]);
+  return { emailCol: emailCol, timeCol: timeCol, actionCol: actionCol, reasonCol: reasonCol, feedbackCol: feedbackCol };
 }
 
 function getActiveSubscribers(sheet) {
-  const data = sheet.getDataRange().getValues();
-  const subscribers = [];
-  for (let i = 1; i < data.length; i++) {
-    const email = (data[i][0] || '').toString().trim().toLowerCase();
-    const status = (data[i][1] || '').toString().trim().toLowerCase();
-    if (email && email.includes('@') && status !== 'unsubscribed') {
-      if (!subscribers.includes(email)) {
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return [];
+
+  var cols = getColumnIndexes(sheet);
+  var emailValues = sheet.getRange(2, cols.emailCol, lastRow - 1, 1).getValues();
+  var actionValues = sheet.getRange(2, cols.actionCol, lastRow - 1, 1).getValues();
+
+  var subscribers = [];
+  for (var i = 0; i < emailValues.length; i++) {
+    var email = emailValues[i][0].toString().trim().toLowerCase();
+    var action = actionValues[i][0].toString().trim().toLowerCase();
+    // Only send to those with action === 'subscribe'
+    if (email && email.indexOf('@') !== -1 && action === 'subscribe') {
+      if (subscribers.indexOf(email) === -1) {
         subscribers.push(email);
       }
     }
@@ -289,10 +273,23 @@ function getActiveSubscribers(sheet) {
   return subscribers;
 }
 
-function countActiveSubscribers(sheet) {
-  return getActiveSubscribers(sheet).length;
+function logBroadcast(articleId, title, sentCount, failedCount, subject) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var logSheet = ss.getSheetByName('Broadcast_Logs');
+    if (!logSheet) {
+      logSheet = ss.insertSheet('Broadcast_Logs');
+      logSheet.appendRow(['Timestamp', 'Article ID', 'Title', 'Sent Count', 'Failed Count', 'Subject']);
+      logSheet.getRange(1, 1, 1, 6).setFontWeight('bold');
+    }
+    logSheet.appendRow([new Date().toISOString(), articleId, title, sentCount, failedCount, subject]);
+  } catch (e) {
+    Logger.log('Could not write to Broadcast_Logs: ' + e.toString());
+  }
 }
 
-function jsonResponse(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+function jsonOutput(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
 }
