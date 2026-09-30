@@ -226,49 +226,8 @@ export const opportunitiesList: Opportunity[] = [
   },
 ];
 
-export const startupSpotlights: StartupSpotlight[] = [
-  {
-    id: 'sp-1',
-    name: 'PresentIQ',
-    tagline: 'AI-Powered Campus Attendance & Analytics Platform',
-    founder: 'Ananya R. & Siddharth M.',
-    founderBatch: 'GECT CSE 2026',
-    sector: 'EdTech / SaaS',
-    stage: 'Seed Funded',
-    stageColor: 'bg-secondary text-on-secondary',
-    highlightMetric: '15 Colleges • ₹50L Pre-Seed',
-    description: 'Born out of a final-year hostel room project at GECT, PresentIQ has revolutionized classroom management across South India with instant QR verification and automated KTU attendance synchronization.',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCO3gZzUKko1uW4sbl158JBCKDjmGxsr_Z_JjWzCDJjiZN3PfVzqCtCGUh2BtDaq2vrXLnIn1-GEHcE8Xs6KWyCkjxV7dpSzaw0MUQel4gh9xknUzFt5q1u1czsq3T5FZhazub_WOUubM6UWK1nwJky_SLUwxtJP0TgWJqGD2kEyekH7YK7DCH-T8f75uK13v44HGSg_13dEVkgdz8x7ZRMQj2AePG75JSQorXSbEJMlk53Nm5XwW54kw',
-    articleId: '4',
-  },
-  {
-    id: 'sp-2',
-    name: 'GECT Electric Racing',
-    tagline: 'High-Performance Formula Student Electric Powertrain',
-    founder: 'Arjun V. & Team',
-    founderBatch: 'GECT ME & EEE 2027',
-    sector: 'Clean Mobility & EV',
-    stage: 'Incubated',
-    stageColor: 'bg-tertiary text-on-tertiary',
-    highlightMetric: '0-100 km/h in 3.6s • Custom BMS',
-    description: 'An engineering marvel designed in the campus workshop featuring custom lithium-ion thermal management, regenerative braking CAN-bus controllers, and aerodynamic carbon fiber aero-foils.',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBGMRl1dRUP3Cr1L5leksQUJB_6c_VVlTZv2dO5tLx-fYZZ6gkVzoYboO4xveDoPswMmnl3c8I5P7Zs0FOstO6anVNSlLGGkKjxmSZmMFxT2vM5j55AgK_RV3dHFlZlLa1roL2etkVICbJUdYD2VxeoOv4vXpxWS35HSK9-7X_KMcqfjIKEhG7QdX5Xw-ulKANh_szfaD9A7hlUqSc2kXDv4gkcJDrEhKUwLLjbUkk4VLMdGa4yKJ7vHA',
-  },
-  {
-    id: 'sp-3',
-    name: 'BreatheEasy Sensor Grid',
-    tagline: 'Hyper-Local Campus Environmental & AQI Intelligence',
-    founder: 'Gautam P. & Nivedita S.',
-    founderBatch: 'GECT ECE 2026',
-    sector: 'IoT & Climate Tech',
-    stage: 'Prototype',
-    stageColor: 'bg-primary text-on-primary',
-    highlightMetric: 'National Award Winner • ESP32 Grid',
-    description: 'Distributed network of real-time air quality nodes measuring PM2.5, volatile organic gases, and humidity to automate HVAC ventilation and campus climate safety alerts.',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCO3gZzUKko1uW4sbl158JBCKDjmGxsr_Z_JjWzCDJjiZN3PfVzqCtCGUh2BtDaq2vrXLnIn1-GEHcE8Xs6KWyCkjxV7dpSzaw0MUQel4gh9xknUzFt5q1u1czsq3T5FZhazub_WOUubM6UWK1nwJky_SLUwxtJP0TgWJqGD2kEyekH7YK7DCH-T8f75uK13v44HGSg_13dEVkgdz8x7ZRMQj2AePG75JSQorXSbEJMlk53Nm5XwW54kw',
-    articleId: '8',
-  },
-];
+export const startupSpotlights: StartupSpotlight[] = [];
+
 
 export const monthMoments: MonthMoment[] = [
   {
