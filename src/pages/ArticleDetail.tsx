@@ -402,7 +402,7 @@ export default function ArticleDetail() {
 
             <div className="flex flex-col gap-6">
               {resources.map((res, rIdx) => {
-                const embed = getEmbedDetails(res.url);
+                const embed = getEmbedDetails(res.url, res.type, res.title);
                 return (
                   <div
                     key={rIdx}
@@ -433,8 +433,42 @@ export default function ArticleDetail() {
                       </a>
                     </div>
 
-                    {/* Interactive iframe preview for Google Drive docs, PDFs, YouTube, etc. */}
-                    {embed.isEmbeddable ? (
+                    {/* Image Preview (Google Drive or Web Image) */}
+                    {embed.isImage ? (
+                      <div className="w-full rounded-xl overflow-hidden border-2 border-on-surface bg-surface-container-high flex flex-col items-center justify-center p-3 relative group shadow-inner">
+                        <img
+                          src={embed.directImageUrl || embed.embedUrl}
+                          alt={res.title || 'Project image resource'}
+                          className="max-h-[550px] w-auto rounded-lg object-contain"
+                          loading="lazy"
+                        />
+                        <div className="mt-2 text-xs text-secondary flex items-center justify-between w-full px-2">
+                          <span className="font-semibold text-on-surface">{res.title || 'High-Resolution Image'}</span>
+                          <a
+                            href={res.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline font-bold flex items-center gap-1"
+                          >
+                            <span>Open Full Size</span>
+                            <span className="material-symbols-outlined text-[14px]">zoom_in</span>
+                          </a>
+                        </div>
+                      </div>
+                    ) : embed.isVideo ? (
+                      /* Video Stream Player (Google Drive Video or YouTube) */
+                      <div className="w-full aspect-video rounded-xl overflow-hidden border-2 border-on-surface bg-black relative shadow-inner">
+                        <iframe
+                          src={embed.embedUrl}
+                          title={res.title || 'Video Player'}
+                          className="w-full h-full border-0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                          loading="lazy"
+                        />
+                      </div>
+                    ) : embed.isEmbeddable ? (
+                      /* Interactive iframe preview for Google Drive docs, PDFs, etc. */
                       <div className="w-full aspect-[16/10] sm:aspect-[16/9] md:h-[550px] rounded-xl overflow-hidden border-2 border-on-surface bg-black/5 relative shadow-inner">
                         <iframe
                           src={embed.embedUrl}
@@ -446,6 +480,7 @@ export default function ArticleDetail() {
                         />
                       </div>
                     ) : (
+                      /* Generic External Link or GitHub Repo */
                       <div className="p-4 rounded-xl bg-surface border border-outline-variant flex items-center justify-between gap-4">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="material-symbols-outlined text-secondary text-lg">link</span>

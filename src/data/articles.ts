@@ -6,7 +6,7 @@ export interface TeamMember {
 export interface ProjectResource {
   title: string;
   url: string;
-  type?: 'doc' | 'github' | 'video' | 'link';
+  type?: 'auto' | 'image' | 'video' | 'doc' | 'github' | 'link';
 }
 
 export interface Article {

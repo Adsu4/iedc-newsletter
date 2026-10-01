@@ -251,7 +251,7 @@ export default function Projects() {
                         </span>
                         <div className="flex flex-wrap gap-1.5">
                           {resources.map((res, rIdx) => {
-                            const embed = getEmbedDetails(res.url);
+                            const embed = getEmbedDetails(res.url, res.type, res.title);
                             return (
                               <a
                                 key={rIdx}

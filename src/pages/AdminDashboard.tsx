@@ -1139,7 +1139,7 @@ export default function AdminDashboard() {
                 <div className="flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[18px] text-tertiary">folder_open</span>
                   <span className="text-label-bold font-label-bold uppercase text-on-surface text-xs">
-                    Project Resources & Docs
+                    Project Resources &amp; Media
                   </span>
                 </div>
                 {/* (i) button */}
@@ -1154,15 +1154,17 @@ export default function AdminDashboard() {
               </div>
 
               <p className="text-[11px] text-secondary leading-snug">
-                Attach Google Docs, PDFs, GitHub links, or YouTube demos. Docs will be embedded in an <code>&lt;iframe&gt;</code> view.
+                Paste Google Drive <strong>Images, Videos, PDFs, or Docs</strong> (or GitHub/YouTube links). Live previews appear below instantly with zero Supabase storage strain.
               </p>
 
               {/* Resources list */}
-              <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-3">
                 {resources.map((res, rIdx) => {
-                  const embedInfo = getEmbedDetails(res.url);
+                  const embedInfo = getEmbedDetails(res.url, res.type, res.title);
+                  const currentType = res.type || 'auto';
+
                   return (
-                    <div key={rIdx} className="p-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest flex flex-col gap-2 shadow-sm">
+                    <div key={rIdx} className="p-3 rounded-xl border border-outline-variant bg-surface-container-lowest flex flex-col gap-2.5 shadow-sm">
                       <div className="flex items-center gap-2">
                         <input
                           type="text"
@@ -1173,7 +1175,7 @@ export default function AdminDashboard() {
                             setResources(next);
                             handleInput();
                           }}
-                          placeholder="Doc/Link Title (e.g. Project Report PDF)"
+                          placeholder="Title (e.g. Prototype Image, Demo Video, Report PDF)"
                           className="flex-1 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-outline-variant bg-surface text-on-surface focus:outline-none focus:border-primary"
                         />
                         <button
@@ -1185,6 +1187,7 @@ export default function AdminDashboard() {
                           <span className="material-symbols-outlined text-[15px]">close</span>
                         </button>
                       </div>
+
                       <input
                         type="url"
                         value={res.url}
@@ -1194,17 +1197,124 @@ export default function AdminDashboard() {
                           setResources(next);
                           handleInput();
                         }}
-                        placeholder="Paste Public Link (Google Drive, GitHub, etc.)"
+                        placeholder="Paste Public Link (Google Drive, YouTube, GitHub, etc.)"
                         className="text-xs px-2.5 py-1.5 rounded-lg border border-outline-variant bg-surface text-on-surface focus:outline-none focus:border-primary font-mono text-[10px]"
                       />
+
+                      {/* Type Selector Pills */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-bold uppercase text-secondary mr-1">Type:</span>
+                        {[
+                          { id: 'auto', label: 'Auto' },
+                          { id: 'image', label: '🖼️ Image' },
+                          { id: 'video', label: '🎬 Video' },
+                          { id: 'doc', label: '📄 Doc / PDF' },
+                          { id: 'link', label: '🔗 Link' },
+                        ].map((t) => (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => {
+                              const next = [...resources];
+                              next[rIdx].type = t.id as any;
+                              setResources(next);
+                              handleInput();
+                            }}
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border transition-all ${
+                              currentType === t.id
+                                ? 'bg-primary text-on-primary border-primary shadow-xs'
+                                : 'bg-surface text-secondary border-outline-variant hover:border-on-surface'
+                            }`}
+                          >
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Live Preview & Status */}
                       {res.url && (
-                        <div className="flex items-center gap-1.5 text-[10px] text-secondary">
-                          <span className="material-symbols-outlined text-[13px] text-primary">{embedInfo.icon}</span>
-                          <span className="font-semibold text-primary">{embedInfo.label}</span>
-                          {embedInfo.isEmbeddable && (
-                            <span className="bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-bold">
-                              ✓ Interactive iframe embed
+                        <div className="flex flex-col gap-2 mt-1 pt-2 border-t border-outline-variant/50">
+                          <div className="flex items-center justify-between text-[10px] text-secondary">
+                            <div className="flex items-center gap-1.5">
+                              <span className="material-symbols-outlined text-[14px] text-primary">{embedInfo.icon}</span>
+                              <span className="font-semibold text-primary">{embedInfo.label}</span>
+                            </div>
+                            <span className="bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold text-[9px] uppercase">
+                              Zero Supabase Storage
                             </span>
+                          </div>
+
+                          {/* Live Image Preview (Google Drive or Direct Image) */}
+                          {embedInfo.isImage && (
+                            <div className="rounded-lg border-2 border-on-surface bg-surface-container-high overflow-hidden flex flex-col items-center justify-center p-2 relative shadow-sm">
+                              <img
+                                src={embedInfo.directImageUrl || embedInfo.embedUrl}
+                                alt={res.title || 'Live image preview'}
+                                className="max-h-40 w-auto rounded object-contain shadow-sm"
+                              />
+                              <div className="mt-1.5 flex items-center justify-between w-full px-1 text-[10px]">
+                                <span className="flex items-center gap-1 text-emerald-700 font-bold">
+                                  <span className="material-symbols-outlined text-[13px]">check_circle</span> Live Drive Image Preview
+                                </span>
+                                <a
+                                  href={res.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline flex items-center gap-0.5 font-bold"
+                                >
+                                  Open full
+                                  <span className="material-symbols-outlined text-[11px]">open_in_new</span>
+                                </a>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Live Video Preview (Google Drive Video or YouTube) */}
+                          {embedInfo.isVideo && (
+                            <div className="rounded-lg border-2 border-on-surface bg-black overflow-hidden relative shadow-sm">
+                              <div className="w-full aspect-video max-h-48">
+                                <iframe
+                                  src={embedInfo.embedUrl}
+                                  title={res.title || 'Live video preview'}
+                                  className="w-full h-full border-0"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                />
+                              </div>
+                              <div className="p-1.5 bg-surface-container-lowest border-t border-outline-variant flex items-center justify-between text-[10px]">
+                                <span className="flex items-center gap-1 text-purple-700 font-bold">
+                                  <span className="material-symbols-outlined text-[13px]">smart_display</span> Live Video Player Ready
+                                </span>
+                                <a
+                                  href={res.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline flex items-center gap-0.5 font-bold"
+                                >
+                                  Open source
+                                  <span className="material-symbols-outlined text-[11px]">open_in_new</span>
+                                </a>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Live Doc Preview indicator */}
+                          {embedInfo.isDoc && (
+                            <div className="p-2 rounded-lg border border-outline-variant bg-surface-container-low flex items-center justify-between text-[10px]">
+                              <span className="flex items-center gap-1.5 text-secondary">
+                                <span className="material-symbols-outlined text-primary text-[15px]">description</span>
+                                <span>Interactive iframe viewer ready for reader</span>
+                              </span>
+                              <a
+                                href={res.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary font-bold hover:underline flex items-center gap-0.5"
+                              >
+                                Test link
+                                <span className="material-symbols-outlined text-[11px]">open_in_new</span>
+                              </a>
+                            </div>
                           )}
                         </div>
                       )}
@@ -1215,7 +1325,7 @@ export default function AdminDashboard() {
 
               <button
                 type="button"
-                onClick={() => setResources([...resources, { title: '', url: '' }])}
+                onClick={() => setResources([...resources, { title: '', url: '', type: 'auto' }])}
                 className="px-3 py-2 bg-surface-container text-on-surface rounded-xl border border-outline-variant hover:border-on-surface text-xs font-label-bold uppercase flex items-center justify-center gap-1.5 transition-all"
               >
                 <span className="material-symbols-outlined text-[16px]">add</span>

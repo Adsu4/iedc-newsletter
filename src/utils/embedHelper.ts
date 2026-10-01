@@ -1,15 +1,19 @@
 /**
  * Utility helper to detect and transform public Google Drive, Docs, YouTube,
- * and external resource URLs into embeddable iframe links.
+ * images, videos, and external resource URLs into embeddable previews.
  */
 
 export interface EmbedResult {
   isEmbeddable: boolean;
   embedUrl: string;
   originalUrl: string;
-  type: 'gdrive_doc' | 'gdrive_file' | 'youtube' | 'pdf' | 'github' | 'generic';
+  type: 'image' | 'video' | 'gdrive_doc' | 'gdrive_file' | 'youtube' | 'pdf' | 'github' | 'generic';
   icon: string;
   label: string;
+  directImageUrl?: string;
+  isImage?: boolean;
+  isVideo?: boolean;
+  isDoc?: boolean;
 }
 
 /**
@@ -43,10 +47,19 @@ export function getDirectDriveImageUrl(url: string): string {
 }
 
 /**
- * Parses any resource link and returns embed details if iframe-compatible
+ * Parses any resource link and returns embed details if preview-compatible.
+ * Supports explicit type override ('image' | 'video' | 'doc' | 'link' | 'auto')
+ * and title hints.
  */
-export function getEmbedDetails(rawUrl: string): EmbedResult {
+export function getEmbedDetails(
+  rawUrl: string,
+  explicitType?: string,
+  titleHint?: string
+): EmbedResult {
   const url = (rawUrl || '').trim();
+  const lowerUrl = url.toLowerCase();
+  const lowerTitle = (titleHint || '').toLowerCase();
+  const driveId = extractGoogleDriveId(url);
 
   // 1. YouTube video
   const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
@@ -58,10 +71,56 @@ export function getEmbedDetails(rawUrl: string): EmbedResult {
       type: 'youtube',
       icon: 'smart_display',
       label: 'YouTube Video',
+      isVideo: true,
     };
   }
 
-  // 2. Google Docs (Document, Spreadsheet, Presentation)
+  // 2. Explicit or detected Image (Google Drive Image, web image)
+  const isImageExt = /\.(png|jpe?g|webp|gif|svg|bmp|avif)(\?.*)?$/i.test(lowerUrl);
+  const isImageHint = lowerTitle.includes('image') || lowerTitle.includes('photo') || lowerTitle.includes('screenshot') || lowerTitle.includes('diagram') || lowerTitle.includes('schematic') || lowerTitle.includes('poster');
+
+  if (explicitType === 'image' || (explicitType !== 'video' && explicitType !== 'doc' && (isImageExt || (driveId && isImageHint)))) {
+    const directImageUrl = driveId ? `https://lh3.googleusercontent.com/d/${driveId}` : url;
+    return {
+      isEmbeddable: true,
+      embedUrl: directImageUrl,
+      directImageUrl,
+      originalUrl: url,
+      type: 'image',
+      icon: 'image',
+      label: driveId ? 'Google Drive Image' : 'Web Image',
+      isImage: true,
+    };
+  }
+
+  // 3. Explicit or detected Video (Google Drive Video, direct video file)
+  const isVideoExt = /\.(mp4|webm|mov|mkv|avi)(\?.*)?$/i.test(lowerUrl);
+  const isVideoHint = lowerTitle.includes('video') || lowerTitle.includes('demo') || lowerTitle.includes('recording') || lowerTitle.includes('clip') || lowerTitle.includes('walkthrough');
+
+  if (explicitType === 'video' || (explicitType !== 'image' && explicitType !== 'doc' && (isVideoExt || (driveId && isVideoHint)))) {
+    if (driveId) {
+      return {
+        isEmbeddable: true,
+        embedUrl: `https://drive.google.com/file/d/${driveId}/preview`,
+        originalUrl: url,
+        type: 'video',
+        icon: 'smart_display',
+        label: 'Google Drive Video',
+        isVideo: true,
+      };
+    }
+    return {
+      isEmbeddable: true,
+      embedUrl: url,
+      originalUrl: url,
+      type: 'video',
+      icon: 'smart_display',
+      label: 'Video Link',
+      isVideo: true,
+    };
+  }
+
+  // 4. Google Docs (Document, Spreadsheet, Presentation)
   const gdocMatch = url.match(/docs\.google\.com\/(document|spreadsheets|presentation)\/d\/([a-zA-Z0-9_-]+)/i);
   if (gdocMatch && gdocMatch[1] && gdocMatch[2]) {
     const docType = gdocMatch[1];
@@ -73,24 +132,26 @@ export function getEmbedDetails(rawUrl: string): EmbedResult {
       type: 'gdrive_doc',
       icon: docType === 'spreadsheets' ? 'table_chart' : docType === 'presentation' ? 'slideshow' : 'description',
       label: docType === 'spreadsheets' ? 'Google Sheets' : docType === 'presentation' ? 'Google Slides' : 'Google Doc',
+      isDoc: true,
     };
   }
 
-  // 3. Google Drive File (PDF, Video, etc.)
-  const driveId = extractGoogleDriveId(url);
+  // 5. Google Drive File (Standard preview: PDF, Documents, Media)
   if (driveId) {
     return {
       isEmbeddable: true,
       embedUrl: `https://drive.google.com/file/d/${driveId}/preview`,
+      directImageUrl: `https://lh3.googleusercontent.com/d/${driveId}`,
       originalUrl: url,
       type: 'gdrive_file',
       icon: 'picture_as_pdf',
-      label: 'Google Drive Document',
+      label: 'Google Drive File',
+      isDoc: true,
     };
   }
 
-  // 4. Direct PDF URL
-  if (url.toLowerCase().endsWith('.pdf')) {
+  // 6. Direct PDF URL
+  if (lowerUrl.endsWith('.pdf')) {
     return {
       isEmbeddable: true,
       embedUrl: `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`,
@@ -98,11 +159,12 @@ export function getEmbedDetails(rawUrl: string): EmbedResult {
       type: 'pdf',
       icon: 'picture_as_pdf',
       label: 'PDF Document',
+      isDoc: true,
     };
   }
 
-  // 5. GitHub Repository or Project
-  if (url.includes('github.com')) {
+  // 7. GitHub Repository or Project
+  if (lowerUrl.includes('github.com')) {
     return {
       isEmbeddable: false,
       embedUrl: url,
@@ -113,7 +175,7 @@ export function getEmbedDetails(rawUrl: string): EmbedResult {
     };
   }
 
-  // 6. Generic external link
+  // 8. Generic external link
   return {
     isEmbeddable: false,
     embedUrl: url,
