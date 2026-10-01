@@ -260,7 +260,7 @@ export default function Home() {
             {/* Primary Cover Story (Hero Card) */}
             <Link to={`/article/${coverStory.id}`} className="lg:col-span-8 flex flex-col gap-4 group cursor-pointer">
               <div className="w-full aspect-[4/3] md:aspect-[16/9] overflow-hidden rounded-xl bg-surface-container-high border-2 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] relative transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[6px_6px_0px_0px_rgba(28,27,27,1)]">
-                <img className="w-full h-full object-cover img-editorial group-hover:scale-105 transition-transform duration-500" alt={coverStory.title} src={coverStory.imageUrl}/>
+                <img className="w-full h-full object-cover img-editorial group-hover:scale-105 transition-transform duration-500" alt={coverStory.title} src={coverStory.imageUrl} />
                 <div className="absolute top-4 right-4 bg-secondary text-on-secondary text-xs font-label-bold uppercase px-3 py-1 rounded-full border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]">
                   ⭐ Edition Cover Story
                 </div>
@@ -286,7 +286,7 @@ export default function Home() {
                 </div>
               </div>
             </Link>
-            
+
             {/* Curated Executive Briefs Sidebar */}
             <div className="lg:col-span-4 flex flex-col gap-4 lg:pl-6 lg:border-l border-on-surface/20">
               <div className="flex items-center justify-between border-b border-on-surface/20 pb-2">
@@ -353,7 +353,7 @@ export default function Home() {
                 </span>
               </div>
               <h2 className="text-2xl md:text-3xl font-bold font-headline-md text-on-surface leading-tight">
-                More Campus Stories
+                More Stories
               </h2>
             </div>
             <Link
@@ -426,7 +426,7 @@ export default function Home() {
         <p className="text-sm md:text-base text-on-surface-variant mb-6 max-w-xl mx-auto leading-relaxed">
           Get upcoming hackathons, verified KSUM grant deadlines, student startup breakthroughs, and workshop alerts delivered once every month. Zero spam, pure engineering signal.
         </p>
-        
+
         {subStatus === 'success' ? (
           <div className="bg-surface rounded-xl p-6 border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] max-w-md mx-auto animate-scale-in">
             <span className="text-3xl mb-2 block">🎉</span>
@@ -478,16 +478,16 @@ export default function Home() {
                 setSubStatus('error');
               }
             }}>
-              <input 
-                className="flex-1 px-5 py-3 rounded-full border-2 border-on-surface bg-surface text-sm font-sans focus:border-primary focus:outline-none transition-colors placeholder-on-surface/50 shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]" 
-                placeholder="Enter your college email" 
+              <input
+                className="flex-1 px-5 py-3 rounded-full border-2 border-on-surface bg-surface text-sm font-sans focus:border-primary focus:outline-none transition-colors placeholder-on-surface/50 shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]"
+                placeholder="Enter your college email"
                 type="email"
                 value={subEmail}
                 onChange={(e) => setSubEmail(e.target.value)}
                 required
               />
-              <button 
-                className="bg-on-surface text-surface px-6 py-3 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-primary hover:text-on-primary transition-colors duration-200 whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] border-2 border-on-surface disabled:opacity-50 flex items-center justify-center gap-2" 
+              <button
+                className="bg-on-surface text-surface px-6 py-3 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-primary hover:text-on-primary transition-colors duration-200 whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] border-2 border-on-surface disabled:opacity-50 flex items-center justify-center gap-2"
                 type="submit"
                 disabled={subStatus === 'sending'}
               >
