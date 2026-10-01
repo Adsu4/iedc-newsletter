@@ -1,3 +1,14 @@
+export interface TeamMember {
+  name: string;
+  url?: string; // Optional LinkedIn or GitHub profile link
+}
+
+export interface ProjectResource {
+  title: string;
+  url: string;
+  type?: 'doc' | 'github' | 'video' | 'link';
+}
+
 export interface Article {
   id: string;
   title: string;
@@ -15,6 +26,9 @@ export interface Article {
     subheadings: string[];
     blockquote?: string;
     html?: string;
+    teamMembers?: TeamMember[];
+    teamName?: string;
+    resources?: ProjectResource[];
   };
   author: {
     name: string;
@@ -23,6 +37,9 @@ export interface Article {
   };
   createdAt?: string;
   topStoryRank?: number;
+  teamMembers?: TeamMember[];
+  teamName?: string;
+  resources?: ProjectResource[];
 }
 
 export const articles: Article[] = [

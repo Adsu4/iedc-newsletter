@@ -9,7 +9,8 @@ import {
 } from '../data/articleService';
 import { broadcastNewsletter, sendTestNewsletterEmail } from '../data/subscriptionService';
 import { generateNewsletterEmailHtml } from '../data/emailTemplateService';
-import type { Article } from '../data/articles';
+import type { Article, TeamMember, ProjectResource } from '../data/articles';
+import { getEmbedDetails, getDirectDriveImageUrl } from '../utils/embedHelper';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -32,6 +33,14 @@ export default function AdminDashboard() {
   const [loaded, setLoaded] = useState(!isEditMode);
   const [serverStatus, setServerStatus] = useState<{ configured: boolean; online: boolean; statusText: string; url: string } | null>(null);
   const [topStoryRank, setTopStoryRank] = useState<number | null>(null);
+
+  // Project Section states: Multiple team members, team name, and resources
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
+    { name: '', url: '' },
+  ]);
+  const [teamName, setTeamName] = useState('');
+  const [resources, setResources] = useState<ProjectResource[]>([]);
+  const [showDriveInfoModal, setShowDriveInfoModal] = useState(false);
 
   // Email Newsletter broadcast states
   const [sendEmailToSubscribers, setSendEmailToSubscribers] = useState(true);
@@ -89,6 +98,21 @@ export default function AdminDashboard() {
         if (art.author?.name) setAuthorName(art.author.name);
         if (art.author?.role) setAuthorRole(art.author.role);
         if (art.topStoryRank) setTopStoryRank(art.topStoryRank);
+        if (art.teamMembers || art.content?.teamMembers) {
+          const mems = art.teamMembers || art.content?.teamMembers;
+          if (Array.isArray(mems) && mems.length > 0) {
+            setTeamMembers(mems.map((m) => ({ name: m.name || '', url: m.url || '' })));
+          }
+        }
+        if (art.teamName || art.content?.teamName) {
+          setTeamName(art.teamName || art.content?.teamName || '');
+        }
+        if (art.resources || art.content?.resources) {
+          const res = art.resources || art.content?.resources;
+          if (Array.isArray(res) && res.length > 0) {
+            setResources(res.map((r) => ({ title: r.title || '', url: r.url || '' })));
+          }
+        }
         if (art.content?.html) {
           setInitialHtml(art.content.html);
         } else {
@@ -330,6 +354,9 @@ export default function AdminDashboard() {
 
     setIsPublishing(true);
     const { html, paragraphs } = extractContent();
+    const validTeamMembers = teamMembers.filter((m) => m.name.trim().length > 0);
+    const validResources = resources.filter((r) => r.url.trim().length > 0);
+
     const payload = {
       title: title.trim(),
       subtitle: subtitle.trim(),
@@ -338,12 +365,19 @@ export default function AdminDashboard() {
       imageUrl: coverImageUrl,
       paragraphs,
       html,
-      authorName: authorName.trim() || 'Admin User',
-      authorRole: authorRole.trim() || 'IEDC Editorial',
+      authorName: category === 'Project section'
+        ? (teamName.trim() || (validTeamMembers[0]?.name ? `${validTeamMembers[0].name} et al.` : 'Project Team'))
+        : (authorName.trim() || 'Admin User'),
+      authorRole: category === 'Project section'
+        ? 'Student Project Team'
+        : (authorRole.trim() || 'IEDC Editorial'),
       subheadings: ['Key Takeaways'],
       status: publishStatus,
       scheduledFor: publishStatus === 'scheduled' ? scheduledFor : undefined,
       topStoryRank: topStoryRank && topStoryRank > 0 ? topStoryRank : null,
+      teamMembers: validTeamMembers,
+      teamName: teamName.trim() || undefined,
+      resources: validResources,
     };
 
     try {
@@ -403,6 +437,9 @@ export default function AdminDashboard() {
     }
     setIsPublishing(true);
     const { html, paragraphs } = extractContent();
+    const validTeamMembers = teamMembers.filter((m) => m.name.trim().length > 0);
+    const validResources = resources.filter((r) => r.url.trim().length > 0);
+
     const payload = {
       title: title.trim(),
       subtitle: subtitle.trim(),
@@ -411,11 +448,18 @@ export default function AdminDashboard() {
       imageUrl: coverImageUrl,
       paragraphs,
       html,
-      authorName: authorName.trim() || 'Admin User',
-      authorRole: authorRole.trim() || 'IEDC Editorial',
+      authorName: category === 'Project section'
+        ? (teamName.trim() || (validTeamMembers[0]?.name ? `${validTeamMembers[0].name} et al.` : 'Project Team'))
+        : (authorName.trim() || 'Admin User'),
+      authorRole: category === 'Project section'
+        ? 'Student Project Team'
+        : (authorRole.trim() || 'IEDC Editorial'),
       subheadings: ['Key Takeaways'],
       status: 'draft' as const,
       topStoryRank: topStoryRank && topStoryRank > 0 ? topStoryRank : null,
+      teamMembers: validTeamMembers,
+      teamName: teamName.trim() || undefined,
+      resources: validResources,
     };
 
     try {
@@ -887,51 +931,50 @@ export default function AdminDashboard() {
             <span className="block text-label-bold font-label-bold uppercase text-secondary mb-3">Cover Image</span>
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border border-dashed border-outline-variant rounded-lg h-32 flex flex-col items-center justify-center gap-2 hover:bg-surface-container/50 transition-colors cursor-pointer group bg-surface-container-lowest"
+              className="border border-dashed border-outline-variant rounded-lg h-32 flex flex-col items-center justify-center gap-2 hover:bg-surface-container/50 transition-colors cursor-pointer group bg-surface-container-lowest overflow-hidden relative"
             >
-              <span className="material-symbols-outlined text-outline-variant group-hover:text-secondary transition-colors text-2xl">
-                {isUploading ? 'progress_activity' : 'add_photo_alternate'}
-              </span>
-              <span className="text-label-bold font-label-bold uppercase text-secondary group-hover:text-on-surface transition-colors">
-                {isUploading ? 'Uploading...' : coverImageUrl ? 'Change cover' : 'Add cover'}
-              </span>
+              {coverImageUrl ? (
+                <img src={coverImageUrl} alt="Cover Preview" className="w-full h-full object-cover" />
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-outline-variant group-hover:text-secondary transition-colors text-2xl">
+                    {isUploading ? 'progress_activity' : 'add_photo_alternate'}
+                  </span>
+                  <span className="text-label-bold font-label-bold uppercase text-secondary group-hover:text-on-surface transition-colors text-xs">
+                    {isUploading ? 'Uploading...' : 'Upload cover file'}
+                  </span>
+                </>
+              )}
+            </div>
+
+            {/* Direct URL input for Google Drive or web link */}
+            <div className="mt-2.5 flex items-center gap-2 border border-outline-variant rounded-lg px-2.5 py-1.5 bg-surface-container-lowest focus-within:border-primary">
+              <span className="material-symbols-outlined text-secondary text-[16px] shrink-0">link</span>
+              <input
+                type="url"
+                value={coverImageUrl}
+                onChange={(e) => {
+                  const directUrl = getDirectDriveImageUrl(e.target.value);
+                  setCoverImageUrl(directUrl);
+                  handleInput();
+                }}
+                placeholder="Or paste image / Google Drive URL"
+                className="bg-transparent border-none text-[11px] text-on-surface focus:ring-0 p-0 w-full"
+              />
+              {coverImageUrl && (
+                <button
+                  type="button"
+                  onClick={() => setCoverImageUrl('')}
+                  className="text-secondary hover:text-error text-xs shrink-0"
+                  title="Clear cover"
+                >
+                  <span className="material-symbols-outlined text-[14px]">close</span>
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Writer / Author Details */}
-          <div>
-            <span className="block text-label-bold font-label-bold uppercase text-secondary mb-3">Writer / Author</span>
-            <div className="flex flex-col gap-3">
-              <div>
-                <label className="text-[11px] font-semibold text-secondary block mb-1">Writer's Name</label>
-                <div className="flex items-center gap-2 border border-outline-variant rounded-lg px-3 py-2 bg-surface-container-lowest focus-within:border-primary transition-colors">
-                  <span className="material-symbols-outlined text-secondary text-[18px]">person</span>
-                  <input
-                    type="text"
-                    value={authorName}
-                    onChange={(e) => { setAuthorName(e.target.value); handleInput(); }}
-                    placeholder="e.g. Sarah Jenkins or John Doe"
-                    className="bg-transparent border-none text-xs font-medium text-on-surface focus:ring-0 p-0 w-full"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-[11px] font-semibold text-secondary block mb-1">Designation / Role</label>
-                <div className="flex items-center gap-2 border border-outline-variant rounded-lg px-3 py-2 bg-surface-container-lowest focus-within:border-primary transition-colors">
-                  <span className="material-symbols-outlined text-secondary text-[18px]">badge</span>
-                  <input
-                    type="text"
-                    value={authorRole}
-                    onChange={(e) => { setAuthorRole(e.target.value); handleInput(); }}
-                    placeholder="e.g. Lead Tech Reporter"
-                    className="bg-transparent border-none text-xs font-medium text-on-surface focus:ring-0 p-0 w-full"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Topic */}
+          {/* Topic / Tag */}
           <div>
             <span className="block text-label-bold font-label-bold uppercase text-secondary mb-3">Topic / Tag</span>
             <div className="flex flex-wrap gap-2">
@@ -939,7 +982,7 @@ export default function AdminDashboard() {
                 { name: 'Monthly Newsletter', label: '⭐ Monthly Newsletter', color: 'primary' as const },
                 { name: 'Tech Update', label: 'Tech Update', color: 'secondary' as const },
                 { name: 'Event', label: 'Event', color: 'secondary' as const },
-                { name: 'Project', label: 'Project', color: 'tertiary' as const },
+                { name: 'Project section', label: '🚀 Project section', color: 'tertiary' as const },
                 { name: 'Robotics', label: 'Robotics', color: 'primary' as const },
                 { name: 'Alumni', label: 'Alumni', color: 'tertiary' as const },
               ].map((t) => (
@@ -962,7 +1005,224 @@ export default function AdminDashboard() {
                 ⭐ <strong>Official Newsletter Tag:</strong> Publishing with this tag will feature this article as the active monthly edition headline across the portal.
               </p>
             )}
+            {category === 'Project section' && (
+              <p className="text-[11px] text-tertiary font-medium mt-2.5 bg-tertiary/10 p-2.5 rounded-xl border border-tertiary/20 leading-relaxed">
+                🚀 <strong>Project Section Tag:</strong> This story will be featured in the official <strong>Projects Showcase</strong> section with team member profiles and embedded documents.
+              </p>
+            )}
           </div>
+
+          {/* Conditional Author OR Team Members section */}
+          {category === 'Project section' ? (
+            <div className="flex flex-col gap-4 p-4 rounded-xl border-2 border-on-surface bg-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)]">
+              <div>
+                <span className="block text-label-bold font-label-bold uppercase text-on-surface text-xs mb-2">
+                  Team Name (Optional)
+                </span>
+                <div className="flex items-center gap-2 border border-outline-variant rounded-lg px-3 py-2 bg-surface-container-lowest focus-within:border-primary transition-colors">
+                  <span className="material-symbols-outlined text-secondary text-[18px]">groups</span>
+                  <input
+                    type="text"
+                    value={teamName}
+                    onChange={(e) => { setTeamName(e.target.value); handleInput(); }}
+                    placeholder="e.g. Team Hyperion / EEE Robotics Lab"
+                    className="bg-transparent border-none text-xs font-medium text-on-surface focus:ring-0 p-0 w-full"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="block text-label-bold font-label-bold uppercase text-on-surface text-xs">
+                    Team Members ({teamMembers.length})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setTeamMembers([...teamMembers, { name: '', url: '' }])}
+                    className="text-xs font-bold text-primary hover:underline flex items-center gap-0.5"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">add</span>
+                    Add Member
+                  </button>
+                </div>
+
+                <div className="flex flex-col gap-2.5">
+                  {teamMembers.map((member, idx) => (
+                    <div key={idx} className="p-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest flex flex-col gap-1.5 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 flex-1 border border-outline-variant rounded-lg px-2.5 py-1.5 bg-surface focus-within:border-primary">
+                          <span className="material-symbols-outlined text-secondary text-[16px]">person</span>
+                          <input
+                            type="text"
+                            value={member.name}
+                            onChange={(e) => {
+                              const next = [...teamMembers];
+                              next[idx].name = e.target.value;
+                              setTeamMembers(next);
+                              handleInput();
+                            }}
+                            placeholder={`Member #${idx + 1} Name`}
+                            className="bg-transparent border-none text-xs font-medium text-on-surface focus:ring-0 p-0 w-full"
+                          />
+                        </div>
+                        {teamMembers.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setTeamMembers(teamMembers.filter((_, i) => i !== idx))}
+                            className="w-7 h-7 rounded-lg border border-outline-variant hover:border-error hover:text-error flex items-center justify-center text-secondary transition-colors shrink-0"
+                            title="Remove member"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">close</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* LinkedIn / GitHub URL */}
+                      <div className="flex items-center gap-1.5 border border-outline-variant/60 rounded-lg px-2.5 py-1.5 bg-surface focus-within:border-primary">
+                        <span className="material-symbols-outlined text-secondary text-[16px]">link</span>
+                        <input
+                          type="url"
+                          value={member.url}
+                          onChange={(e) => {
+                            const next = [...teamMembers];
+                            next[idx].url = e.target.value;
+                            setTeamMembers(next);
+                            handleInput();
+                          }}
+                          placeholder="LinkedIn or GitHub link (optional)"
+                          className="bg-transparent border-none text-on-surface focus:ring-0 p-0 w-full font-mono text-[10px]"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <span className="block text-label-bold font-label-bold uppercase text-secondary mb-3">Writer / Author</span>
+              <div className="flex flex-col gap-3">
+                <div>
+                  <label className="text-[11px] font-semibold text-secondary block mb-1">Writer's Name</label>
+                  <div className="flex items-center gap-2 border border-outline-variant rounded-lg px-3 py-2 bg-surface-container-lowest focus-within:border-primary transition-colors">
+                    <span className="material-symbols-outlined text-secondary text-[18px]">person</span>
+                    <input
+                      type="text"
+                      value={authorName}
+                      onChange={(e) => { setAuthorName(e.target.value); handleInput(); }}
+                      placeholder="e.g. Sarah Jenkins or John Doe"
+                      className="bg-transparent border-none text-xs font-medium text-on-surface focus:ring-0 p-0 w-full"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-secondary block mb-1">Designation / Role</label>
+                  <div className="flex items-center gap-2 border border-outline-variant rounded-lg px-3 py-2 bg-surface-container-lowest focus-within:border-primary transition-colors">
+                    <span className="material-symbols-outlined text-secondary text-[18px]">badge</span>
+                    <input
+                      type="text"
+                      value={authorRole}
+                      onChange={(e) => { setAuthorRole(e.target.value); handleInput(); }}
+                      placeholder="e.g. Lead Tech Reporter"
+                      className="bg-transparent border-none text-xs font-medium text-on-surface focus:ring-0 p-0 w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Project Resources & Documents (when category === 'Project section') */}
+          {category === 'Project section' && (
+            <div className="p-4 rounded-xl border-2 border-on-surface bg-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[18px] text-tertiary">folder_open</span>
+                  <span className="text-label-bold font-label-bold uppercase text-on-surface text-xs">
+                    Project Resources & Docs
+                  </span>
+                </div>
+                {/* (i) button */}
+                <button
+                  type="button"
+                  onClick={() => setShowDriveInfoModal(true)}
+                  className="w-5 h-5 rounded-full border border-on-surface bg-surface-container-high hover:bg-primary hover:text-on-primary flex items-center justify-center text-on-surface text-[11px] font-bold transition-all shadow-[1px_1px_0px_0px_rgba(28,27,27,1)]"
+                  title="How to make Google Drive links public"
+                >
+                  i
+                </button>
+              </div>
+
+              <p className="text-[11px] text-secondary leading-snug">
+                Attach Google Docs, PDFs, GitHub links, or YouTube demos. Docs will be embedded in an <code>&lt;iframe&gt;</code> view.
+              </p>
+
+              {/* Resources list */}
+              <div className="flex flex-col gap-2.5">
+                {resources.map((res, rIdx) => {
+                  const embedInfo = getEmbedDetails(res.url);
+                  return (
+                    <div key={rIdx} className="p-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest flex flex-col gap-2 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={res.title}
+                          onChange={(e) => {
+                            const next = [...resources];
+                            next[rIdx].title = e.target.value;
+                            setResources(next);
+                            handleInput();
+                          }}
+                          placeholder="Doc/Link Title (e.g. Project Report PDF)"
+                          className="flex-1 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-outline-variant bg-surface text-on-surface focus:outline-none focus:border-primary"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setResources(resources.filter((_, i) => i !== rIdx))}
+                          className="w-7 h-7 rounded-lg border border-outline-variant hover:border-error hover:text-error flex items-center justify-center text-secondary transition-colors shrink-0"
+                          title="Remove resource"
+                        >
+                          <span className="material-symbols-outlined text-[15px]">close</span>
+                        </button>
+                      </div>
+                      <input
+                        type="url"
+                        value={res.url}
+                        onChange={(e) => {
+                          const next = [...resources];
+                          next[rIdx].url = e.target.value;
+                          setResources(next);
+                          handleInput();
+                        }}
+                        placeholder="Paste Public Link (Google Drive, GitHub, etc.)"
+                        className="text-xs px-2.5 py-1.5 rounded-lg border border-outline-variant bg-surface text-on-surface focus:outline-none focus:border-primary font-mono text-[10px]"
+                      />
+                      {res.url && (
+                        <div className="flex items-center gap-1.5 text-[10px] text-secondary">
+                          <span className="material-symbols-outlined text-[13px] text-primary">{embedInfo.icon}</span>
+                          <span className="font-semibold text-primary">{embedInfo.label}</span>
+                          {embedInfo.isEmbeddable && (
+                            <span className="bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-bold">
+                              ✓ Interactive iframe embed
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setResources([...resources, { title: '', url: '' }])}
+                className="px-3 py-2 bg-surface-container text-on-surface rounded-xl border border-outline-variant hover:border-on-surface text-xs font-label-bold uppercase flex items-center justify-center gap-1.5 transition-all"
+              >
+                <span className="material-symbols-outlined text-[16px]">add</span>
+                Add Resource / Doc Link
+              </button>
+            </div>
+          )}
 
           {/* Top Stories Ranking (#1, #2, #3, ...) */}
           <div className="p-4 rounded-xl border-2 border-on-surface bg-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex flex-col gap-3">
@@ -1196,6 +1456,86 @@ export default function AdminDashboard() {
                 Done Previewing
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Google Drive Public Share Info Modal */}
+      {showDriveInfoModal && (
+        <div
+          className="fixed inset-0 bg-on-surface/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4"
+          onClick={() => setShowDriveInfoModal(false)}
+        >
+          <div
+            className="bg-surface rounded-2xl border-4 border-on-surface shadow-[10px_10px_0px_0px_rgba(28,27,27,1)] p-6 sm:p-8 max-w-lg w-full flex flex-col gap-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 border-b-2 border-on-surface pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-sm border border-on-surface shadow-[1px_1px_0px_0px_rgba(28,27,27,1)]">
+                  i
+                </div>
+                <div>
+                  <h3 className="text-base font-bold font-sans text-on-surface uppercase">
+                    Make the File Public
+                  </h3>
+                  <span className="text-[11px] text-secondary">Step-by-step Google Drive instructions</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDriveInfoModal(false)}
+                className="w-8 h-8 rounded-full border border-outline-variant hover:border-on-surface flex items-center justify-center text-secondary hover:text-on-surface"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-3 text-xs sm:text-sm text-on-surface leading-relaxed">
+              <p className="font-semibold text-secondary">
+                Follow these exact steps so anyone can view your document or PDF embedded in the article:
+              </p>
+              <ol className="list-decimal pl-5 flex flex-col gap-2.5 font-medium text-xs sm:text-sm">
+                <li>
+                  Open{' '}
+                  <a
+                    href="https://drive.google.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary font-bold underline hover:text-on-surface"
+                  >
+                    Google Drive
+                  </a>{' '}
+                  and locate your PDF or document.
+                </li>
+                <li>
+                  Right-click the file and select <strong>Share &gt; Share</strong>.
+                </li>
+                <li>
+                  Under <strong>General access</strong>, change the setting from <em>Restricted</em> to{' '}
+                  <strong className="text-primary">Anyone with the link</strong> and set the role to{' '}
+                  <strong>Viewer</strong>.
+                </li>
+                <li>
+                  Click <strong>Copy link</strong> and then <strong>Done</strong>.
+                </li>
+              </ol>
+
+              <div className="bg-surface-container p-3 rounded-xl border border-outline-variant text-xs text-secondary mt-1 flex items-start gap-2">
+                <span className="material-symbols-outlined text-primary text-[18px] shrink-0 mt-0.5">lightbulb</span>
+                <span>
+                  Simply paste the copied link into the Resource URL box. The system automatically converts it into a responsive <code>&lt;iframe&gt;</code> viewer!
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowDriveInfoModal(false)}
+              className="w-full py-2.5 bg-primary text-on-primary rounded-xl font-label-bold uppercase text-xs border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-0.5 transition-all mt-2"
+            >
+              Got It
+            </button>
           </div>
         </div>
       )}

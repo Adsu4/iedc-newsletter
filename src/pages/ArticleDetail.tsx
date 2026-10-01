@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { fetchArticleById, getAllArticles, getLocalArticlesSync } from '../data/articleService';
 import type { Article } from '../data/articles';
+import { getEmbedDetails, getDirectDriveImageUrl } from '../utils/embedHelper';
 
 export default function ArticleDetail() {
   const { id } = useParams<{ id: string }>();
@@ -100,6 +101,11 @@ export default function ArticleDetail() {
   const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareTitle}\n\nRead more on IEDC Chronicle: ${currentUrl}`)}`;
   const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}`;
   const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(currentUrl)}`;
+
+  const teamMembers = article?.teamMembers || article?.content?.teamMembers;
+  const teamName = article?.teamName || article?.content?.teamName;
+  const resources = article?.resources || article?.content?.resources;
+  const isProject = (article?.category || '').trim().toLowerCase().includes('project') || Boolean(teamMembers && teamMembers.length > 0);
 
   return (
     <main className="flex-grow w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-12 relative">
@@ -283,20 +289,77 @@ export default function ArticleDetail() {
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-sans text-on-surface mb-4 leading-tight">{article.title}</h1>
           <p className="text-sm sm:text-base font-normal text-on-surface-variant mb-6 leading-relaxed">{article.subtitle}</p>
 
-          {/* Author Bio Box */}
-          <div className="flex items-center justify-center gap-3 py-4 border-y border-outline-variant/40 mb-8">
-            <img className="w-11 h-11 rounded-full object-cover border border-on-surface" alt={article.author?.name} src={article.author?.avatarUrl}/>
-            <div className="text-left">
-              <div className="text-xs font-bold text-on-surface">{article.author?.name}</div>
-              <div className="text-[11px] text-secondary">{article.author?.role}</div>
+          {/* Author or Project Team Bio Box */}
+          {isProject ? (
+            <div className="py-4 border-y border-outline-variant/40 mb-8 flex flex-col items-center justify-center gap-2">
+              <div className="flex items-center gap-1.5 text-secondary">
+                <span className="material-symbols-outlined text-[18px] text-primary">groups</span>
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  {teamName ? `Team: ${teamName}` : 'Project Team & Contributors'}
+                </span>
+              </div>
+              {teamMembers && teamMembers.length > 0 ? (
+                <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
+                  {teamMembers.map((member, mIdx) => {
+                    const hasLink = member.url && member.url.trim().length > 0;
+                    const isGithub = member.url?.toLowerCase().includes('github.com');
+                    const isLinkedin = member.url?.toLowerCase().includes('linkedin.com');
+
+                    if (hasLink) {
+                      return (
+                        <a
+                          key={mIdx}
+                          href={member.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={`View ${member.name}'s profile (${member.url})`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-on-surface bg-surface hover:bg-primary/10 hover:border-primary hover:text-primary transition-all text-xs font-bold text-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] active:translate-y-0 active:shadow-none group"
+                        >
+                          <span>{member.name}</span>
+                          {isGithub ? (
+                            <svg className="w-3.5 h-3.5 fill-current text-secondary group-hover:text-primary" viewBox="0 0 24 24">
+                              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                            </svg>
+                          ) : isLinkedin ? (
+                            <svg className="w-3.5 h-3.5 fill-current text-[#0077B5]" viewBox="0 0 24 24">
+                              <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/>
+                            </svg>
+                          ) : (
+                            <span className="material-symbols-outlined text-[14px] text-secondary group-hover:text-primary">open_in_new</span>
+                          )}
+                        </a>
+                      );
+                    }
+
+                    return (
+                      <span
+                        key={mIdx}
+                        className="inline-flex items-center px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container-low text-xs font-bold text-on-surface shadow-sm"
+                      >
+                        {member.name}
+                      </span>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-xs font-bold text-on-surface">{article.author?.name || 'IEDC Project Team'}</div>
+              )}
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center justify-center gap-3 py-4 border-y border-outline-variant/40 mb-8">
+              <img className="w-11 h-11 rounded-full object-cover border border-on-surface" alt={article.author?.name} src={article.author?.avatarUrl}/>
+              <div className="text-left">
+                <div className="text-xs font-bold text-on-surface">{article.author?.name}</div>
+                <div className="text-[11px] text-secondary">{article.author?.role}</div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Hero Image */}
         {article.imageUrl && (
           <div className="w-full aspect-[16/9] mb-8 rounded-xl overflow-hidden border-2 border-on-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] relative bg-surface-container-high">
-            <img className="w-full h-full object-cover img-editorial" alt={article.title} src={article.imageUrl}/>
+            <img className="w-full h-full object-cover img-editorial" alt={article.title} src={getDirectDriveImageUrl(article.imageUrl)}/>
           </div>
         )}
 
@@ -320,6 +383,90 @@ export default function ArticleDetail() {
               </div>
             ))}
           </div>
+        )}
+
+        {/* Project Resources & Embedded Docs */}
+        {resources && resources.length > 0 && (
+          <section className="mt-12 pt-8 border-t-2 border-on-surface flex flex-col gap-6">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-2xl">folder_open</span>
+                <h2 className="text-xl sm:text-2xl font-bold font-sans text-on-surface">
+                  Project Resources & Documents
+                </h2>
+              </div>
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface border border-outline-variant">
+                {resources.length} {resources.length === 1 ? 'Resource' : 'Resources'}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-6">
+              {resources.map((res, rIdx) => {
+                const embed = getEmbedDetails(res.url);
+                return (
+                  <div
+                    key={rIdx}
+                    className="rounded-2xl border-2 border-on-surface bg-surface-container-lowest p-4 sm:p-6 shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] flex flex-col gap-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-outline-variant/60">
+                      <div className="flex items-center gap-2.5">
+                        <span className="material-symbols-outlined text-primary text-2xl">
+                          {embed.icon}
+                        </span>
+                        <div>
+                          <h3 className="text-sm sm:text-base font-bold text-on-surface font-sans">
+                            {res.title || embed.label}
+                          </h3>
+                          <span className="text-[11px] font-medium text-secondary">
+                            {embed.label}
+                          </span>
+                        </div>
+                      </div>
+                      <a
+                        href={res.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-on-surface bg-surface text-xs font-bold text-on-surface hover:bg-primary hover:text-on-primary shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] transition-all"
+                      >
+                        <span>Open in Tab</span>
+                        <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+                      </a>
+                    </div>
+
+                    {/* Interactive iframe preview for Google Drive docs, PDFs, YouTube, etc. */}
+                    {embed.isEmbeddable ? (
+                      <div className="w-full aspect-[16/10] sm:aspect-[16/9] md:h-[550px] rounded-xl overflow-hidden border-2 border-on-surface bg-black/5 relative shadow-inner">
+                        <iframe
+                          src={embed.embedUrl}
+                          title={res.title || 'Document Preview'}
+                          className="w-full h-full border-0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                          loading="lazy"
+                        />
+                      </div>
+                    ) : (
+                      <div className="p-4 rounded-xl bg-surface border border-outline-variant flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="material-symbols-outlined text-secondary text-lg">link</span>
+                          <span className="text-xs text-secondary font-mono truncate">{res.url}</span>
+                        </div>
+                        <a
+                          href={res.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-bold text-primary hover:underline shrink-0 flex items-center gap-1"
+                        >
+                          <span>Visit Resource</span>
+                          <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
         )}
       </article>
 

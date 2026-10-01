@@ -1,4 +1,4 @@
-import { articles as initialArticles, type Article } from './articles';
+import { articles as initialArticles, type Article, type TeamMember, type ProjectResource } from './articles';
 import { supabase, isSupabaseConfigured, supabaseUrl } from '../lib/supabase';
 
 const LOCAL_STORAGE_KEY = 'iedc_published_articles_v2';
@@ -209,6 +209,10 @@ function mapSupabaseRow(item: Record<string, unknown>): Article {
   const parsedRank = rawRank ? Number(rawRank) : undefined;
   const topStoryRank = parsedRank && !isNaN(parsedRank) && parsedRank > 0 ? parsedRank : undefined;
 
+  const teamMembers = Array.isArray(contentObj.teamMembers) ? (contentObj.teamMembers as TeamMember[]) : undefined;
+  const teamName = typeof contentObj.teamName === 'string' ? contentObj.teamName : undefined;
+  const resources = Array.isArray(contentObj.resources) ? (contentObj.resources as ProjectResource[]) : undefined;
+
   return {
     id: String(item.id),
     title: (item.title as string) || '',
@@ -225,6 +229,9 @@ function mapSupabaseRow(item: Record<string, unknown>): Article {
     author: typeof item.author === 'string' ? JSON.parse(item.author as string) : (item.author as Article['author']),
     createdAt: (item.createdAt as string) || undefined,
     topStoryRank,
+    teamMembers,
+    teamName,
+    resources,
   };
 }
 
@@ -232,6 +239,9 @@ function toSupabaseRow(article: Article): Record<string, unknown> {
   const contentPayload = {
     ...article.content,
     topStoryRank: article.topStoryRank && article.topStoryRank > 0 ? article.topStoryRank : null,
+    teamMembers: article.teamMembers || article.content?.teamMembers || [],
+    teamName: article.teamName || article.content?.teamName || '',
+    resources: article.resources || article.content?.resources || [],
   };
 
   return {
@@ -325,6 +335,9 @@ export interface CreateArticlePayload {
   scheduledFor?: string;
   featured?: boolean;
   topStoryRank?: number | null;
+  teamMembers?: TeamMember[];
+  teamName?: string;
+  resources?: ProjectResource[];
 }
 
 export async function publishArticle(payload: CreateArticlePayload): Promise<Article> {
@@ -352,11 +365,17 @@ export async function publishArticle(payload: CreateArticlePayload): Promise<Art
     status: payload.status || 'published',
     scheduledFor: payload.scheduledFor || undefined,
     topStoryRank: cleanRank,
+    teamMembers: payload.teamMembers || [],
+    teamName: payload.teamName || '',
+    resources: payload.resources || [],
     content: {
       paragraphs: payload.paragraphs.length > 0 ? sanitizeParagraphs(payload.paragraphs) : ['No content provided.'],
       subheadings: payload.subheadings || [],
       blockquote: payload.blockquote ? sanitizeHtml(payload.blockquote) : undefined,
       html: payload.html || undefined,
+      teamMembers: payload.teamMembers || [],
+      teamName: payload.teamName || '',
+      resources: payload.resources || [],
     },
     author: {
       name: payload.authorName || 'Admin User',
@@ -399,6 +418,10 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
     ? (payload.topStoryRank && Number(payload.topStoryRank) > 0 ? Number(payload.topStoryRank) : undefined)
     : existing.topStoryRank;
 
+  const resolvedTeamMembers = payload.teamMembers !== undefined ? payload.teamMembers : (existing.teamMembers || existing.content?.teamMembers);
+  const resolvedTeamName = payload.teamName !== undefined ? payload.teamName : (existing.teamName || existing.content?.teamName);
+  const resolvedResources = payload.resources !== undefined ? payload.resources : (existing.resources || existing.content?.resources);
+
   const updated: Article = {
     ...existing,
     title: payload.title !== undefined ? sanitizeHtml(payload.title) : existing.title,
@@ -410,12 +433,20 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
     featured: Boolean(cleanRank) || isNewsletter || (payload.featured ?? existing.featured),
     scheduledFor: payload.scheduledFor ?? existing.scheduledFor,
     topStoryRank: cleanRank,
-    content: payload.paragraphs ? {
-      paragraphs: sanitizeParagraphs(payload.paragraphs),
-      subheadings: payload.subheadings || existing.content.subheadings,
-      blockquote: payload.blockquote !== undefined ? (payload.blockquote ? sanitizeHtml(payload.blockquote) : undefined) : existing.content.blockquote,
-      html: payload.html !== undefined ? payload.html : existing.content.html,
-    } : existing.content,
+    teamMembers: resolvedTeamMembers,
+    teamName: resolvedTeamName,
+    resources: resolvedResources,
+    content: {
+      ...(payload.paragraphs ? {
+        paragraphs: sanitizeParagraphs(payload.paragraphs),
+        subheadings: payload.subheadings || existing.content.subheadings,
+        blockquote: payload.blockquote !== undefined ? (payload.blockquote ? sanitizeHtml(payload.blockquote) : undefined) : existing.content.blockquote,
+        html: payload.html !== undefined ? payload.html : existing.content.html,
+      } : existing.content),
+      teamMembers: resolvedTeamMembers,
+      teamName: resolvedTeamName,
+      resources: resolvedResources,
+    },
     author: {
       name: payload.authorName !== undefined ? sanitizeHtml(payload.authorName) : (existing.author?.name || 'Admin User'),
       role: payload.authorRole !== undefined ? sanitizeHtml(payload.authorRole) : (existing.author?.role || (isNewsletter ? 'IEDC Chief Editor' : 'IEDC Editorial')),
