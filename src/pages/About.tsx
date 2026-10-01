@@ -107,11 +107,11 @@ export default function About() {
         <div>
           <h3 className="text-2xl md:text-3xl font-bold font-headline-md text-on-surface leading-tight mb-2">Visit the IEDC Innovation Lab</h3>
           <p className="text-xs sm:text-sm text-on-surface-variant max-w-xl leading-relaxed">
-            Room no. 413, First Floor, Main Block, Govt. Engineering College, Ramavarmapuram, Thrissur, Kerala - 680009
+            Room no. 213, First Floor, Main Block, Govt. Engineering College, Ramavarmapuram, Thrissur, Kerala - 680009
           </p>
         </div>
         <a
-          href="mailto:iedc@gectcr.ac.in"
+          href="mailto:gectiedc@gmail.com"
           className="bg-on-surface text-surface px-6 py-3 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-primary hover:text-on-primary transition-all whitespace-nowrap border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]"
         >
           Contact IEDC Team

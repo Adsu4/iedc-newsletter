@@ -9,7 +9,7 @@ export default function ComingUpSection({ showAll = false }: ComingUpSectionProp
   const [copied, setCopied] = useState(false);
 
   const handleCopyEmail = () => {
-    navigator.clipboard.writeText('iedc@gectcr.ac.in');
+    navigator.clipboard.writeText('gectiedc@gmail.com');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -77,10 +77,10 @@ export default function ComingUpSection({ showAll = false }: ComingUpSectionProp
           <p className="text-xs sm:text-sm text-on-surface-variant">
             Have an idea for a workshop, or want your club's technical event featured? Send us your proposal at{' '}
             <a
-              href="mailto:iedc@gectcr.ac.in?subject=Workshop%2FEvent%20Proposal%20-%20IEDC%20GECT"
+              href="mailto:gectiedc@gmail.com?subject=Workshop%2FEvent%20Proposal%20-%20IEDC%20GECT"
               className="font-bold text-primary underline hover:text-on-surface transition-colors"
             >
-              iedc@gectcr.ac.in
+              gectiedc@gmail.com
             </a>.
           </p>
 
@@ -98,7 +98,7 @@ export default function ComingUpSection({ showAll = false }: ComingUpSectionProp
               className="bg-surface text-on-surface px-4 py-2 rounded-full text-label-bold font-label-bold uppercase text-xs border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] hover:bg-surface-container-high transition-all flex items-center gap-1.5"
             >
               <span className="material-symbols-outlined text-[15px]">{copied ? 'check' : 'content_copy'}</span>
-              <span>{copied ? 'Copied iedc@gectcr.ac.in!' : 'Copy IEDC Email'}</span>
+              <span>{copied ? 'Copied gectiedc@gmail.com!' : 'Copy IEDC Email'}</span>
             </button>
           </div>
         </div>

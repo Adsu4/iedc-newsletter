@@ -1,18 +1,18 @@
 // ==============================================================================
 // IEDC GECT Innovation Chronicle — Google Apps Script (Live Sheet & Email Broadcast)
-// Official Account: iedc@gectcr.ac.in
+// Official Account: gectiedc@gmail.com
 // ==============================================================================
 
 /**
  * ⚡ RUN THIS FUNCTION ONCE IN APPS SCRIPT EDITOR TO AUTHORIZE EMAIL SENDING:
  * 1. In the top dropdown (where it says doGet), select "testAuth".
  * 2. Click "▷ Run".
- * 3. Click "Review permissions" -> Choose iedc@gectcr.ac.in -> "Advanced" -> "Go to Untitled project (unsafe)" -> "Allow".
+ * 3. Click "Review permissions" -> Choose gectiedc@gmail.com -> "Advanced" -> "Go to Untitled project (unsafe)" -> "Allow".
  * 4. Deploy > Manage deployments > Edit > New version > Deploy.
  */
 function testAuth() {
   Logger.log("Testing authorization...");
-  var email = Session.getActiveUser().getEmail() || "iedc@gectcr.ac.in";
+  var email = Session.getActiveUser().getEmail() || "gectiedc@gmail.com";
   sendInnovationEmail(
     email,
     "IEDC GECT Innovation Chronicle - Authorization Test",
@@ -20,7 +20,7 @@ function testAuth() {
     "<span style='background-color: #C25E37; color: #FFFFFF; font-size: 10px; font-weight: bold; padding: 3px 8px; border-radius: 9999px; text-transform: uppercase;'>Verified</span>" +
     "<h2 style='color: #1C1B1B; margin-top: 10px;'>Authorization Successful!</h2>" +
     "<p style='color: #555555; line-height: 1.5;'>Your Google Apps Script is now fully authorized to send newsletter emails from <strong>" + email + "</strong>.</p>" +
-    "<p style='font-size: 12px; color: #888888;'>Official Sender: IEDC GECT Innovation Chronicle &lt;iedc@gectcr.ac.in&gt;</p>" +
+    "<p style='font-size: 12px; color: #888888;'>Official Sender: IEDC GECT Innovation Chronicle &lt;gectiedc@gmail.com&gt;</p>" +
     "</div>"
   );
   Logger.log("Test email successfully sent to: " + email);
@@ -30,13 +30,13 @@ function sendInnovationEmail(recipient, subject, htmlBody) {
   var options = {
     htmlBody: htmlBody,
     name: "IEDC GECT Innovation Chronicle",
-    replyTo: "iedc@gectcr.ac.in"
+    replyTo: "gectiedc@gmail.com"
   };
 
   try {
     var aliases = GmailApp.getAliases();
-    if (aliases && aliases.indexOf("iedc@gectcr.ac.in") > -1) {
-      options.from = "iedc@gectcr.ac.in";
+    if (aliases && aliases.indexOf("gectiedc@gmail.com") > -1) {
+      options.from = "gectiedc@gmail.com";
     }
   } catch (e) {
     // default to active user account

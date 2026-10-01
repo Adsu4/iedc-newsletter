@@ -58,7 +58,7 @@ export default function AdminLogin() {
               id="userid"
               type="text" 
               className="w-full px-6 py-4 rounded-xl border-2 border-on-surface bg-surface text-body-md font-body-md focus:border-primary focus:outline-none transition-colors placeholder-on-surface/50 shadow-[4px_4px_0px_0px_rgba(28,27,27,1)]" 
-              placeholder="admin@iedc.ac.in"
+              placeholder="gectiedc@gmail.com"
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
               required

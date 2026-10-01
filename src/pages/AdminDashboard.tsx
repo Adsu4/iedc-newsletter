@@ -1132,7 +1132,7 @@ export default function AdminDashboard() {
                 <span className="font-bold text-on-surface whitespace-nowrap">Send Test Preview:</span>
                 <input
                   type="email"
-                  placeholder="admin@iedc.ac.in"
+                  placeholder="gectiedc@gmail.com"
                   value={testEmailAddress}
                   onChange={(e) => setTestEmailAddress(e.target.value)}
                   className="flex-1 px-3 py-1.5 rounded-lg border border-on-surface bg-surface text-xs focus:outline-none focus:border-primary"

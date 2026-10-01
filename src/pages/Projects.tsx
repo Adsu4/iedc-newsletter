@@ -21,12 +21,12 @@ export default function Projects() {
   const [copied, setCopied] = useState(false);
 
   const handleCopyEmail = () => {
-    navigator.clipboard.writeText('iedc@gectcr.ac.in');
+    navigator.clipboard.writeText('gectiedc@gmail.com');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const mailtoUrl = "mailto:iedc@gectcr.ac.in?subject=Project%20Submission%20-%20IEDC%20Student%20Labs&body=Hi%20IEDC%20Team%2C%0A%0AI%20would%20like%20to%20submit%20our%20project%20for%20the%20IEDC%20Newsletter%20Showcase.%0A%0AProject%20Title%3A%20%0ADepartment%3A%20%0ATeam%20Members%3A%20%0AProject%20Summary%3A%20%0ATechnologies%20Used%3A%20%0AGitHub%20%2F%20Demo%20Link%3A%20%0AContact%20Phone%3A%20%0A%0AThank%20you!";
+  const mailtoUrl = "mailto:gectiedc@gmail.com?subject=Project%20Submission%20-%20IEDC%20Student%20Labs&body=Hi%20IEDC%20Team%2C%0A%0AI%20would%20like%20to%20submit%20our%20project%20for%20the%20IEDC%20Newsletter%20Showcase.%0A%0AProject%20Title%3A%20%0ADepartment%3A%20%0ATeam%20Members%3A%20%0AProject%20Summary%3A%20%0ATechnologies%20Used%3A%20%0AGitHub%20%2F%20Demo%20Link%3A%20%0AContact%20Phone%3A%20%0A%0AThank%20you!";
 
   return (
     <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8 md:py-14 flex flex-col gap-8 md:gap-10">
@@ -64,7 +64,7 @@ export default function Projects() {
           </h2>
           <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
             Built an innovative hardware prototype, software application, or research model? Student projects can be submitted directly by emailing our official IEDC address at{' '}
-            <strong className="text-on-surface font-semibold underline">iedc@gectcr.ac.in</strong> with your project title, team members, tech stack, and GitHub or demo links.
+            <strong className="text-on-surface font-semibold underline">gectiedc@gmail.com</strong> with your project title, team members, tech stack, and GitHub or demo links.
           </p>
         </div>
 
@@ -74,7 +74,7 @@ export default function Projects() {
             className="bg-on-surface text-surface px-4 py-2 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-primary hover:text-on-primary transition-colors border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] flex items-center justify-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial"
           >
             <span className="material-symbols-outlined text-[15px]">send</span>
-            <span>Send to iedc@gectcr.ac.in</span>
+            <span>Send to gectiedc@gmail.com</span>
           </a>
           <button
             onClick={handleCopyEmail}
