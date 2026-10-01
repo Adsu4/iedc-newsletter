@@ -42,6 +42,10 @@ export default function AdminDashboard() {
   const [resources, setResources] = useState<ProjectResource[]>([]);
   const [showDriveInfoModal, setShowDriveInfoModal] = useState(false);
 
+  // Student Submitter & Approval states
+  const [submitterContact, setSubmitterContact] = useState<Article['submitterContact'] | null>(null);
+  const [needsApproval, setNeedsApproval] = useState<boolean>(false);
+
   // Email Newsletter broadcast states
   const [sendEmailToSubscribers, setSendEmailToSubscribers] = useState(true);
   const [showEmailPreviewModal, setShowEmailPreviewModal] = useState(false);
@@ -112,6 +116,14 @@ export default function AdminDashboard() {
           if (Array.isArray(res) && res.length > 0) {
             setResources(res.map((r) => ({ title: r.title || '', url: r.url || '' })));
           }
+        }
+        if (art.submitterContact || art.content?.submitterContact) {
+          setSubmitterContact(art.submitterContact || art.content?.submitterContact || null);
+        }
+        if (art.needsApproval !== undefined) {
+          setNeedsApproval(Boolean(art.needsApproval));
+        } else if (art.content?.needsApproval !== undefined) {
+          setNeedsApproval(Boolean(art.content.needsApproval));
         }
         if (art.content?.html) {
           setInitialHtml(art.content.html);
@@ -254,25 +266,21 @@ export default function AdminDashboard() {
     handleInput();
   };
 
-  // Keyboard navigation: single line-break on Shift+Enter, exit heading on normal Enter
+  // Keyboard navigation: default Enter directly jumps to next line without skipping lines
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    // 1. Shift + Enter: Insert a clean line break (<br>) without starting a new paragraph
-    if (e.key === 'Enter' && e.shiftKey) {
-      e.preventDefault();
-      document.execCommand('insertLineBreak');
-      handleInput();
-      return;
-    }
-
-    // 2. Normal Enter: If inside a heading (H1, H2, H3), start a normal paragraph <p> next!
     if (e.key === 'Enter') {
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0) {
         let node: Node | null = selection.anchorNode;
+        let isList = false;
         let headingNode: HTMLElement | null = null;
         while (node && node !== editorRef.current) {
           if (node.nodeType === Node.ELEMENT_NODE) {
             const tag = (node as HTMLElement).tagName.toLowerCase();
+            if (['li', 'ul', 'ol'].includes(tag)) {
+              isList = true;
+              break;
+            }
             if (['h1', 'h2', 'h3'].includes(tag)) {
               headingNode = node as HTMLElement;
               break;
@@ -281,7 +289,11 @@ export default function AdminDashboard() {
           node = node.parentNode;
         }
 
-        if (headingNode) {
+        // Inside a list: let standard browser behavior continue (creates next <li>)
+        if (isList) return;
+
+        // If inside a heading on normal Enter: exit heading cleanly into a new block
+        if (headingNode && !e.shiftKey) {
           e.preventDefault();
           const p = document.createElement('p');
           p.innerHTML = '<br>';
@@ -300,6 +312,13 @@ export default function AdminDashboard() {
           handleInput();
           return;
         }
+
+        // Standard text: Default Enter directly jumps to next line without skipping a line!
+        e.preventDefault();
+        document.execCommand('insertLineBreak');
+        updateActiveFormats();
+        handleInput();
+        return;
       }
     }
   };
@@ -372,12 +391,14 @@ export default function AdminDashboard() {
         ? 'Student Project Team'
         : (authorRole.trim() || 'IEDC Editorial'),
       subheadings: ['Key Takeaways'],
-      status: publishStatus,
+      status: publishStatus === 'draft' ? ('published' as const) : publishStatus,
       scheduledFor: publishStatus === 'scheduled' ? scheduledFor : undefined,
-      topStoryRank: topStoryRank && topStoryRank > 0 ? topStoryRank : null,
+      topStoryRank: category !== 'Project section' && topStoryRank && topStoryRank > 0 ? topStoryRank : null,
       teamMembers: validTeamMembers,
       teamName: teamName.trim() || undefined,
       resources: validResources,
+      submitterContact: submitterContact || undefined,
+      needsApproval: false,
     };
 
     try {
@@ -400,7 +421,9 @@ export default function AdminDashboard() {
             emailMsg = '\n\n⚠️ Story updated, but email broadcast to Google Sheet failed.';
           }
         }
-        alert(`Story updated on cloud server! Changes are live across all devices.${emailMsg}`);
+        alert(needsApproval
+          ? `🎉 Project approved and published! It is now live in the Projects Showcase.${emailMsg}`
+          : `Story updated on cloud server! Changes are live across all devices.${emailMsg}`);
         navigate('/admin/articles');
       } else {
         const published = await publishArticle(payload);
@@ -456,10 +479,12 @@ export default function AdminDashboard() {
         : (authorRole.trim() || 'IEDC Editorial'),
       subheadings: ['Key Takeaways'],
       status: 'draft' as const,
-      topStoryRank: topStoryRank && topStoryRank > 0 ? topStoryRank : null,
+      topStoryRank: category !== 'Project section' && topStoryRank && topStoryRank > 0 ? topStoryRank : null,
       teamMembers: validTeamMembers,
       teamName: teamName.trim() || undefined,
       resources: validResources,
+      submitterContact: submitterContact || undefined,
+      needsApproval: needsApproval,
     };
 
     try {
@@ -512,7 +537,15 @@ export default function AdminDashboard() {
     );
   }
 
-  const publishLabel = isEditMode ? 'Update' : publishStatus === 'scheduled' ? 'Schedule' : 'Publish';
+  const publishLabel = isPublishing
+    ? 'Saving...'
+    : needsApproval
+    ? 'Approve & Publish Project'
+    : isEditMode
+    ? 'Update'
+    : publishStatus === 'scheduled'
+    ? 'Schedule'
+    : 'Publish';
 
   return (
     <>
@@ -523,7 +556,7 @@ export default function AdminDashboard() {
             <span className="material-symbols-outlined text-[20px]">arrow_back</span>
           </button>
           <span className="text-label-bold font-label-bold text-secondary uppercase tracking-widest">
-            {isEditMode ? 'Editing' : 'Draft'}
+            {needsApproval ? 'Pending Approval' : isEditMode ? 'Editing' : 'Draft'}
           </span>
           <span className="text-secondary/30">•</span>
           <span className="text-label-md font-label-md text-secondary">Saved {savedText}</span>
@@ -539,7 +572,11 @@ export default function AdminDashboard() {
           <button
             onClick={handlePublish}
             disabled={isPublishing}
-            className="px-6 py-2 bg-primary text-on-primary rounded-full text-label-bold font-label-bold hover:bg-surface-tint transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+            className={`px-6 py-2 rounded-full text-label-bold font-label-bold transition-all shadow-sm disabled:opacity-50 flex items-center gap-2 ${
+              needsApproval
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-2 border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]'
+                : 'bg-primary text-on-primary hover:bg-surface-tint'
+            }`}
           >
             {isPublishing ? (
               <>
@@ -547,14 +584,67 @@ export default function AdminDashboard() {
                 Saving...
               </>
             ) : (
-              publishLabel
+              <>
+                {needsApproval && <span className="material-symbols-outlined text-[18px]">verified</span>}
+                {publishLabel}
+              </>
             )}
           </button>
         </div>
       </header>
 
       {/* Editor Area */}
-      <div className="max-w-3xl mx-auto mt-24 px-4 md:pr-80 lg:pr-0">
+      <div className="w-full max-w-[1400px] mt-24 px-4 sm:px-8 md:pr-[415px] xl:pr-[455px] pb-24">
+        {/* Confidential Submitter Contact Banner */}
+        {submitterContact && (
+          <div className="mb-6 p-4 sm:p-5 rounded-2xl border-2 border-amber-600 bg-amber-50 shadow-[4px_4px_0px_0px_#d97706] flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                <span className="material-symbols-outlined text-[20px]">verified_user</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-950 font-sans">
+                    Student Submission Contact Info
+                  </span>
+                  <span className="bg-amber-200 text-amber-900 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full">
+                    Private &bull; Not Shared Publicly
+                  </span>
+                  {needsApproval && (
+                    <span className="bg-red-100 text-red-800 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border border-red-300">
+                      Needs Approval
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-amber-900 mt-1">
+                  Submitted by <strong>{submitterContact.name || 'Student Innovator'}</strong>. Confidential details for editorial communication only.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+              {submitterContact.phone && (
+                <a
+                  href={`tel:${submitterContact.phone}`}
+                  className="px-3.5 py-1.5 rounded-xl border border-amber-600 bg-white text-amber-950 text-xs font-bold hover:bg-amber-100 transition-colors flex items-center gap-1.5 shadow-xs"
+                >
+                  <span className="material-symbols-outlined text-[15px] text-amber-700">call</span>
+                  <span>{submitterContact.phone}</span>
+                </a>
+              )}
+              {submitterContact.email && (
+                <a
+                  href={`mailto:${submitterContact.email}`}
+                  className="px-3.5 py-1.5 rounded-xl border border-amber-600 bg-white text-amber-950 text-xs font-bold hover:bg-amber-100 transition-colors flex items-center gap-1.5 shadow-xs"
+                >
+                  <span className="material-symbols-outlined text-[15px] text-amber-700">mail</span>
+                  <span>{submitterContact.email}</span>
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Server Connection Banner */}
         {serverStatus && (
           <div className={`p-4 rounded-xl border-2 flex items-start gap-3 text-sm mb-6 ${
@@ -598,32 +688,83 @@ export default function AdminDashboard() {
               onChange={(e) => { setSubtitle(e.target.value); handleInput(); }}
             />
             <div className="flex items-center gap-3 text-secondary pt-4 border-t border-surface-variant/30 flex-wrap">
-              {/* Writer Name Input */}
-              <div className="flex items-center gap-1.5 bg-surface-container/60 hover:bg-surface-container px-3 py-1.5 rounded-full border border-outline-variant/60 transition-colors group">
-                <span className="material-symbols-outlined text-[16px] text-secondary group-hover:text-primary transition-colors">person</span>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-secondary">By</span>
-                <input
-                  type="text"
-                  value={authorName}
-                  onChange={(e) => { setAuthorName(e.target.value); handleInput(); }}
-                  placeholder="Writer's Name"
-                  className="bg-transparent border-none text-xs font-bold text-on-surface focus:ring-0 p-0 placeholder:text-surface-variant w-32 sm:w-44"
-                  title="Click to edit writer's name"
-                />
-              </div>
+              {category === 'Project section' ? (
+                <>
+                  {/* Team Name badge / input */}
+                  <div className="flex items-center gap-1.5 bg-tertiary/10 text-tertiary px-3 py-1.5 rounded-full border border-tertiary/30">
+                    <span className="material-symbols-outlined text-[16px]">groups</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider">Team:</span>
+                    <input
+                      type="text"
+                      value={teamName}
+                      onChange={(e) => { setTeamName(e.target.value); handleInput(); }}
+                      placeholder="e.g. Team Hyperion"
+                      className="bg-transparent border-none text-xs font-bold text-on-surface focus:ring-0 p-0 placeholder:text-secondary/60 w-32 sm:w-48"
+                      title="Click to edit team name"
+                    />
+                  </div>
 
-              {/* Writer Role Input */}
-              <div className="flex items-center gap-1.5 bg-surface-container/60 hover:bg-surface-container px-3 py-1.5 rounded-full border border-outline-variant/60 transition-colors group">
-                <span className="material-symbols-outlined text-[16px] text-secondary group-hover:text-primary transition-colors">badge</span>
-                <input
-                  type="text"
-                  value={authorRole}
-                  onChange={(e) => { setAuthorRole(e.target.value); handleInput(); }}
-                  placeholder="Designation / Role"
-                  className="bg-transparent border-none text-xs font-medium text-secondary focus:ring-0 p-0 placeholder:text-surface-variant w-28 sm:w-40"
-                  title="Click to edit writer's role"
-                />
-              </div>
+                  {/* Team Members Chips */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] font-bold uppercase text-secondary">Members:</span>
+                    {teamMembers.filter((m) => m.name.trim()).length > 0 ? (
+                      teamMembers
+                        .filter((m) => m.name.trim())
+                        .map((m, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1 bg-surface-container px-2.5 py-1 rounded-full border border-outline-variant text-xs font-medium text-on-surface"
+                          >
+                            <span className="material-symbols-outlined text-[13px] text-secondary">person</span>
+                            {m.name}
+                            {m.url && (
+                              <a
+                                href={m.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline ml-0.5 inline-flex items-center"
+                                title="Open profile link"
+                              >
+                                <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                              </a>
+                            )}
+                          </span>
+                        ))
+                    ) : (
+                      <span className="text-xs italic text-secondary">(Add team members in right sidebar)</span>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Writer Name Input */}
+                  <div className="flex items-center gap-1.5 bg-surface-container/60 hover:bg-surface-container px-3 py-1.5 rounded-full border border-outline-variant/60 transition-colors group">
+                    <span className="material-symbols-outlined text-[16px] text-secondary group-hover:text-primary transition-colors">person</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-secondary">By</span>
+                    <input
+                      type="text"
+                      value={authorName}
+                      onChange={(e) => { setAuthorName(e.target.value); handleInput(); }}
+                      placeholder="Writer's Name"
+                      className="bg-transparent border-none text-xs font-bold text-on-surface focus:ring-0 p-0 placeholder:text-surface-variant w-32 sm:w-44"
+                      title="Click to edit writer's name"
+                    />
+                  </div>
+
+                  {/* Writer Role Input */}
+                  <div className="flex items-center gap-1.5 bg-surface-container/60 hover:bg-surface-container px-3 py-1.5 rounded-full border border-outline-variant/60 transition-colors group">
+                    <span className="material-symbols-outlined text-[16px] text-secondary group-hover:text-primary transition-colors">badge</span>
+                    <input
+                      type="text"
+                      value={authorRole}
+                      onChange={(e) => { setAuthorRole(e.target.value); handleInput(); }}
+                      placeholder="Designation / Role"
+                      className="bg-transparent border-none text-xs font-medium text-secondary focus:ring-0 p-0 placeholder:text-surface-variant w-28 sm:w-40"
+                      title="Click to edit writer's role"
+                    />
+                  </div>
+                </>
+              )}
 
               <span className="text-secondary/30">•</span>
               <span className="text-label-bold font-label-bold uppercase text-secondary text-xs">
@@ -923,7 +1064,7 @@ export default function AdminDashboard() {
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageFileChange} />
 
       {/* Sidebar */}
-      <div className="fixed right-0 top-20 h-[calc(100vh-80px)] w-80 bg-surface border-l border-surface-variant transform translate-x-full md:translate-x-0 transition-transform duration-300 z-30 p-6 overflow-y-auto">
+      <div className="fixed right-0 top-20 h-[calc(100vh-80px)] w-[390px] xl:w-[430px] bg-surface border-l border-surface-variant transform translate-x-full md:translate-x-0 transition-transform duration-300 z-30 p-6 overflow-y-auto">
         <h3 className="text-body-md font-body-md font-semibold text-on-surface mb-8 border-b border-surface-variant/50 pb-4">Publish Details</h3>
         <div className="flex flex-col gap-8">
           {/* Cover Image */}
@@ -1154,7 +1295,7 @@ export default function AdminDashboard() {
               </div>
 
               <p className="text-[11px] text-secondary leading-snug">
-                Paste Google Drive <strong>Images, Videos, PDFs, or Docs</strong> (or GitHub/YouTube links). Live previews appear below instantly with zero Supabase storage strain.
+                Paste Google Drive <strong>Images, Videos, PDFs, or Docs</strong> (or GitHub/YouTube links). Live previews appear below instantly.
               </p>
 
               {/* Resources list */}
@@ -1239,9 +1380,6 @@ export default function AdminDashboard() {
                               <span className="material-symbols-outlined text-[14px] text-primary">{embedInfo.icon}</span>
                               <span className="font-semibold text-primary">{embedInfo.label}</span>
                             </div>
-                            <span className="bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold text-[9px] uppercase">
-                              Zero Supabase Storage
-                            </span>
                           </div>
 
                           {/* Live Image Preview (Google Drive or Direct Image) */}
@@ -1334,50 +1472,52 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* Top Stories Ranking (#1, #2, #3, ...) */}
-          <div className="p-4 rounded-xl border-2 border-on-surface bg-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-label-bold font-label-bold uppercase text-on-surface text-xs flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[17px] text-primary">hotel_class</span>
-                Top Story Slot
-              </span>
-              {topStoryRank ? (
-                <span className="bg-primary text-on-primary text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                  #{String(topStoryRank).padStart(2, '0')}
+          {/* Top Stories Ranking (#1, #2, #3, ...) - Only for General / Newsletter articles */}
+          {category !== 'Project section' && (
+            <div className="p-4 rounded-xl border-2 border-on-surface bg-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <span className="text-label-bold font-label-bold uppercase text-on-surface text-xs flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[17px] text-primary">hotel_class</span>
+                  Top Story Slot
                 </span>
-              ) : (
-                <span className="text-[10px] text-secondary font-medium">Standard</span>
-              )}
-            </div>
+                {topStoryRank ? (
+                  <span className="bg-primary text-on-primary text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                    #{String(topStoryRank).padStart(2, '0')}
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-secondary font-medium">Standard</span>
+                )}
+              </div>
 
-            <p className="text-[11px] text-secondary leading-snug">
-              Pin this story to a top slot on the Home page (#1 Cover, #2 & #3 Briefs) & Top Stories:
-            </p>
+              <p className="text-[11px] text-secondary leading-snug">
+                Pin this story to a top slot on the Home page (#1 Cover, #2 & #3 Briefs) & Top Stories:
+              </p>
 
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { rank: null, label: 'None' },
-                { rank: 1, label: '#1 Cover Story' },
-                { rank: 2, label: '#2 Brief #1' },
-                { rank: 3, label: '#3 Brief #2' },
-                { rank: 4, label: '#4 Spotlight' },
-                { rank: 5, label: '#5 Spotlight' },
-              ].map((item) => (
-                <button
-                  key={String(item.rank)}
-                  type="button"
-                  onClick={() => setTopStoryRank(item.rank)}
-                  className={`px-2.5 py-1.5 rounded-lg border text-xs font-medium text-left transition-all ${
-                    topStoryRank === item.rank
-                      ? 'border-primary bg-primary text-on-primary font-bold shadow-sm'
-                      : 'border-outline-variant bg-surface text-on-surface hover:border-on-surface'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { rank: null, label: 'None' },
+                  { rank: 1, label: '#1 Cover Story' },
+                  { rank: 2, label: '#2 Brief #1' },
+                  { rank: 3, label: '#3 Brief #2' },
+                  { rank: 4, label: '#4 Spotlight' },
+                  { rank: 5, label: '#5 Spotlight' },
+                ].map((item) => (
+                  <button
+                    key={String(item.rank)}
+                    type="button"
+                    onClick={() => setTopStoryRank(item.rank)}
+                    className={`px-2.5 py-1.5 rounded-lg border text-xs font-medium text-left transition-all ${
+                      topStoryRank === item.rank
+                        ? 'border-primary bg-primary text-on-primary font-bold shadow-sm'
+                        : 'border-outline-variant bg-surface text-on-surface hover:border-on-surface'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Email Broadcast Section (Active for Monthly Newsletter) */}
           {category === 'Monthly Newsletter' && (

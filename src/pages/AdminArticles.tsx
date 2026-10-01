@@ -22,7 +22,7 @@ export default function AdminArticles() {
   const [articlesList, setArticlesList] = useState<Article[]>(() => getLocalArticlesAdminSync());
   const [loading, setLoading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Article | null>(null);
-  const [filter, setFilter] = useState<'all' | Article['status']>('all');
+  const [filter, setFilter] = useState<'all' | Article['status'] | 'pending'>('all');
   const [serverStatus, setServerStatus] = useState<{ configured: boolean; online: boolean; statusText: string; url: string } | null>(null);
   const [showCurateModal, setShowCurateModal] = useState(false);
   const [curateOrder, setCurateOrder] = useState<string[]>([]);
@@ -98,13 +98,20 @@ export default function AdminArticles() {
     }
   };
 
-  const filtered = filter === 'all' ? articlesList : articlesList.filter((a) => a.status === filter);
+  const pendingCount = articlesList.filter((a) => a.needsApproval).length;
+
+  const filtered = filter === 'all'
+    ? articlesList
+    : filter === 'pending'
+    ? articlesList.filter((a) => a.needsApproval)
+    : articlesList.filter((a) => a.status === filter);
 
   const counts = {
     all: articlesList.length,
     published: articlesList.filter((a) => a.status === 'published').length,
     draft: articlesList.filter((a) => a.status === 'draft').length,
     scheduled: articlesList.filter((a) => a.status === 'scheduled').length,
+    pending: pendingCount,
   };
 
   const rankedStoriesCount = articlesList.filter((a) => a.topStoryRank && a.topStoryRank > 0).length;
@@ -112,11 +119,12 @@ export default function AdminArticles() {
   return (
     <div className="p-4 md:p-12 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-12">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8">
         <div>
           <h1 className="text-headline-xl font-headline-xl text-on-surface uppercase leading-none">Articles</h1>
           <p className="text-body-md text-secondary mt-2">
             {articlesList.length} total stories • {rankedStoriesCount} curated in Top Stories
+            {pendingCount > 0 && ` • ${pendingCount} pending approval`}
           </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
@@ -137,6 +145,37 @@ export default function AdminArticles() {
           </Link>
         </div>
       </div>
+
+      {/* Project Submission Pending Approval Alert */}
+      {pendingCount > 0 && (
+        <div className="p-4 sm:p-5 rounded-2xl border-2 border-amber-500 bg-amber-50 shadow-[4px_4px_0px_0px_#d97706] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-lg shadow-sm shrink-0">
+              <span className="material-symbols-outlined text-[22px]">inbox</span>
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-950 font-sans">
+                  {pendingCount} {pendingCount === 1 ? 'Project Submission' : 'Project Submissions'} Awaiting Approval
+                </span>
+                <span className="bg-amber-200 text-amber-900 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full">
+                  Action Required
+                </span>
+              </div>
+              <p className="text-xs text-amber-900 mt-0.5">
+                Student projects submitted through the portal need review before appearing on the public showcase.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setFilter('pending')}
+            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-full text-xs font-bold uppercase tracking-wider transition-colors shadow-sm flex items-center gap-1.5 shrink-0"
+          >
+            <span>Review Submissions ({pendingCount})</span>
+            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+          </button>
+        </div>
+      )}
 
       {/* Server Connection Banner */}
       {serverStatus && (
@@ -179,6 +218,20 @@ export default function AdminArticles() {
             {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)} ({counts[f]})
           </button>
         ))}
+
+        {pendingCount > 0 && (
+          <button
+            onClick={() => setFilter('pending')}
+            className={`px-4 py-2 rounded-full text-label-bold font-label-bold uppercase text-sm transition-all border-2 flex items-center gap-1.5 ${
+              filter === 'pending'
+                ? 'bg-amber-600 text-white border-amber-600 shadow-none'
+                : 'bg-amber-50 text-amber-900 border-amber-500 hover:bg-amber-100'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[16px]">pending_actions</span>
+            <span>Pending Approval ({pendingCount})</span>
+          </button>
+        )}
       </div>
 
       {/* Articles List */}
@@ -215,7 +268,13 @@ export default function AdminArticles() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-1 flex-wrap">
                     <span className={`${sc.color} px-2 py-0.5 rounded-full text-xs font-label-bold uppercase`}>{sc.label}</span>
-                    {article.topStoryRank && article.topStoryRank > 0 ? (
+                    {article.needsApproval && (
+                      <span className="bg-amber-500 text-white px-2.5 py-0.5 rounded-full text-xs font-label-bold uppercase flex items-center gap-1 shadow-xs">
+                        <span className="material-symbols-outlined text-[13px]">pending</span>
+                        Needs Approval
+                      </span>
+                    )}
+                    {article.category !== 'Project section' && article.topStoryRank && article.topStoryRank > 0 ? (
                       <span className="bg-primary text-on-primary px-2.5 py-0.5 rounded-full text-xs font-label-bold uppercase flex items-center gap-1 shadow-sm">
                         <span className="material-symbols-outlined text-[13px]">hotel_class</span>
                         #{article.topStoryRank} {article.topStoryRank === 1 ? 'Cover' : article.topStoryRank <= 3 ? 'Brief' : 'Spotlight'}
@@ -228,7 +287,9 @@ export default function AdminArticles() {
                       <>
                         <span className="text-secondary/30">•</span>
                         <span className="text-label-md text-on-surface font-medium flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[13px] text-secondary">person</span>
+                          <span className="material-symbols-outlined text-[13px] text-secondary">
+                            {article.category === 'Project section' ? 'groups' : 'person'}
+                          </span>
                           {article.author.name}
                         </span>
                       </>
@@ -242,6 +303,12 @@ export default function AdminArticles() {
                         </span>
                       </>
                     )}
+                    {article.submitterContact && (
+                      <span className="text-[11px] text-amber-900 bg-amber-100/90 border border-amber-300 px-2 py-0.5 rounded-md font-medium flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[13px] text-amber-700">lock</span>
+                        Lead: {article.submitterContact.name || 'Student'} ({article.submitterContact.phone || article.submitterContact.email})
+                      </span>
+                    )}
                   </div>
                   <h3 className="text-body-lg font-headline-md text-on-surface truncate">{article.title}</h3>
                   <p className="text-body-md text-secondary truncate">{article.subtitle}</p>
@@ -249,34 +316,47 @@ export default function AdminArticles() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
-                  {/* Quick Rank Selector */}
-                  <div className="flex items-center gap-1.5 bg-surface-container-high px-2.5 py-1.5 rounded-xl border border-on-surface text-xs shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]">
-                    <span className="text-[11px] font-bold text-secondary uppercase hidden md:inline">Top Story:</span>
-                    <select
-                      value={article.topStoryRank || ''}
-                      onChange={(e) => handleQuickRank(String(article.id), e.target.value)}
-                      className="bg-transparent text-on-surface text-xs font-bold focus:outline-none cursor-pointer"
-                      title="Set Top Story Slot"
-                    >
-                      <option value="">No Rank</option>
-                      <option value="1">#1 Cover Story</option>
-                      <option value="2">#2 Exec Brief 1</option>
-                      <option value="3">#3 Exec Brief 2</option>
-                      <option value="4">#4 Spotlight</option>
-                      <option value="5">#5 Spotlight</option>
-                      <option value="6">#6 Spotlight</option>
-                      <option value="7">#7 Spotlight</option>
-                      <option value="8">#8 Spotlight</option>
-                    </select>
-                  </div>
+                  {/* Quick Rank Selector (Only for non-Project articles) */}
+                  {article.category !== 'Project section' && (
+                    <div className="flex items-center gap-1.5 bg-surface-container-high px-2.5 py-1.5 rounded-xl border border-on-surface text-xs shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]">
+                      <span className="text-[11px] font-bold text-secondary uppercase hidden md:inline">Top Story:</span>
+                      <select
+                        value={article.topStoryRank || ''}
+                        onChange={(e) => handleQuickRank(String(article.id), e.target.value)}
+                        className="bg-transparent text-on-surface text-xs font-bold focus:outline-none cursor-pointer"
+                        title="Set Top Story Slot"
+                      >
+                        <option value="">No Rank</option>
+                        <option value="1">#1 Cover Story</option>
+                        <option value="2">#2 Exec Brief 1</option>
+                        <option value="3">#3 Exec Brief 2</option>
+                        <option value="4">#4 Spotlight</option>
+                        <option value="5">#5 Spotlight</option>
+                        <option value="6">#6 Spotlight</option>
+                        <option value="7">#7 Spotlight</option>
+                        <option value="8">#8 Spotlight</option>
+                      </select>
+                    </div>
+                  )}
 
-                  <button
-                    onClick={() => navigate(`/admin/dashboard/${article.id}`)}
-                    className="w-10 h-10 rounded-full border border-outline-variant hover:border-primary hover:bg-primary/5 flex items-center justify-center text-secondary hover:text-primary transition-all"
-                    title="Edit"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">edit</span>
-                  </button>
+                  {article.needsApproval ? (
+                    <button
+                      onClick={() => navigate(`/admin/article/${article.id}`)}
+                      className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase transition-all shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] flex items-center gap-1.5 shrink-0"
+                      title="Review and approve student submission"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">verified</span>
+                      <span>Review &amp; Approve</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => navigate(`/admin/dashboard/${article.id}`)}
+                      className="w-10 h-10 rounded-full border border-outline-variant hover:border-primary hover:bg-primary/5 flex items-center justify-center text-secondary hover:text-primary transition-all"
+                      title="Edit"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">edit</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => window.open(`/article/${article.id}`, '_blank')}
                     className="w-10 h-10 rounded-full border border-outline-variant hover:border-tertiary hover:bg-tertiary/5 flex items-center justify-center text-secondary hover:text-tertiary transition-all"

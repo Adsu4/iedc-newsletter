@@ -9,6 +9,12 @@ export interface ProjectResource {
   type?: 'auto' | 'image' | 'video' | 'doc' | 'github' | 'link';
 }
 
+export interface SubmitterContact {
+  name?: string;
+  email?: string;
+  phone?: string;
+}
+
 export interface Article {
   id: string;
   title: string;
@@ -29,6 +35,8 @@ export interface Article {
     teamMembers?: TeamMember[];
     teamName?: string;
     resources?: ProjectResource[];
+    submitterContact?: SubmitterContact;
+    needsApproval?: boolean;
   };
   author: {
     name: string;
@@ -40,6 +48,8 @@ export interface Article {
   teamMembers?: TeamMember[];
   teamName?: string;
   resources?: ProjectResource[];
+  submitterContact?: SubmitterContact;
+  needsApproval?: boolean;
 }
 
 export const articles: Article[] = [

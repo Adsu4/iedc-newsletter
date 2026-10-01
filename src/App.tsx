@@ -16,6 +16,7 @@ import AdminArticles from './pages/AdminArticles';
 import ArticleDetail from './pages/ArticleDetail';
 import AdminLogin from './pages/AdminLogin';
 import Unsubscribe from './pages/Unsubscribe';
+import SubmitProject from './pages/SubmitProject';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
             <Route path="/coming-up" element={<ComingUpPage />} />
             <Route path="/opportunities" element={<OpportunityRadarPage />} />
             <Route path="/projects" element={<Projects />} />
+            <Route path="/submit-project" element={<SubmitProject />} />
             <Route path="/archive" element={<Archive />} />
             <Route path="/about" element={<About />} />
             <Route path="/article/:id" element={<ArticleDetail />} />
@@ -43,6 +45,7 @@ function App() {
             <Route path="/admin/articles" element={<AdminArticles />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/dashboard/:articleId" element={<AdminDashboard />} />
+            <Route path="/admin/article/:articleId" element={<AdminDashboard />} />
           </Route>
         </Routes>
       </BrowserRouter>

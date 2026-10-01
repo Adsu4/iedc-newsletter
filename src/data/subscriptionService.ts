@@ -194,3 +194,102 @@ export async function sendTestNewsletterEmail(
     return false;
   }
 }
+
+export interface ProjectSubmissionNotificationParams {
+  projectTitle: string;
+  teamName?: string;
+  teamMembers?: { name: string; url?: string }[];
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  articleId: string;
+  articleSummary?: string;
+}
+
+/**
+ * Sends an email notification to gectiedc@gmail.com with project details and a direct
+ * link to the admin panel for review and approval.
+ */
+export async function sendProjectSubmissionAdminNotification(
+  params: ProjectSubmissionNotificationParams
+): Promise<boolean> {
+  const adminEmail = 'gectiedc@gmail.com';
+  const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://iedc-newsletter.vercel.app';
+  const adminReviewUrl = `${siteUrl}/admin/article/${params.articleId}`;
+
+  const membersText = params.teamMembers && params.teamMembers.length > 0
+    ? params.teamMembers.map((m) => m.name).filter(Boolean).join(', ')
+    : 'Not listed';
+
+  const htmlBody = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 2px solid #1c1b1b; border-radius: 16px; overflow: hidden; box-shadow: 4px 4px 0px #1c1b1b;">
+      <div style="background: #C25E37; color: #ffffff; padding: 20px 24px;">
+        <span style="font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; background: rgba(0,0,0,0.25); padding: 4px 10px; border-radius: 99px;">
+          IEDC Projects Showcase Submission
+        </span>
+        <h1 style="margin: 12px 0 4px 0; font-size: 22px; line-height: 1.3;">
+          New Project Submission Pending Approval
+        </h1>
+        <p style="margin: 0; font-size: 13px; opacity: 0.95;">
+          A student innovator has submitted their project for review.
+        </p>
+      </div>
+
+      <div style="padding: 24px; color: #1c1b1b;">
+        <h2 style="font-size: 18px; margin: 0 0 8px 0; color: #1c1b1b;">
+          ${params.projectTitle}
+        </h2>
+        ${params.articleSummary ? `<p style="font-size: 14px; color: #555; line-height: 1.5; margin: 0 0 16px 0;">${params.articleSummary}</p>` : ''}
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
+          ${params.teamName ? `<tr><td style="padding: 6px 0; font-weight: bold; width: 140px; color: #777;">Team Name:</td><td style="padding: 6px 0; font-weight: bold;">${params.teamName}</td></tr>` : ''}
+          <tr><td style="padding: 6px 0; font-weight: bold; width: 140px; color: #777;">Team Members:</td><td style="padding: 6px 0;">${membersText}</td></tr>
+        </table>
+
+        <!-- Confidential Submitter Details -->
+        <div style="background: #FDF4ED; border: 1px solid #E8BAA8; border-radius: 12px; padding: 14px; margin-bottom: 24px;">
+          <div style="font-size: 11px; font-weight: bold; text-transform: uppercase; color: #C25E37; margin-bottom: 6px;">
+            🔒 Submitter Contact (Confidential - For Editorial Use Only)
+          </div>
+          <div style="font-size: 13px; line-height: 1.6;">
+            <strong>Lead Contact:</strong> ${params.contactName}<br/>
+            <strong>Email:</strong> <a href="mailto:${params.contactEmail}">${params.contactEmail}</a><br/>
+            <strong>Phone:</strong> <a href="tel:${params.contactPhone}">${params.contactPhone}</a>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin: 28px 0 12px 0;">
+          <a href="${adminReviewUrl}" style="display: inline-block; background: #C25E37; color: #ffffff; text-decoration: none; font-weight: bold; font-size: 14px; text-transform: uppercase; padding: 12px 28px; border-radius: 99px; border: 2px solid #1c1b1b; box-shadow: 2px 2px 0px #1c1b1b;">
+            Review, Edit &amp; Publish in Admin Panel →
+          </a>
+        </div>
+        <p style="text-align: center; font-size: 11px; color: #888; margin-top: 8px;">
+          Direct Review Link: <a href="${adminReviewUrl}" style="color: #C25E37;">${adminReviewUrl}</a>
+        </p>
+      </div>
+    </div>
+  `;
+
+  if (WEBHOOK_URL) {
+    try {
+      await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'test_email',
+          recipient: adminEmail,
+          subject: `[ACTION REQUIRED] New Project for Approval: ${params.projectTitle}`,
+          htmlBody,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+      return true;
+    } catch (err) {
+      console.error('Failed to notify admin via webhook:', err);
+    }
+  }
+
+  return true;
+}
+

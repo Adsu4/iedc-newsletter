@@ -1,5 +1,6 @@
-import { articles as initialArticles, type Article, type TeamMember, type ProjectResource } from './articles';
+import { articles as initialArticles, type Article, type TeamMember, type ProjectResource, type SubmitterContact } from './articles';
 import { supabase, isSupabaseConfigured, supabaseUrl } from '../lib/supabase';
+import { sendProjectSubmissionAdminNotification } from './subscriptionService';
 
 const LOCAL_STORAGE_KEY = 'iedc_published_articles_v2';
 const DELETED_IDS_KEY = 'iedc_deleted_article_ids_v2';
@@ -212,6 +213,8 @@ function mapSupabaseRow(item: Record<string, unknown>): Article {
   const teamMembers = Array.isArray(contentObj.teamMembers) ? (contentObj.teamMembers as TeamMember[]) : undefined;
   const teamName = typeof contentObj.teamName === 'string' ? contentObj.teamName : undefined;
   const resources = Array.isArray(contentObj.resources) ? (contentObj.resources as ProjectResource[]) : undefined;
+  const submitterContact = contentObj.submitterContact ? (contentObj.submitterContact as SubmitterContact) : undefined;
+  const needsApproval = typeof contentObj.needsApproval === 'boolean' ? contentObj.needsApproval : undefined;
 
   return {
     id: String(item.id),
@@ -232,6 +235,8 @@ function mapSupabaseRow(item: Record<string, unknown>): Article {
     teamMembers,
     teamName,
     resources,
+    submitterContact,
+    needsApproval,
   };
 }
 
@@ -242,6 +247,8 @@ function toSupabaseRow(article: Article): Record<string, unknown> {
     teamMembers: article.teamMembers || article.content?.teamMembers || [],
     teamName: article.teamName || article.content?.teamName || '',
     resources: article.resources || article.content?.resources || [],
+    submitterContact: article.submitterContact || article.content?.submitterContact || null,
+    needsApproval: article.needsApproval !== undefined ? article.needsApproval : (article.content?.needsApproval ?? false),
   };
 
   return {
@@ -338,6 +345,8 @@ export interface CreateArticlePayload {
   teamMembers?: TeamMember[];
   teamName?: string;
   resources?: ProjectResource[];
+  submitterContact?: SubmitterContact;
+  needsApproval?: boolean;
 }
 
 export async function publishArticle(payload: CreateArticlePayload): Promise<Article> {
@@ -368,6 +377,8 @@ export async function publishArticle(payload: CreateArticlePayload): Promise<Art
     teamMembers: payload.teamMembers || [],
     teamName: payload.teamName || '',
     resources: payload.resources || [],
+    submitterContact: payload.submitterContact,
+    needsApproval: payload.needsApproval,
     content: {
       paragraphs: payload.paragraphs.length > 0 ? sanitizeParagraphs(payload.paragraphs) : ['No content provided.'],
       subheadings: payload.subheadings || [],
@@ -376,6 +387,8 @@ export async function publishArticle(payload: CreateArticlePayload): Promise<Art
       teamMembers: payload.teamMembers || [],
       teamName: payload.teamName || '',
       resources: payload.resources || [],
+      submitterContact: payload.submitterContact,
+      needsApproval: payload.needsApproval,
     },
     author: {
       name: payload.authorName || 'Admin User',
@@ -421,6 +434,8 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
   const resolvedTeamMembers = payload.teamMembers !== undefined ? payload.teamMembers : (existing.teamMembers || existing.content?.teamMembers);
   const resolvedTeamName = payload.teamName !== undefined ? payload.teamName : (existing.teamName || existing.content?.teamName);
   const resolvedResources = payload.resources !== undefined ? payload.resources : (existing.resources || existing.content?.resources);
+  const resolvedSubmitter = payload.submitterContact !== undefined ? payload.submitterContact : (existing.submitterContact || existing.content?.submitterContact);
+  const resolvedNeedsApproval = payload.needsApproval !== undefined ? payload.needsApproval : (existing.needsApproval ?? existing.content?.needsApproval);
 
   const updated: Article = {
     ...existing,
@@ -436,6 +451,8 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
     teamMembers: resolvedTeamMembers,
     teamName: resolvedTeamName,
     resources: resolvedResources,
+    submitterContact: resolvedSubmitter,
+    needsApproval: resolvedNeedsApproval,
     content: {
       ...(payload.paragraphs ? {
         paragraphs: sanitizeParagraphs(payload.paragraphs),
@@ -446,6 +463,8 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
       teamMembers: resolvedTeamMembers,
       teamName: resolvedTeamName,
       resources: resolvedResources,
+      submitterContact: resolvedSubmitter,
+      needsApproval: resolvedNeedsApproval,
     },
     author: {
       name: payload.authorName !== undefined ? sanitizeHtml(payload.authorName) : (existing.author?.name || 'Admin User'),
@@ -454,22 +473,15 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
     },
   };
 
-  if (payload.paragraphs) {
-    const totalWords = [...updated.content.paragraphs, updated.title, updated.subtitle].join(' ').split(/\s+/).length;
-    updated.readTime = `${Math.max(1, Math.ceil(totalWords / 200))} min read`;
-  }
-
-  // 1. Save locally immediately
+  // 1. UPDATE LOCALLY
   all[idx] = updated;
   saveLocalArticles(all);
   notifyArticlesUpdated();
 
-  // 2. Save to Supabase cloud server
+  // 2. UPDATE ON SUPABASE CLOUD SERVER
   if (isSupabaseConfigured && supabase) {
     const res = await withTimeout<any>(
-      supabase
-        .from('articles')
-        .upsert(toSupabaseRow(updated)),
+      supabase.from('articles').update(toSupabaseRow(updated)).eq('id', targetId),
       3500
     );
     if (res.error) {
@@ -479,6 +491,66 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
   }
 
   return updated;
+}
+
+export interface StudentProjectPayload {
+  title: string;
+  subtitle: string;
+  teamName?: string;
+  teamMembers: TeamMember[];
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  imageUrl?: string;
+  html?: string;
+  paragraphs?: string[];
+  resources?: ProjectResource[];
+}
+
+/**
+ * Submits a student project for editorial approval. Saves as a draft flagged
+ * with needsApproval: true, and emails an approval notification to gectiedc@gmail.com.
+ */
+export async function submitStudentProject(payload: StudentProjectPayload): Promise<Article> {
+  const article = await publishArticle({
+    title: payload.title,
+    subtitle: payload.subtitle,
+    category: 'Project section',
+    categoryColor: 'tertiary',
+    imageUrl: payload.imageUrl || '',
+    paragraphs: payload.paragraphs || (payload.html ? [] : ['Student project submission.']),
+    html: payload.html,
+    subheadings: [],
+    authorName: payload.teamName ? `Team: ${payload.teamName}` : (payload.teamMembers[0]?.name || 'Student Innovation Team'),
+    authorRole: 'Student Innovation Team',
+    status: 'draft',
+    needsApproval: true,
+    teamName: payload.teamName,
+    teamMembers: payload.teamMembers,
+    resources: payload.resources,
+    submitterContact: {
+      name: payload.contactName,
+      email: payload.contactEmail,
+      phone: payload.contactPhone,
+    },
+  });
+
+  try {
+    await sendProjectSubmissionAdminNotification({
+      projectTitle: payload.title,
+      teamName: payload.teamName,
+      teamMembers: payload.teamMembers,
+      contactName: payload.contactName,
+      contactEmail: payload.contactEmail,
+      contactPhone: payload.contactPhone,
+      articleId: article.id,
+      articleSummary: payload.subtitle,
+    });
+  } catch (err) {
+    console.error('Failed to notify admin of student project submission:', err);
+  }
+
+  return article;
 }
 
 /** Set single article top story rank (e.g. #1, #2, #3... or null to unrank) */

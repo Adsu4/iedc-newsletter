@@ -57,13 +57,15 @@ export default function Projects() {
             Explore cutting-edge hardware prototypes, SaaS applications, and IoT systems built by student innovators at Govt. Engineering College Thrissur.
           </p>
         </div>
-        <a
-          href={mailtoUrl}
-          className="bg-primary text-on-primary px-5 py-2.5 rounded-full text-label-bold font-label-bold uppercase text-xs border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] transition-all shrink-0 flex items-center gap-1.5"
-        >
-          <span className="material-symbols-outlined text-[18px]">mail</span>
-          <span>Submit Your Project</span>
-        </a>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link
+            to="/submit-project"
+            className="bg-primary text-on-primary px-5 py-2.5 rounded-full text-label-bold font-label-bold uppercase text-xs border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] transition-all shrink-0 flex items-center gap-1.5"
+          >
+            <span className="material-symbols-outlined text-[18px]">edit_document</span>
+            <span>Write &amp; Submit Project</span>
+          </Link>
+        </div>
       </div>
 
       {/* Submission Guidance Callout Banner */}
@@ -77,25 +79,32 @@ export default function Projects() {
             How to Submit Your Project
           </h2>
           <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-            Built an innovative hardware prototype, software application, or research model? Student projects can be submitted directly by emailing our official IEDC address at{' '}
-            <strong className="text-on-surface font-semibold underline">gectiedc@gmail.com</strong> with your project title, team members, tech stack, and public Google Drive document or GitHub links.
+            Built an innovative hardware prototype, software application, or research model? Submit directly through our online project submission form for review by the IEDC team, or email{' '}
+            <strong className="text-on-surface font-semibold underline">gectiedc@gmail.com</strong>.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+          <Link
+            to="/submit-project"
+            className="bg-primary text-on-primary px-5 py-2.5 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-primary/90 transition-colors border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] flex items-center justify-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial"
+          >
+            <span className="material-symbols-outlined text-[16px]">edit_document</span>
+            <span>Write &amp; Submit Online</span>
+          </Link>
           <a
             href={mailtoUrl}
-            className="bg-on-surface text-surface px-4 py-2 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-primary hover:text-on-primary transition-colors border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] flex items-center justify-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial"
+            className="bg-surface text-on-surface px-4 py-2.5 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-surface-container transition-colors border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] flex items-center justify-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial"
           >
-            <span className="material-symbols-outlined text-[15px]">send</span>
-            <span>Send to gectiedc@gmail.com</span>
+            <span className="material-symbols-outlined text-[15px]">mail</span>
+            <span>Or Email Us</span>
           </a>
           <button
             onClick={handleCopyEmail}
-            className="bg-surface text-on-surface px-4 py-2 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-surface-container transition-colors border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] flex items-center justify-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial"
+            className="bg-surface text-on-surface px-3 py-2.5 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-surface-container transition-colors border border-outline-variant flex items-center justify-center gap-1 whitespace-nowrap"
+            title="Copy email address"
           >
             <span className="material-symbols-outlined text-[15px]">{copied ? 'check' : 'content_copy'}</span>
-            <span>{copied ? 'Copied!' : 'Copy Email'}</span>
           </button>
         </div>
       </div>
@@ -115,16 +124,16 @@ export default function Projects() {
           <div className="flex flex-col gap-1.5 max-w-md">
             <h3 className="text-xl font-bold font-sans text-on-surface">No Projects Published Yet</h3>
             <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-              Submissions are currently open for all GECT engineering batches. Admins can tag articles with <strong>Project section</strong> in the Admin Dashboard to feature them here immediately.
+              Submissions are currently open for all GECT engineering batches. Submit your verified prototype, hardware build, or software platform to be featured in the official showcase.
             </p>
           </div>
-          <a
-            href={mailtoUrl}
-            className="mt-2 bg-primary text-on-primary px-5 py-2.5 rounded-full text-label-bold font-label-bold uppercase text-xs border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] transition-all flex items-center gap-1.5"
+          <Link
+            to="/submit-project"
+            className="mt-2 bg-primary text-on-primary px-6 py-2.5 rounded-full text-label-bold font-label-bold uppercase text-xs border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] transition-all flex items-center gap-1.5"
           >
-            <span className="material-symbols-outlined text-[16px]">send</span>
-            <span>Submit Your Project</span>
-          </a>
+            <span className="material-symbols-outlined text-[16px]">edit_document</span>
+            <span>Submit Your Project Online</span>
+          </Link>
         </div>
       ) : (
         /* Dynamic Grid of Published Projects */
