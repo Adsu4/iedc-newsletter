@@ -1,6 +1,33 @@
-import { generateNewsletterEmailHtml } from './emailTemplateService';
+import { generateNewsletterEmailHtml, escapeHtml } from './emailTemplateService';
+export { escapeHtml };
 
 const WEBHOOK_URL = import.meta.env.VITE_GOOGLE_SHEET_WEBHOOK || '';
+
+/** Retrieve Apps Script Secret Key (session storage takes priority over build-time env) */
+export function getAppsScriptApiKey(): string {
+  if (typeof window !== 'undefined') {
+    const sessionKey = sessionStorage.getItem('iedc_apps_script_key') || localStorage.getItem('iedc_apps_script_key');
+    if (sessionKey) return sessionKey;
+  }
+  return import.meta.env.VITE_APPS_SCRIPT_API_KEY || '';
+}
+
+export function setAppsScriptApiKey(key: string): void {
+  if (typeof window !== 'undefined') {
+    sessionStorage.setItem('iedc_apps_script_key', key.trim());
+  }
+}
+
+export const APPS_SCRIPT_API_KEY = getAppsScriptApiKey();
+
+/** Check if an article was already broadcast to subscribers (H4) */
+export function getArticleBroadcastSentAt(articleId: string): string | null {
+  try {
+    return localStorage.getItem(`iedc_broadcast_sent_${articleId}`);
+  } catch {
+    return null;
+  }
+}
 
 export type SubscribeResult = 'created' | 'already_subscribed' | 'resubscribed' | 'error';
 
@@ -13,7 +40,7 @@ export async function checkEmailStatus(email: string): Promise<'already_subscrib
     if (!res.ok) return 'none';
     const json = await res.json();
     return json.status || 'none';
-  } catch (e) {
+  } catch {
     return 'none';
   }
 }
@@ -97,6 +124,29 @@ export async function broadcastNewsletter(article: {
     return false;
   }
 
+  let apiKey = getAppsScriptApiKey();
+  if (!apiKey && typeof window !== 'undefined') {
+    const entered = window.prompt('Please enter your Google Apps Script Secret Key to authorize newsletter broadcast:');
+    if (entered) {
+      setAppsScriptApiKey(entered);
+      apiKey = entered.trim();
+    }
+  }
+
+  if (!apiKey) {
+    console.warn('Cannot broadcast newsletter: Apps Script Secret Key is required.');
+    return false;
+  }
+
+  // Duplicate broadcast prevention check (H4)
+  const existingSent = getArticleBroadcastSentAt(String(article.id));
+  if (existingSent) {
+    const confirmResend = typeof window !== 'undefined' ? window.confirm(
+      `Notice: This newsletter was already sent on ${new Date(existingSent).toLocaleString()}.\nDo you want to re-broadcast it anyway?`
+    ) : false;
+    if (!confirmResend) return false;
+  }
+
   try {
     const htmlBody = generateNewsletterEmailHtml({
       id: String(article.id),
@@ -111,12 +161,12 @@ export async function broadcastNewsletter(article: {
       unsubscribeUrl: `https://iedc-newsletter.vercel.app/unsubscribe?email={{EMAIL}}`,
     });
 
-    await fetch(WEBHOOK_URL, {
+    const res = await fetch(WEBHOOK_URL, {
       method: 'POST',
-      mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         action: 'broadcast_newsletter',
+        apiKey: apiKey,
         subject: `IEDC GECT Chronicle: ${article.title}`,
         articleId: String(article.id),
         title: article.title,
@@ -131,6 +181,17 @@ export async function broadcastNewsletter(article: {
         timestamp: new Date().toISOString(),
       }),
     });
+
+    const result = await res.json().catch(() => null);
+    if (!res.ok || !result || result.result !== 'success') {
+      console.error('Failed to trigger newsletter broadcast:', result?.message || res.statusText);
+      return false;
+    }
+
+    try {
+      localStorage.setItem(`iedc_broadcast_sent_${article.id}`, new Date().toISOString());
+    } catch {}
+
     return true;
   } catch (err) {
     console.error('Failed to trigger newsletter broadcast:', err);
@@ -159,6 +220,20 @@ export async function sendTestNewsletterEmail(
     return false;
   }
 
+  let apiKey = getAppsScriptApiKey();
+  if (!apiKey && typeof window !== 'undefined') {
+    const entered = window.prompt('Please enter your Google Apps Script Secret Key to authorize preview email:');
+    if (entered) {
+      setAppsScriptApiKey(entered);
+      apiKey = entered.trim();
+    }
+  }
+
+  if (!apiKey) {
+    alert('Apps Script Secret Key is required.');
+    return false;
+  }
+
   const normalized = testEmail.trim().toLowerCase();
   if (!normalized) return false;
 
@@ -176,21 +251,30 @@ export async function sendTestNewsletterEmail(
       unsubscribeUrl: `https://iedc-newsletter.vercel.app/unsubscribe?email=${encodeURIComponent(normalized)}`,
     });
 
-    await fetch(WEBHOOK_URL, {
+    const res = await fetch(WEBHOOK_URL, {
       method: 'POST',
-      mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         action: 'test_email',
+        apiKey: apiKey,
         recipient: normalized,
         subject: `[PREVIEW] IEDC GECT Chronicle: ${article.title}`,
         htmlBody,
         timestamp: new Date().toISOString(),
       }),
     });
+
+    const result = await res.json().catch(() => null);
+    if (!res.ok || !result || result.result !== 'success') {
+      console.error('Failed to send test email:', result?.message || res.statusText);
+      alert(`Failed to send test email: ${result?.message || 'Server error'}`);
+      return false;
+    }
+
     return true;
   } catch (err) {
     console.error('Failed to send test email:', err);
+    alert('Network error while sending test email.');
     return false;
   }
 }
@@ -217,8 +301,16 @@ export async function sendProjectSubmissionAdminNotification(
   const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://iedc-newsletter.vercel.app';
   const adminReviewUrl = `${siteUrl}/admin/article/${params.articleId}`;
 
+  // Safe HTML escaping for all user submitted data (M4)
+  const safeProjectTitle = escapeHtml(params.projectTitle);
+  const safeArticleSummary = escapeHtml(params.articleSummary);
+  const safeTeamName = escapeHtml(params.teamName);
+  const safeContactName = escapeHtml(params.contactName);
+  const safeContactEmail = escapeHtml(params.contactEmail);
+  const safeContactPhone = escapeHtml(params.contactPhone);
+
   const membersText = params.teamMembers && params.teamMembers.length > 0
-    ? params.teamMembers.map((m) => m.name).filter(Boolean).join(', ')
+    ? params.teamMembers.map((m) => escapeHtml(m.name)).filter(Boolean).join(', ')
     : 'Not listed';
 
   const htmlBody = `
@@ -237,12 +329,12 @@ export async function sendProjectSubmissionAdminNotification(
 
       <div style="padding: 24px; color: #1c1b1b;">
         <h2 style="font-size: 18px; margin: 0 0 8px 0; color: #1c1b1b;">
-          ${params.projectTitle}
+          ${safeProjectTitle}
         </h2>
-        ${params.articleSummary ? `<p style="font-size: 14px; color: #555; line-height: 1.5; margin: 0 0 16px 0;">${params.articleSummary}</p>` : ''}
+        ${safeArticleSummary ? `<p style="font-size: 14px; color: #555; line-height: 1.5; margin: 0 0 16px 0;">${safeArticleSummary}</p>` : ''}
 
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
-          ${params.teamName ? `<tr><td style="padding: 6px 0; font-weight: bold; width: 140px; color: #777;">Team Name:</td><td style="padding: 6px 0; font-weight: bold;">${params.teamName}</td></tr>` : ''}
+          ${safeTeamName ? `<tr><td style="padding: 6px 0; font-weight: bold; width: 140px; color: #777;">Team Name:</td><td style="padding: 6px 0; font-weight: bold;">${safeTeamName}</td></tr>` : ''}
           <tr><td style="padding: 6px 0; font-weight: bold; width: 140px; color: #777;">Team Members:</td><td style="padding: 6px 0;">${membersText}</td></tr>
         </table>
 
@@ -252,9 +344,9 @@ export async function sendProjectSubmissionAdminNotification(
             🔒 Submitter Contact (Confidential - For Editorial Use Only)
           </div>
           <div style="font-size: 13px; line-height: 1.6;">
-            <strong>Lead Contact:</strong> ${params.contactName}<br/>
-            <strong>Email:</strong> <a href="mailto:${params.contactEmail}">${params.contactEmail}</a><br/>
-            <strong>Phone:</strong> <a href="tel:${params.contactPhone}">${params.contactPhone}</a>
+            <strong>Lead Contact:</strong> ${safeContactName}<br/>
+            <strong>Email:</strong> <a href="mailto:${safeContactEmail}">${safeContactEmail}</a><br/>
+            <strong>Phone:</strong> <a href="tel:${safeContactPhone}">${safeContactPhone}</a>
           </div>
         </div>
 
@@ -270,26 +362,33 @@ export async function sendProjectSubmissionAdminNotification(
     </div>
   `;
 
-  if (WEBHOOK_URL) {
-    try {
-      await fetch(WEBHOOK_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          action: 'test_email',
-          recipient: adminEmail,
-          subject: `[ACTION REQUIRED] New Project for Approval: ${params.projectTitle}`,
-          htmlBody,
-          timestamp: new Date().toISOString(),
-        }),
-      });
-      return true;
-    } catch (err) {
-      console.error('Failed to notify admin via webhook:', err);
-    }
+  if (!WEBHOOK_URL) {
+    console.warn('Webhook URL not configured. Admin email notification skipped.');
+    return false;
   }
 
-  return true;
+  try {
+    const res = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'project_submission_notify',
+        recipient: adminEmail,
+        subject: `[ACTION REQUIRED] New Project for Approval: ${safeProjectTitle}`,
+        htmlBody,
+        timestamp: new Date().toISOString(),
+      }),
+    });
+
+    const result = await res.json().catch(() => null);
+    if (!res.ok || !result || result.result !== 'success') {
+      console.warn('Failed to notify admin via webhook:', result?.message || res.statusText);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Failed to notify admin via webhook:', err);
+    return false;
+  }
 }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { unsubscribe } from '../data/subscriptionService';
 
@@ -10,12 +10,6 @@ export default function Unsubscribe() {
   const [feedback, setFeedback] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDone, setIsDone] = useState(false);
-
-  useEffect(() => {
-    if (urlEmail && !email) {
-      setEmail(urlEmail);
-    }
-  }, [urlEmail]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

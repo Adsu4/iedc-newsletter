@@ -407,7 +407,7 @@ export default function AdminDashboard() {
         let emailMsg = '';
         if (category === 'Monthly Newsletter' && publishStatus === 'published' && sendEmailToSubscribers) {
           try {
-            await broadcastNewsletter({
+            const sent = await broadcastNewsletter({
               id: articleId,
               title: payload.title,
               subtitle: payload.subtitle,
@@ -415,7 +415,11 @@ export default function AdminDashboard() {
               imageUrl: payload.imageUrl,
               content: { paragraphs: payload.paragraphs, html: payload.html },
             });
-            emailMsg = '\n\n📧 Newsletter broadcast sent to all active subscribers in your Google Sheet!';
+            if (sent) {
+              emailMsg = '\n\n📧 Newsletter broadcast sent to all active subscribers in your Google Sheet!';
+            } else {
+              emailMsg = '\n\n⚠️ Story updated, but email broadcast could not be sent (check Apps Script webhook & API key).';
+            }
           } catch (e) {
             console.error('Email broadcast failed:', e);
             emailMsg = '\n\n⚠️ Story updated, but email broadcast to Google Sheet failed.';
@@ -430,8 +434,12 @@ export default function AdminDashboard() {
         let emailMsg = '';
         if (category === 'Monthly Newsletter' && publishStatus === 'published' && sendEmailToSubscribers) {
           try {
-            await broadcastNewsletter(published);
-            emailMsg = '\n\n📧 Newsletter broadcast sent to all active subscribers in your Google Sheet!';
+            const sent = await broadcastNewsletter(published);
+            if (sent) {
+              emailMsg = '\n\n📧 Newsletter broadcast sent to all active subscribers in your Google Sheet!';
+            } else {
+              emailMsg = '\n\n⚠️ Story published, but email broadcast could not be sent (check Apps Script webhook & API key).';
+            }
           } catch (e) {
             console.error('Email broadcast failed:', e);
             emailMsg = '\n\n⚠️ Story published, but email broadcast to Google Sheet failed.';
@@ -494,8 +502,9 @@ export default function AdminDashboard() {
         await publishArticle(payload);
       }
       navigate('/admin/articles');
-    } catch (err) {
-      console.error('Save draft failed:', err);
+    } catch (err: any) {
+      console.error('Save draft error:', err);
+      navigate('/admin/articles');
     } finally {
       setIsPublishing(false);
     }

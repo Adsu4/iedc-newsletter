@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 import { fetchArticleById, getAllArticles, getLocalArticlesSync } from '../data/articleService';
 import type { Article } from '../data/articles';
 import { getEmbedDetails, getDirectDriveImageUrl } from '../utils/embedHelper';
@@ -13,6 +14,7 @@ export default function ArticleDetail() {
   const [recommended, setRecommended] = useState<Article[]>(() => {
     return getLocalArticlesSync().filter((a) => String(a.id) !== String(id)).slice(0, 2);
   });
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -69,8 +71,6 @@ export default function ArticleDetail() {
       </div>
     );
   }
-
-  const [copied, setCopied] = useState(false);
 
   const handleCopyLink = () => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
@@ -367,7 +367,12 @@ export default function ArticleDetail() {
         {article.content?.html ? (
           <div
             className="prose article-rich-content text-base md:text-lg font-body-lg text-on-surface leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: article.content.html }}
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(article.content.html, {
+                ADD_TAGS: ['iframe'],
+                ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'target', 'rel'],
+              }),
+            }}
           />
         ) : (
           <div className="prose text-base md:text-lg font-body-lg text-on-surface leading-relaxed">

@@ -50,6 +50,7 @@ export interface Article {
   resources?: ProjectResource[];
   submitterContact?: SubmitterContact;
   needsApproval?: boolean;
+  broadcastSentAt?: string;
 }
 
 export const articles: Article[] = [

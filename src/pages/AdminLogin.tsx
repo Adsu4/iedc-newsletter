@@ -15,14 +15,23 @@ export default function AdminLogin() {
     }
   }, [isAuthenticated, navigate]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const result = login(userId, password);
-    if (result.success) {
-      navigate('/admin/articles');
-    } else {
-      setError(result.error || 'Login failed.');
+    setIsSubmitting(true);
+    try {
+      const result = await login(userId, password);
+      if (result.success) {
+        navigate('/admin/articles');
+      } else {
+        setError(result.error || 'Login failed.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Login failed.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -58,7 +67,7 @@ export default function AdminLogin() {
               id="userid"
               type="text" 
               className="w-full px-6 py-4 rounded-xl border-2 border-on-surface bg-surface text-body-md font-body-md focus:border-primary focus:outline-none transition-colors placeholder-on-surface/50 shadow-[4px_4px_0px_0px_rgba(28,27,27,1)]" 
-              placeholder="gectiedc@gmail.com"
+              placeholder="editor@iedc"
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
               required
@@ -80,9 +89,17 @@ export default function AdminLogin() {
           
           <button 
             type="submit" 
-            className="w-full mt-6 bg-primary text-on-primary px-8 py-4 rounded-xl text-label-bold font-label-bold uppercase hover:bg-on-primary-fixed-variant transition-colors duration-200 shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] hover:shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-1 border-2 border-on-surface"
+            disabled={isSubmitting}
+            className="w-full mt-6 bg-primary text-on-primary px-8 py-4 rounded-xl text-label-bold font-label-bold uppercase hover:bg-on-primary-fixed-variant transition-colors duration-200 shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] hover:shadow-[8px_8px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-1 border-2 border-on-surface disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            Authenticate
+            {isSubmitting ? (
+              <>
+                <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span>
+                <span>Authenticating...</span>
+              </>
+            ) : (
+              <span>Authenticate</span>
+            )}
           </button>
         </form>
       </div>

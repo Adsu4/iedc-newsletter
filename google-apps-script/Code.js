@@ -38,7 +38,7 @@ function sendInnovationEmail(recipient, subject, htmlBody) {
     if (aliases && aliases.indexOf("gectiedc@gmail.com") > -1) {
       options.from = "gectiedc@gmail.com";
     }
-  } catch (e) {
+  } catch {
     // default to active user account
   }
 
@@ -94,7 +94,7 @@ function doPost(e) {
     if (e && e.postData && e.postData.contents) {
       try {
         data = JSON.parse(e.postData.contents);
-      } catch (parseErr) {
+      } catch {
         data = e.parameter || {};
       }
     } else if (e && e.parameter) {
@@ -103,6 +103,14 @@ function doPost(e) {
     
     var action = (data.action || 'subscribe').toString().trim().toLowerCase();
     var timestamp = data.timestamp || new Date().toISOString();
+
+    // 🔒 Security: API Key validation for admin email and broadcast operations (L1)
+    var EXPECTED_API_KEY = "iedc_gect_secret_2024";
+    if (action === 'test_email' || action === 'broadcast_newsletter') {
+      if (!data.apiKey || data.apiKey !== EXPECTED_API_KEY) {
+        return jsonOutput({ result: 'error', message: 'Unauthorized: Invalid or missing API key' });
+      }
+    }
 
     // -------------------------------------------------------------
     // ACTION 1: SEND TEST PREVIEW EMAIL
@@ -162,6 +170,19 @@ function doPost(e) {
         total: activeSubscribers.length,
         message: 'Successfully broadcasted newsletter to ' + sentCount + ' subscribers'
       });
+    }
+
+    // -------------------------------------------------------------
+    // ACTION 2B: NOTIFY ADMIN OF STUDENT PROJECT SUBMISSION
+    // -------------------------------------------------------------
+    // Strictly restricted to sending notifications to the official admin address
+    if (action === 'project_submission_notify') {
+      var adminTarget = 'gectiedc@gmail.com';
+      var notifSubject = data.subject || '[ACTION REQUIRED] New Project for Approval';
+      var notifBody = data.htmlBody || '<p>New project submitted for editorial approval.</p>';
+
+      sendInnovationEmail(adminTarget, notifSubject, notifBody);
+      return jsonOutput({ result: 'success', message: 'Notification sent to ' + adminTarget });
     }
 
     // -------------------------------------------------------------
@@ -293,3 +314,11 @@ function jsonOutput(obj) {
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
+
+// Handle CORS preflight options request (H6)
+function doOptions() {
+  return ContentService
+    .createTextOutput('')
+    .setMimeType(ContentService.MimeType.TEXT);
+}
+

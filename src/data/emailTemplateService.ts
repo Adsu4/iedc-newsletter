@@ -12,6 +12,19 @@ export interface NewsletterEmailData {
 }
 
 /**
+ * Utility to HTML-escape user parameters to prevent HTML injection in emails (M4, M7)
+ */
+export function escapeHtml(str?: string): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
  * Generates an editorial, neobrutalist-styled HTML email template
  * that matches the visual identity of the IEDC Innovation Chronicle.
  */
@@ -23,6 +36,12 @@ export function generateNewsletterEmailHtml(data: NewsletterEmailData): string {
   const readTime = data.readTime || '3 min read';
   const category = data.category || 'Monthly Newsletter';
 
+  const safeTitle = escapeHtml(data.title);
+  const safeSubtitle = escapeHtml(data.subtitle);
+  const safeCategory = escapeHtml(category);
+  const safeEditionDate = escapeHtml(editionDate);
+  const safeReadTime = escapeHtml(readTime);
+
   // Preview paragraphs (first 2-3 paragraphs)
   const paragraphsToRender = (data.paragraphs && data.paragraphs.length > 0)
     ? data.paragraphs.slice(0, 3)
@@ -31,7 +50,7 @@ export function generateNewsletterEmailHtml(data: NewsletterEmailData): string {
   const renderedParagraphs = paragraphsToRender
     .map(
       (p) =>
-        `<p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.65; color: #292524; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">${p}</p>`
+        `<p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.65; color: #292524; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">${escapeHtml(p)}</p>`
     )
     .join('');
 
@@ -42,7 +61,7 @@ export function generateNewsletterEmailHtml(data: NewsletterEmailData): string {
         <tr>
           <td align="center">
             <a href="${articleUrl}" target="_blank" style="text-decoration: none; display: block;">
-              <img src="${data.imageUrl}" alt="${data.title}" width="540" style="max-width: 100%; height: auto; display: block; border: 2px solid #1C1B1B; border-radius: 8px; box-shadow: 4px 4px 0px #1C1B1B;" />
+              <img src="${data.imageUrl}" alt="${safeTitle}" width="540" style="max-width: 100%; height: auto; display: block; border: 2px solid #1C1B1B; border-radius: 8px; box-shadow: 4px 4px 0px #1C1B1B;" />
             </a>
           </td>
         </tr>
@@ -56,7 +75,7 @@ export function generateNewsletterEmailHtml(data: NewsletterEmailData): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>${data.title} - IEDC GECT Chronicle</title>
+  <title>${safeTitle} - IEDC GECT Chronicle</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #F6F4ED; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; word-break: break-word;">
   <!-- Wrapper Table -->
@@ -74,13 +93,13 @@ export function generateNewsletterEmailHtml(data: NewsletterEmailData): string {
                 <tr>
                   <td>
                     <span style="display: inline-block; background-color: #C25E37; color: #FFFFFF; font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 3px 8px; border-radius: 9999px; margin-bottom: 6px;">
-                      ⭐ ${category.toUpperCase()}
+                      ⭐ ${safeCategory.toUpperCase()}
                     </span>
                     <h1 style="margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 20px; font-weight: 800; color: #FFFFFF; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2;">
                       IEDC GECT Innovation Chronicle
                     </h1>
                     <p style="margin: 4px 0 0 0; font-size: 11px; color: #A8A29E; text-transform: uppercase; letter-spacing: 0.8px;">
-                      Govt. Engineering College Thrissur • ${editionDate}
+                      Govt. Engineering College Thrissur • ${safeEditionDate}
                     </p>
                   </td>
                 </tr>
@@ -97,11 +116,11 @@ export function generateNewsletterEmailHtml(data: NewsletterEmailData): string {
                 <tr>
                   <td>
                     <span style="font-size: 12px; font-weight: 700; color: #C25E37; text-transform: uppercase; letter-spacing: 0.5px;">
-                      ${editionDate}
+                      ${safeEditionDate}
                     </span>
                     <span style="color: #D6D3D1; margin: 0 6px;">•</span>
                     <span style="font-size: 12px; color: #78716C; font-weight: 500;">
-                      ⏱ ${readTime}
+                      ⏱ ${safeReadTime}
                     </span>
                   </td>
                 </tr>
@@ -110,14 +129,14 @@ export function generateNewsletterEmailHtml(data: NewsletterEmailData): string {
               <!-- Article Title -->
               <h2 style="margin: 0 0 12px 0; font-family: Georgia, 'Times New Roman', serif; font-size: 24px; line-height: 1.25; font-weight: 800; color: #1C1B1B;">
                 <a href="${articleUrl}" target="_blank" style="color: #1C1B1B; text-decoration: none;">
-                  ${data.title}
+                  ${safeTitle}
                 </a>
               </h2>
 
               <!-- Subtitle -->
               ${data.subtitle ? `
               <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 1.5; color: #57534E; font-style: italic; font-family: Georgia, serif;">
-                ${data.subtitle}
+                ${safeSubtitle}
               </p>
               ` : ''}
 

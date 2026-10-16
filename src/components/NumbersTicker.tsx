@@ -59,6 +59,34 @@ function useCountUp(target: string, duration = 1200) {
   return { display, ref };
 }
 
+function StatCard({ item, index }: { item: { label: string; value: string; subtext: string; icon: string; color: string }; index: number }) {
+  const counter = useCountUp(item.value);
+  return (
+    <div
+      ref={counter.ref}
+      className="bg-surface p-4 rounded-xl border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_rgba(28,27,27,1)] transition-all flex flex-col justify-between"
+      style={{ animationDelay: `${index * 80}ms` }}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className={`w-8 h-8 rounded-lg border border-on-surface ${item.color} flex items-center justify-center shadow-[1px_1px_0px_0px_rgba(28,27,27,1)]`}>
+          <span className="material-symbols-outlined text-[16px]">{item.icon}</span>
+        </div>
+      </div>
+      <div>
+        <div className="text-2xl sm:text-3xl font-bold font-headline-md text-on-surface leading-none mb-1 tabular-nums">
+          {counter.display}
+        </div>
+        <div className="text-xs font-bold font-sans text-on-surface leading-tight mb-0.5">
+          {item.label}
+        </div>
+        <div className="text-[11px] text-secondary font-medium">
+          {item.subtext}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function NumbersTicker() {
   const statItems = [
     {
@@ -128,34 +156,9 @@ export default function NumbersTicker() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-        {statItems.map((item, index) => {
-          const counter = useCountUp(item.value);
-          return (
-            <div
-              key={item.label}
-              ref={counter.ref}
-              className="bg-surface p-4 rounded-xl border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_rgba(28,27,27,1)] transition-all flex flex-col justify-between"
-              style={{ animationDelay: `${index * 80}ms` }}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className={`w-8 h-8 rounded-lg border border-on-surface ${item.color} flex items-center justify-center shadow-[1px_1px_0px_0px_rgba(28,27,27,1)]`}>
-                  <span className="material-symbols-outlined text-[16px]">{item.icon}</span>
-                </div>
-              </div>
-              <div>
-                <div className="text-2xl sm:text-3xl font-bold font-headline-md text-on-surface leading-none mb-1 tabular-nums">
-                  {counter.display}
-                </div>
-                <div className="text-xs font-bold font-sans text-on-surface leading-tight mb-0.5">
-                  {item.label}
-                </div>
-                <div className="text-[11px] text-secondary font-medium">
-                  {item.subtext}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {statItems.map((item, index) => (
+          <StatCard key={item.label} item={item} index={index} />
+        ))}
       </div>
     </section>
   );

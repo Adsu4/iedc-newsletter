@@ -1,6 +1,7 @@
 import { articles as initialArticles, type Article, type TeamMember, type ProjectResource, type SubmitterContact } from './articles';
 import { supabase, isSupabaseConfigured, supabaseUrl } from '../lib/supabase';
 import { sendProjectSubmissionAdminNotification } from './subscriptionService';
+import DOMPurify from 'dompurify';
 
 const LOCAL_STORAGE_KEY = 'iedc_published_articles_v2';
 const DELETED_IDS_KEY = 'iedc_deleted_article_ids_v2';
@@ -59,7 +60,7 @@ export async function checkServerConnection(): Promise<{
       statusText: 'Cloud Server Online (All devices syncing)',
       url: supabaseUrl,
     };
-  } catch (err: any) {
+  } catch {
     return {
       configured: true,
       online: false,
@@ -82,17 +83,25 @@ if (typeof window !== 'undefined' && isSupabaseConfigured && client) {
             saveLocalArticles(res.data.map(mapSupabaseRow));
             notifyArticlesUpdated();
           }
-        } catch (e) {
+        } catch {
           // ignore
         }
       })
       .subscribe();
-  } catch (e) {
+  } catch {
     // Realtime not supported or connection dropped
   }
 }
 
 // --- HTML Sanitization ---
+export function sanitizeRichHtml(input?: string): string {
+  if (!input) return '';
+  return DOMPurify.sanitize(input, {
+    ADD_TAGS: ['iframe'],
+    ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'target', 'rel'],
+  });
+}
+
 function sanitizeHtml(input: string): string {
   const div = document.createElement('div');
   div.textContent = input;
@@ -108,7 +117,7 @@ function getDeletedIds(): string[] {
   try {
     const stored = localStorage.getItem(DELETED_IDS_KEY);
     return stored ? JSON.parse(stored) : [];
-  } catch (e) {
+  } catch {
     return [];
   }
 }
@@ -200,7 +209,7 @@ function mapSupabaseRow(item: Record<string, unknown>): Article {
   let contentObj: any = { paragraphs: [], subheadings: [] };
   try {
     contentObj = typeof item.content === 'string' ? JSON.parse(item.content as string) : (item.content as any) || contentObj;
-  } catch (e) {
+  } catch {
     contentObj = { paragraphs: [], subheadings: [] };
   }
 
@@ -213,7 +222,8 @@ function mapSupabaseRow(item: Record<string, unknown>): Article {
   const teamMembers = Array.isArray(contentObj.teamMembers) ? (contentObj.teamMembers as TeamMember[]) : undefined;
   const teamName = typeof contentObj.teamName === 'string' ? contentObj.teamName : undefined;
   const resources = Array.isArray(contentObj.resources) ? (contentObj.resources as ProjectResource[]) : undefined;
-  const submitterContact = contentObj.submitterContact ? (contentObj.submitterContact as SubmitterContact) : undefined;
+  const isPublished = (item.status as Article['status']) === 'published';
+  const submitterContact = isPublished ? undefined : (contentObj.submitterContact ? (contentObj.submitterContact as SubmitterContact) : undefined);
   const needsApproval = typeof contentObj.needsApproval === 'boolean' ? contentObj.needsApproval : undefined;
 
   return {
@@ -228,7 +238,7 @@ function mapSupabaseRow(item: Record<string, unknown>): Article {
     featured: Boolean(topStoryRank) || (item.featured as boolean) || false,
     status: (item.status as Article['status']) || 'published',
     scheduledFor: (item.scheduled_for as string) || undefined,
-    content: contentObj,
+    content: isPublished ? { ...contentObj, submitterContact: undefined } : contentObj,
     author: typeof item.author === 'string' ? JSON.parse(item.author as string) : (item.author as Article['author']),
     createdAt: (item.createdAt as string) || undefined,
     topStoryRank,
@@ -241,15 +251,24 @@ function mapSupabaseRow(item: Record<string, unknown>): Article {
 }
 
 function toSupabaseRow(article: Article): Record<string, unknown> {
-  const contentPayload = {
+  const isPublished = article.status === 'published';
+  // 🔒 Privacy (M6): Submitter contact info is confidential and must NEVER be stored in published articles
+  const safeSubmitterContact = isPublished ? undefined : (article.submitterContact || article.content?.submitterContact || undefined);
+
+  const contentPayload: Record<string, unknown> = {
     ...article.content,
     topStoryRank: article.topStoryRank && article.topStoryRank > 0 ? article.topStoryRank : null,
     teamMembers: article.teamMembers || article.content?.teamMembers || [],
     teamName: article.teamName || article.content?.teamName || '',
     resources: article.resources || article.content?.resources || [],
-    submitterContact: article.submitterContact || article.content?.submitterContact || null,
     needsApproval: article.needsApproval !== undefined ? article.needsApproval : (article.content?.needsApproval ?? false),
   };
+
+  if (!isPublished && safeSubmitterContact) {
+    contentPayload.submitterContact = safeSubmitterContact;
+  } else {
+    delete contentPayload.submitterContact;
+  }
 
   return {
     id: String(article.id),
@@ -283,11 +302,21 @@ export async function getAllArticlesAdmin(): Promise<Article[]> {
           .from('articles')
           .select('*')
           .order('createdAt', { ascending: false }),
-        1500
+        2000
       );
 
       if (!res.error && res.data && res.data.length > 0) {
-        list = res.data.map(mapSupabaseRow);
+        const cloudArticles = res.data.map(mapSupabaseRow);
+        const cloudMap = new Map(cloudArticles.map((a: Article) => [String(a.id), a]));
+
+        // Merge: keep cloud articles, but preserve local articles (especially drafts and offline edits)
+        const mergedList = [...cloudArticles];
+        for (const local of list) {
+          if (!cloudMap.has(String(local.id)) && !deletedIds.includes(String(local.id))) {
+            mergedList.push(local);
+          }
+        }
+        list = mergedList;
         // Persist to local cache so visitor devices immediately have server articles offline/instant
         saveLocalArticles(list);
       }
@@ -304,14 +333,23 @@ export async function getAllArticlesAdmin(): Promise<Article[]> {
 export async function getAllArticles(): Promise<Article[]> {
   const all = await getAllArticlesAdmin();
   const now = new Date();
-  return all.filter((a) => {
-    if (a.status === 'draft') return false;
-    if (a.status === 'scheduled') {
-      if (!a.scheduledFor) return false;
-      return new Date(a.scheduledFor) <= now;
-    }
-    return true;
-  });
+  return all
+    .filter((a) => {
+      if (a.status === 'draft') return false;
+      if (a.status === 'scheduled') {
+        if (!a.scheduledFor) return false;
+        return new Date(a.scheduledFor) <= now;
+      }
+      return true;
+    })
+    .map((a) => ({
+      ...a,
+      submitterContact: undefined, // 🔒 Privacy (H1): Never expose confidential student contacts on public pages
+      content: {
+        ...a.content,
+        submitterContact: undefined,
+      },
+    }));
 }
 
 export async function fetchArticleById(id: string): Promise<Article | undefined> {
@@ -350,7 +388,7 @@ export interface CreateArticlePayload {
 }
 
 export async function publishArticle(payload: CreateArticlePayload): Promise<Article> {
-  const newId = String(Date.now());
+  const newId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now());
   const now = new Date();
   const formattedDate = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
@@ -360,6 +398,10 @@ export async function publishArticle(payload: CreateArticlePayload): Promise<Art
 
   const isNewsletter = payload.category === 'Monthly Newsletter' || payload.category === 'Newsletter' || payload.category === 'Latest Edition';
   const cleanRank = payload.topStoryRank && Number(payload.topStoryRank) > 0 ? Number(payload.topStoryRank) : undefined;
+  const articleStatus = payload.status || 'published';
+  const isPublished = articleStatus === 'published';
+  // 🔒 Privacy (M6): Submitter contact info is confidential and must NEVER be stored in published articles
+  const safeContact = isPublished ? undefined : payload.submitterContact;
 
   const newArticle: Article = {
     id: newId,
@@ -371,23 +413,23 @@ export async function publishArticle(payload: CreateArticlePayload): Promise<Art
     readTime,
     imageUrl: payload.imageUrl || '',
     featured: Boolean(cleanRank) || isNewsletter || payload.featured || false,
-    status: payload.status || 'published',
+    status: articleStatus,
     scheduledFor: payload.scheduledFor || undefined,
     topStoryRank: cleanRank,
     teamMembers: payload.teamMembers || [],
     teamName: payload.teamName || '',
     resources: payload.resources || [],
-    submitterContact: payload.submitterContact,
+    submitterContact: safeContact,
     needsApproval: payload.needsApproval,
     content: {
       paragraphs: payload.paragraphs.length > 0 ? sanitizeParagraphs(payload.paragraphs) : ['No content provided.'],
       subheadings: payload.subheadings || [],
       blockquote: payload.blockquote ? sanitizeHtml(payload.blockquote) : undefined,
-      html: payload.html || undefined,
+      html: payload.html ? sanitizeRichHtml(payload.html) : undefined,
       teamMembers: payload.teamMembers || [],
       teamName: payload.teamName || '',
       resources: payload.resources || [],
-      submitterContact: payload.submitterContact,
+      submitterContact: safeContact,
       needsApproval: payload.needsApproval,
     },
     author: {
@@ -405,13 +447,39 @@ export async function publishArticle(payload: CreateArticlePayload): Promise<Art
 
   // 2. SAVE TO SUPABASE CLOUD SERVER (Sync across all devices)
   if (isSupabaseConfigured && supabase) {
-    const res = await withTimeout<any>(
-      supabase.from('articles').insert([toSupabaseRow(newArticle)]),
-      3500
-    );
-    if (res.error) {
-      console.error('Supabase cloud insert failed:', res.error);
-      throw new Error(`Cloud server error: ${res.error.message || 'Database insert failed'}`);
+    try {
+      const res = await withTimeout<any>(
+        supabase.from('articles').insert([toSupabaseRow(newArticle)]),
+        3500
+      );
+      if (res.error) {
+        console.warn('Supabase cloud insert warning:', res.error);
+        if (newArticle.status !== 'draft') {
+          console.error('Supabase cloud insert failed:', res.error);
+          throw new Error(`Cloud server error: ${res.error.message || 'Database insert failed'}`);
+        }
+      }
+
+      // 🔒 Also securely save confidential contact info to dedicated project_submissions table (H1)
+      if (newArticle.submitterContact) {
+        try {
+          await supabase.from('project_submissions').insert([{
+            id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()),
+            article_id: newArticle.id,
+            contact_name: newArticle.submitterContact.name || '',
+            contact_email: newArticle.submitterContact.email || '',
+            contact_phone: newArticle.submitterContact.phone || '',
+          }]);
+        } catch {
+          // Optional project_submissions sync note
+        }
+      }
+    } catch (err: any) {
+      if (newArticle.status === 'draft') {
+        console.warn('Supabase cloud sync failed for draft, draft is safely preserved in local cache:', err);
+      } else {
+        throw err;
+      }
     }
   }
 
@@ -434,8 +502,11 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
   const resolvedTeamMembers = payload.teamMembers !== undefined ? payload.teamMembers : (existing.teamMembers || existing.content?.teamMembers);
   const resolvedTeamName = payload.teamName !== undefined ? payload.teamName : (existing.teamName || existing.content?.teamName);
   const resolvedResources = payload.resources !== undefined ? payload.resources : (existing.resources || existing.content?.resources);
-  const resolvedSubmitter = payload.submitterContact !== undefined ? payload.submitterContact : (existing.submitterContact || existing.content?.submitterContact);
-  const resolvedNeedsApproval = payload.needsApproval !== undefined ? payload.needsApproval : (existing.needsApproval ?? existing.content?.needsApproval);
+  const targetStatus = payload.status ?? existing.status;
+  const isPublished = targetStatus === 'published';
+  // 🔒 Privacy (M6): Submitter contact info is confidential and must NEVER be stored in published articles
+  const resolvedSubmitter = isPublished ? undefined : (payload.submitterContact !== undefined ? payload.submitterContact : (existing.submitterContact || existing.content?.submitterContact));
+  const resolvedNeedsApproval = isPublished ? false : (payload.needsApproval !== undefined ? payload.needsApproval : (existing.needsApproval ?? existing.content?.needsApproval));
 
   const updated: Article = {
     ...existing,
@@ -444,7 +515,7 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
     category: payload.category ?? existing.category,
     categoryColor: payload.categoryColor ?? existing.categoryColor,
     imageUrl: payload.imageUrl ?? existing.imageUrl,
-    status: payload.status ?? existing.status,
+    status: targetStatus,
     featured: Boolean(cleanRank) || isNewsletter || (payload.featured ?? existing.featured),
     scheduledFor: payload.scheduledFor ?? existing.scheduledFor,
     topStoryRank: cleanRank,
@@ -458,7 +529,7 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
         paragraphs: sanitizeParagraphs(payload.paragraphs),
         subheadings: payload.subheadings || existing.content.subheadings,
         blockquote: payload.blockquote !== undefined ? (payload.blockquote ? sanitizeHtml(payload.blockquote) : undefined) : existing.content.blockquote,
-        html: payload.html !== undefined ? payload.html : existing.content.html,
+        html: payload.html !== undefined ? (payload.html ? sanitizeRichHtml(payload.html) : undefined) : existing.content.html,
       } : existing.content),
       teamMembers: resolvedTeamMembers,
       teamName: resolvedTeamName,
@@ -480,13 +551,24 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
 
   // 2. UPDATE ON SUPABASE CLOUD SERVER
   if (isSupabaseConfigured && supabase) {
-    const res = await withTimeout<any>(
-      supabase.from('articles').update(toSupabaseRow(updated)).eq('id', targetId),
-      3500
-    );
-    if (res.error) {
-      console.error('Supabase cloud update failed:', res.error);
-      throw new Error(`Cloud server error: ${res.error.message || 'Database update failed'}`);
+    try {
+      const res = await withTimeout<any>(
+        supabase.from('articles').update(toSupabaseRow(updated)).eq('id', targetId),
+        3500
+      );
+      if (res.error) {
+        console.warn('Supabase cloud update warning:', res.error);
+        if (updated.status !== 'draft') {
+          console.error('Supabase cloud update failed:', res.error);
+          throw new Error(`Cloud server error: ${res.error.message || 'Database update failed'}`);
+        }
+      }
+    } catch (err: any) {
+      if (updated.status === 'draft') {
+        console.warn('Supabase cloud sync failed for draft, draft is safely preserved in local cache:', err);
+      } else {
+        throw err;
+      }
     }
   }
 

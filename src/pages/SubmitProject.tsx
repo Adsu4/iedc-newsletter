@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { submitStudentProject } from '../data/articleService';
+import { submitStudentProject, sanitizeRichHtml } from '../data/articleService';
 import type { TeamMember, ProjectResource } from '../data/articles';
 import { getEmbedDetails, getDirectDriveImageUrl } from '../utils/embedHelper';
 
@@ -26,6 +26,27 @@ export default function SubmitProject() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedArticleId, setSubmittedArticleId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Security & Anti-Spam (H3, M3)
+  const [honeypot, setHoneypot] = useState('');
+  const [securityAnswer, setSecurityAnswer] = useState('');
+  const [challenge] = useState(() => {
+    const a = Math.floor(Math.random() * 6) + 2;
+    const b = Math.floor(Math.random() * 6) + 2;
+    return { a, b, answer: a + b };
+  });
+
+  const handleCreateLink = () => {
+    const url = window.prompt('Enter link URL (e.g. https://github.com/my-project):');
+    if (!url) return;
+    const trimmed = url.trim();
+    if (!/^https?:\/\//i.test(trimmed) && !/^mailto:/i.test(trimmed)) {
+      alert('Security Notice: Only web links starting with http://, https://, or mailto: are allowed.');
+      return;
+    }
+    document.execCommand('createLink', false, trimmed);
+    updateActiveFormats();
+  };
 
   // Editor State & Toolbar
   const editorRef = useRef<HTMLDivElement>(null);
@@ -120,9 +141,32 @@ export default function SubmitProject() {
       return;
     }
 
+    // Anti-spam honeypot
+    if (honeypot.trim()) {
+      setSubmittedArticleId('mock-success');
+      return;
+    }
+
+    // Rate limiting check (60s cooldown per browser)
+    const lastSubmitTime = localStorage.getItem('iedc_last_project_submit');
+    if (lastSubmitTime) {
+      const elapsedSec = (Date.now() - Number(lastSubmitTime)) / 1000;
+      if (elapsedSec < 60) {
+        setErrorMessage(`Rate limit: Please wait ${Math.ceil(60 - elapsedSec)} seconds before submitting another project.`);
+        return;
+      }
+    }
+
+    // Anti-bot math verification
+    if (parseInt(securityAnswer.trim(), 10) !== challenge.answer) {
+      setErrorMessage(`Security verification failed: What is ${challenge.a} + ${challenge.b}? Please enter the correct sum.`);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const htmlContent = editorRef.current ? editorRef.current.innerHTML.trim() : '';
+      const rawHtml = editorRef.current ? editorRef.current.innerHTML.trim() : '';
+      const htmlContent = rawHtml ? sanitizeRichHtml(rawHtml) : '';
 
       const article = await submitStudentProject({
         title: title.trim(),
@@ -138,6 +182,7 @@ export default function SubmitProject() {
         resources: resources.filter((r) => r.url.trim().length > 0),
       });
 
+      localStorage.setItem('iedc_last_project_submit', String(Date.now()));
       setSubmittedArticleId(article.id);
     } catch (err: any) {
       console.error('Submission failed:', err);
@@ -163,8 +208,7 @@ export default function SubmitProject() {
             Project Submitted for Approval!
           </h1>
           <p className="text-sm sm:text-base text-on-surface-variant max-w-lg mx-auto leading-relaxed">
-            Thank you for submitting <strong>"{title}"</strong>! An email notification has been dispatched to{' '}
-            <strong className="text-on-surface">gectiedc@gmail.com</strong>.
+            Thank you for submitting <strong>"{title}"</strong>! Your project is now queued for editorial review by the IEDC board.
           </p>
         </div>
 
@@ -565,8 +609,9 @@ export default function SubmitProject() {
             </button>
             <button
               type="button"
-              onMouseDown={(e) => { e.preventDefault(); applyFormat('createLink'); }}
+              onMouseDown={(e) => { e.preventDefault(); handleCreateLink(); }}
               className="w-7 h-7 rounded-lg flex items-center justify-center bg-surface hover:bg-surface-variant text-on-surface transition-colors"
+              title="Insert Safe Link"
             >
               <span className="material-symbols-outlined text-[16px]">link</span>
             </button>
@@ -735,6 +780,44 @@ export default function SubmitProject() {
             <span className="material-symbols-outlined text-[16px]">add</span>
             <span>Add Resource / Media Link</span>
           </button>
+        </div>
+
+        {/* Security & Anti-Bot Verification Challenge */}
+        <div style={{ display: 'none' }} aria-hidden="true">
+          <input
+            type="text"
+            name="security_honeypot_check"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+          />
+        </div>
+
+        <div className="bg-surface-container-low border-2 border-on-surface p-4 sm:p-5 rounded-2xl shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary text-on-primary flex items-center justify-center shrink-0 border border-on-surface">
+              <span className="material-symbols-outlined text-[20px]">verified_user</span>
+            </div>
+            <div>
+              <div className="text-xs sm:text-sm font-bold text-on-surface">
+                Anti-Bot Verification: What is <span className="text-primary font-mono text-base font-black">{challenge.a} + {challenge.b}</span>?
+              </div>
+              <div className="text-[11px] text-secondary">
+                Simple anti-spam verification required before submitting for editorial review.
+              </div>
+            </div>
+          </div>
+          <div className="w-full sm:w-auto flex items-center gap-2">
+            <input
+              type="number"
+              value={securityAnswer}
+              onChange={(e) => setSecurityAnswer(e.target.value)}
+              placeholder="Your answer"
+              required
+              className="w-full sm:w-28 text-center text-sm font-bold px-3 py-2 rounded-xl border-2 border-on-surface bg-surface text-on-surface focus:outline-none focus:border-primary shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]"
+            />
+          </div>
         </div>
 
         {/* Submit Button */}
