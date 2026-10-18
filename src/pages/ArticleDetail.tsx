@@ -15,6 +15,7 @@ export default function ArticleDetail() {
     return getLocalArticlesSync().filter((a) => String(a.id) !== String(id)).slice(0, 2);
   });
   const [copied, setCopied] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -453,15 +454,15 @@ export default function ArticleDetail() {
               </a>
 
               {eventDetails?.registrationQrUrl && (
-                <a
-                  href={getDirectDriveImageUrl(eventDetails.registrationQrUrl)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-surface text-on-surface px-4 py-2.5 rounded-full text-xs font-bold uppercase border border-outline-variant hover:border-on-surface transition-all flex items-center gap-1.5"
+                <button
+                  type="button"
+                  onClick={() => setShowQrModal(true)}
+                  className="bg-surface text-on-surface px-4 py-2.5 rounded-full text-xs font-bold uppercase border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] transition-all flex items-center gap-1.5 cursor-pointer"
+                  title="Scan Registration QR"
                 >
-                  <span className="material-symbols-outlined text-[15px]">qr_code_2</span>
-                  <span>View Registration QR</span>
-                </a>
+                  <span className="material-symbols-outlined text-[16px] text-primary">qr_code_scanner</span>
+                  <span>Show QR Code</span>
+                </button>
               )}
             </div>
           </div>
@@ -694,6 +695,59 @@ export default function ArticleDetail() {
           ))}
         </div>
       </section>
+
+      {/* QR Code Scanning Modal */}
+      {showQrModal && eventDetails?.registrationQrUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setShowQrModal(false)}
+        >
+          <div
+            className="bg-surface rounded-2xl border-2 border-on-surface p-6 max-w-sm w-full shadow-[6px_6px_0px_0px_rgba(28,27,27,1)] flex flex-col items-center gap-4 text-center animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between w-full border-b border-outline-variant/60 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[16px] text-primary">qr_code_scanner</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-secondary">Scan to Register</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowQrModal(false)}
+                className="w-7 h-7 rounded-full border border-outline-variant flex items-center justify-center text-secondary hover:text-on-surface hover:bg-surface-container transition-colors"
+              >
+                <span className="material-symbols-outlined text-[16px]">close</span>
+              </button>
+            </div>
+
+            <h3 className="font-bold text-sm text-on-surface">{article.title}</h3>
+
+            <div className="w-56 h-56 p-2 rounded-xl border-2 border-on-surface bg-white shadow-inner flex items-center justify-center overflow-hidden">
+              <img
+                src={getDirectDriveImageUrl(eventDetails.registrationQrUrl)}
+                alt="Registration QR Code"
+                className="w-full h-full object-contain"
+              />
+            </div>
+
+            <p className="text-xs text-secondary leading-relaxed px-2">
+              Point your smartphone camera at this QR code to open the registration form directly.
+            </p>
+
+            {eventDetails.registrationLink && (
+              <a
+                href={eventDetails.registrationLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-2.5 bg-primary text-on-primary rounded-xl text-xs font-label-bold uppercase border-2 border-on-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-1.5"
+              >
+                <span>Or Open Registration Link</span>
+                <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+              </a>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }
