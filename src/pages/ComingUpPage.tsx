@@ -30,7 +30,10 @@ export default function ComingUpPage() {
         </p>
       </div>
 
-      {/* Collaboration Callout Banner */}
+      {/* Dynamic Schedule List (Events / Articles first) */}
+      <ComingUpSection showAll={true} />
+
+      {/* Collaboration Callout Banner (Placed after articles) */}
       <div className="bg-surface-container-high rounded-xl border-2 border-on-surface p-5 sm:p-6 shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5">
         <div className="flex flex-col gap-1.5 max-w-2xl">
           <div className="flex items-center gap-2 text-xs font-medium text-secondary">
@@ -66,9 +69,6 @@ export default function ComingUpPage() {
           </button>
         </div>
       </div>
-
-      {/* Dynamic Schedule List */}
-      <ComingUpSection showAll={true} />
     </main>
   );
 }

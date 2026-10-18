@@ -68,47 +68,6 @@ export default function Projects() {
         </div>
       </div>
 
-      {/* Submission Guidance Callout Banner */}
-      <div className="bg-surface-container-high rounded-xl border-2 border-on-surface p-5 sm:p-6 shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5">
-        <div className="flex flex-col gap-1.5 max-w-2xl">
-          <div className="flex items-center gap-2 text-xs font-medium text-secondary">
-            <span className="bg-secondary text-on-secondary px-2.5 py-0.5 rounded-full text-[10px] font-label-bold uppercase">Call for Submissions</span>
-            <span>• Open for all engineering departments</span>
-          </div>
-          <h2 className="text-lg sm:text-xl font-bold font-sans text-on-surface leading-tight">
-            How to Submit Your Project
-          </h2>
-          <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-            Built an innovative hardware prototype, software application, or research model? Submit directly through our online project submission form for review by the IEDC team, or email{' '}
-            <strong className="text-on-surface font-semibold underline">gectiedc@gmail.com</strong>.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-          <Link
-            to="/submit-project"
-            className="bg-primary text-on-primary px-5 py-2.5 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-primary/90 transition-colors border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] flex items-center justify-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial"
-          >
-            <span className="material-symbols-outlined text-[16px]">edit_document</span>
-            <span>Write &amp; Submit Online</span>
-          </Link>
-          <a
-            href={mailtoUrl}
-            className="bg-surface text-on-surface px-4 py-2.5 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-surface-container transition-colors border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] flex items-center justify-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial"
-          >
-            <span className="material-symbols-outlined text-[15px]">mail</span>
-            <span>Or Email Us</span>
-          </a>
-          <button
-            onClick={handleCopyEmail}
-            className="bg-surface text-on-surface px-3 py-2.5 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-surface-container transition-colors border border-outline-variant flex items-center justify-center gap-1 whitespace-nowrap"
-            title="Copy email address"
-          >
-            <span className="material-symbols-outlined text-[15px]">{copied ? 'check' : 'content_copy'}</span>
-          </button>
-        </div>
-      </div>
-
       {/* Loading State */}
       {loading && projects.length === 0 ? (
         <div className="py-20 flex flex-col items-center justify-center gap-3">
@@ -299,6 +258,47 @@ export default function Projects() {
           })}
         </div>
       )}
+
+      {/* Submission Guidance Callout Banner (Placed after articles) */}
+      <div className="bg-surface-container-high rounded-xl border-2 border-on-surface p-5 sm:p-6 shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5 mt-2">
+        <div className="flex flex-col gap-1.5 max-w-2xl">
+          <div className="flex items-center gap-2 text-xs font-medium text-secondary">
+            <span className="bg-secondary text-on-secondary px-2.5 py-0.5 rounded-full text-[10px] font-label-bold uppercase">Call for Submissions</span>
+            <span>• Open for all engineering departments</span>
+          </div>
+          <h2 className="text-lg sm:text-xl font-bold font-sans text-on-surface leading-tight">
+            How to Submit Your Project
+          </h2>
+          <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
+            Built an innovative hardware prototype, software application, or research model? Submit directly through our online project submission form for review by the IEDC team, or email{' '}
+            <strong className="text-on-surface font-semibold underline">gectiedc@gmail.com</strong>.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+          <Link
+            to="/submit-project"
+            className="bg-primary text-on-primary px-5 py-2.5 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-primary/90 transition-colors border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] flex items-center justify-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial"
+          >
+            <span className="material-symbols-outlined text-[16px]">edit_document</span>
+            <span>Write &amp; Submit Online</span>
+          </Link>
+          <a
+            href={mailtoUrl}
+            className="bg-surface text-on-surface px-4 py-2.5 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-surface-container transition-colors border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] flex items-center justify-center gap-1.5 whitespace-nowrap flex-1 sm:flex-initial"
+          >
+            <span className="material-symbols-outlined text-[15px]">mail</span>
+            <span>Or Email Us</span>
+          </a>
+          <button
+            onClick={handleCopyEmail}
+            className="bg-surface text-on-surface px-3 py-2.5 rounded-full text-label-bold font-label-bold uppercase text-xs hover:bg-surface-container transition-colors border border-outline-variant flex items-center justify-center gap-1 whitespace-nowrap"
+            title="Copy email address"
+          >
+            <span className="material-symbols-outlined text-[15px]">{copied ? 'check' : 'content_copy'}</span>
+          </button>
+        </div>
+      </div>
     </main>
   );
 }
