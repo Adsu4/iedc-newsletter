@@ -8,6 +8,7 @@ import {
   checkServerConnection,
   setArticleTopStoryRank,
   reorderTopStories,
+  isComingUpArticle,
 } from '../data/articleService';
 import type { Article } from '../data/articles';
 
@@ -22,7 +23,7 @@ export default function AdminArticles() {
   const [articlesList, setArticlesList] = useState<Article[]>(() => getLocalArticlesAdminSync());
   const [loading, setLoading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Article | null>(null);
-  const [filter, setFilter] = useState<'all' | Article['status'] | 'pending'>('all');
+  const [filter, setFilter] = useState<'all' | Article['status'] | 'pending' | 'coming-up'>('all');
   const [serverStatus, setServerStatus] = useState<{ configured: boolean; online: boolean; statusText: string; url: string } | null>(null);
   const [showCurateModal, setShowCurateModal] = useState(false);
   const [curateOrder, setCurateOrder] = useState<string[]>([]);
@@ -99,11 +100,14 @@ export default function AdminArticles() {
   };
 
   const pendingCount = articlesList.filter((a) => a.needsApproval).length;
+  const comingUpCount = articlesList.filter(isComingUpArticle).length;
 
   const filtered = filter === 'all'
     ? articlesList
     : filter === 'pending'
     ? articlesList.filter((a) => a.needsApproval)
+    : filter === 'coming-up'
+    ? articlesList.filter(isComingUpArticle)
     : articlesList.filter((a) => a.status === filter);
 
   const counts = {
@@ -112,6 +116,7 @@ export default function AdminArticles() {
     draft: articlesList.filter((a) => a.status === 'draft').length,
     scheduled: articlesList.filter((a) => a.status === 'scheduled').length,
     pending: pendingCount,
+    comingUp: comingUpCount,
   };
 
   const rankedStoriesCount = articlesList.filter((a) => a.topStoryRank && a.topStoryRank > 0).length;
@@ -219,6 +224,18 @@ export default function AdminArticles() {
           </button>
         ))}
 
+        <button
+          onClick={() => setFilter('coming-up')}
+          className={`px-4 py-2 rounded-full text-label-bold font-label-bold uppercase text-sm transition-all border-2 flex items-center gap-1.5 ${
+            filter === 'coming-up'
+              ? 'bg-primary text-on-primary border-primary shadow-none'
+              : 'bg-transparent text-on-surface border-outline-variant hover:border-on-surface'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[16px]">calendar_month</span>
+          <span>Coming Up ({counts.comingUp})</span>
+        </button>
+
         {pendingCount > 0 && (
           <button
             onClick={() => setFilter('pending')}
@@ -242,12 +259,14 @@ export default function AdminArticles() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-24 text-secondary">
           <span className="material-symbols-outlined text-6xl mb-4 block opacity-30">article</span>
-          <p className="text-body-lg font-body-lg">No articles found.</p>
+          <p className="text-body-lg font-body-lg">No entries found.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
           {filtered.map((article) => {
             const sc = statusConfig[article.status] || statusConfig.published;
+            const isEvent = isComingUpArticle(article);
+
             return (
               <div
                 key={article.id}
@@ -260,7 +279,9 @@ export default function AdminArticles() {
                   </div>
                 ) : (
                   <div className="w-full sm:w-20 h-20 rounded-xl border-2 border-outline-variant shrink-0 bg-surface-container flex items-center justify-center">
-                    <span className="material-symbols-outlined text-outline-variant">article</span>
+                    <span className="material-symbols-outlined text-outline-variant">
+                      {isEvent ? 'event' : 'article'}
+                    </span>
                   </div>
                 )}
 
@@ -274,21 +295,48 @@ export default function AdminArticles() {
                         Needs Approval
                       </span>
                     )}
-                    {article.category !== 'Project section' && article.topStoryRank && article.topStoryRank > 0 ? (
+                    {isEvent && (
+                      <span className="bg-primary/10 text-primary border border-primary/30 px-2.5 py-0.5 rounded-full text-xs font-label-bold uppercase flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[13px]">calendar_month</span>
+                        Coming Up {article.eventDetails?.eventType ? `• ${article.eventDetails.eventType}` : ''}
+                      </span>
+                    )}
+                    {!isEvent && article.category !== 'Project section' && article.topStoryRank && article.topStoryRank > 0 ? (
                       <span className="bg-primary text-on-primary px-2.5 py-0.5 rounded-full text-xs font-label-bold uppercase flex items-center gap-1 shadow-sm">
                         <span className="material-symbols-outlined text-[13px]">hotel_class</span>
                         #{article.topStoryRank} {article.topStoryRank === 1 ? 'Cover' : article.topStoryRank <= 3 ? 'Brief' : 'Spotlight'}
                       </span>
                     ) : null}
                     <span className="text-label-md text-secondary">{article.category}</span>
-                    <span className="text-secondary/30">•</span>
-                    <span className="text-label-md text-secondary">{article.date}</span>
+                    {article.eventDetails?.eventDate ? (
+                      <>
+                        <span className="text-secondary/30">•</span>
+                        <span className="text-label-md text-primary font-bold flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px]">event_upcoming</span>
+                          {article.eventDetails.eventDate}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-secondary/30">•</span>
+                        <span className="text-label-md text-secondary">{article.date}</span>
+                      </>
+                    )}
+                    {article.eventDetails?.eventVenue && (
+                      <>
+                        <span className="text-secondary/30">•</span>
+                        <span className="text-label-md text-secondary flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px]">location_on</span>
+                          {article.eventDetails.eventVenue}
+                        </span>
+                      </>
+                    )}
                     {article.author?.name && (
                       <>
                         <span className="text-secondary/30">•</span>
                         <span className="text-label-md text-on-surface font-medium flex items-center gap-1">
                           <span className="material-symbols-outlined text-[13px] text-secondary">
-                            {article.category === 'Project section' ? 'groups' : 'person'}
+                            {isEvent ? 'event_seat' : article.category === 'Project section' ? 'groups' : 'person'}
                           </span>
                           {article.author.name}
                         </span>
@@ -316,8 +364,8 @@ export default function AdminArticles() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
-                  {/* Quick Rank Selector (Only for non-Project articles) */}
-                  {article.category !== 'Project section' && (
+                  {/* Quick Rank Selector (Only for non-Project, non-Event articles) */}
+                  {article.category !== 'Project section' && !isEvent && (
                     <div className="flex items-center gap-1.5 bg-surface-container-high px-2.5 py-1.5 rounded-xl border border-on-surface text-xs shadow-[2px_2px_0px_0px_rgba(28,27,27,1)]">
                       <span className="text-[11px] font-bold text-secondary uppercase hidden md:inline">Top Story:</span>
                       <select

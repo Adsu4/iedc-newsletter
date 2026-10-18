@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, type ChangeEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   publishArticle,
   updateArticle,
@@ -9,22 +9,30 @@ import {
 } from '../data/articleService';
 import { broadcastNewsletter, sendTestNewsletterEmail } from '../data/subscriptionService';
 import { generateNewsletterEmailHtml } from '../data/emailTemplateService';
-import type { Article, TeamMember, ProjectResource } from '../data/articles';
+import type { Article, TeamMember, ProjectResource, EventDetails } from '../data/articles';
 import { getEmbedDetails, getDirectDriveImageUrl } from '../utils/embedHelper';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const { articleId } = useParams<{ articleId: string }>();
+  const [searchParams] = useSearchParams();
   const isEditMode = Boolean(articleId);
+
+  const queryCat = searchParams.get('category');
+  const defaultInitialCategory = queryCat === 'Coming Up' || queryCat === 'coming-up'
+    ? 'Coming Up'
+    : queryCat === 'Project section'
+    ? 'Project section'
+    : 'Monthly Newsletter';
 
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
-  const [category, setCategory] = useState('Monthly Newsletter');
+  const [category, setCategory] = useState(defaultInitialCategory);
   const [categoryColor, setCategoryColor] = useState<Article['categoryColor']>('primary');
   const [coverImageUrl, setCoverImageUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
-  const [authorName, setAuthorName] = useState('Admin User');
-  const [authorRole, setAuthorRole] = useState('IEDC Editorial');
+  const [authorName, setAuthorName] = useState(defaultInitialCategory === 'Coming Up' ? 'IEDC Events Desk' : 'Admin User');
+  const [authorRole, setAuthorRole] = useState(defaultInitialCategory === 'Coming Up' ? 'Event Coordinator' : 'IEDC Editorial');
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishStatus, setPublishStatus] = useState<Article['status']>('published');
   const [scheduledFor, setScheduledFor] = useState('');
@@ -33,6 +41,16 @@ export default function AdminDashboard() {
   const [loaded, setLoaded] = useState(!isEditMode);
   const [serverStatus, setServerStatus] = useState<{ configured: boolean; online: boolean; statusText: string; url: string } | null>(null);
   const [topStoryRank, setTopStoryRank] = useState<number | null>(null);
+
+  // Coming Up Event states
+  const [eventDate, setEventDate] = useState('');
+  const [eventVenue, setEventVenue] = useState('');
+  const [eventType, setEventType] = useState('Workshop');
+  const [registrationDeadline, setRegistrationDeadline] = useState('');
+  const [registrationLink, setRegistrationLink] = useState('');
+  const [registrationQrUrl, setRegistrationQrUrl] = useState('');
+  const [eligibility, setEligibility] = useState('');
+  const [contactPerson, setContactPerson] = useState('');
 
   // Project Section states: Multiple team members, team name, and resources
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
@@ -119,6 +137,19 @@ export default function AdminDashboard() {
         }
         if (art.submitterContact || art.content?.submitterContact) {
           setSubmitterContact(art.submitterContact || art.content?.submitterContact || null);
+        }
+        if (art.eventDetails || art.content?.eventDetails) {
+          const ev = art.eventDetails || art.content?.eventDetails;
+          if (ev) {
+            if (ev.eventDate) setEventDate(ev.eventDate);
+            if (ev.eventVenue) setEventVenue(ev.eventVenue);
+            if (ev.eventType) setEventType(ev.eventType);
+            if (ev.registrationDeadline) setRegistrationDeadline(ev.registrationDeadline);
+            if (ev.registrationLink) setRegistrationLink(ev.registrationLink);
+            if (ev.registrationQrUrl) setRegistrationQrUrl(ev.registrationQrUrl);
+            if (ev.eligibility) setEligibility(ev.eligibility);
+            if (ev.contactPerson) setContactPerson(ev.contactPerson);
+          }
         }
         if (art.needsApproval !== undefined) {
           setNeedsApproval(Boolean(art.needsApproval));
@@ -376,6 +407,20 @@ export default function AdminDashboard() {
     const validTeamMembers = teamMembers.filter((m) => m.name.trim().length > 0);
     const validResources = resources.filter((r) => r.url.trim().length > 0);
 
+    const eventDetailsPayload: EventDetails | undefined =
+      category === 'Coming Up' || eventDate.trim() || registrationLink.trim()
+        ? {
+            eventDate: eventDate.trim() || undefined,
+            eventVenue: eventVenue.trim() || undefined,
+            eventType: eventType.trim() || 'Workshop',
+            registrationDeadline: registrationDeadline.trim() || undefined,
+            registrationLink: registrationLink.trim() || undefined,
+            registrationQrUrl: registrationQrUrl.trim() || undefined,
+            eligibility: eligibility.trim() || undefined,
+            contactPerson: contactPerson.trim() || undefined,
+          }
+        : undefined;
+
     const payload = {
       title: title.trim(),
       subtitle: subtitle.trim(),
@@ -386,17 +431,22 @@ export default function AdminDashboard() {
       html,
       authorName: category === 'Project section'
         ? (teamName.trim() || (validTeamMembers[0]?.name ? `${validTeamMembers[0].name} et al.` : 'Project Team'))
+        : category === 'Coming Up'
+        ? (authorName.trim() || 'IEDC Events Desk')
         : (authorName.trim() || 'Admin User'),
       authorRole: category === 'Project section'
         ? 'Student Project Team'
+        : category === 'Coming Up'
+        ? (authorRole.trim() || 'Event Coordinator')
         : (authorRole.trim() || 'IEDC Editorial'),
       subheadings: ['Key Takeaways'],
       status: publishStatus === 'draft' ? ('published' as const) : publishStatus,
       scheduledFor: publishStatus === 'scheduled' ? scheduledFor : undefined,
-      topStoryRank: category !== 'Project section' && topStoryRank && topStoryRank > 0 ? topStoryRank : null,
+      topStoryRank: category !== 'Project section' && category !== 'Coming Up' && topStoryRank && topStoryRank > 0 ? topStoryRank : null,
       teamMembers: validTeamMembers,
       teamName: teamName.trim() || undefined,
       resources: validResources,
+      eventDetails: eventDetailsPayload,
       submitterContact: submitterContact || undefined,
       needsApproval: false,
     };
@@ -427,8 +477,10 @@ export default function AdminDashboard() {
         }
         alert(needsApproval
           ? `🎉 Project approved and published! It is now live in the Projects Showcase.${emailMsg}`
+          : category === 'Coming Up'
+          ? `🎉 Upcoming Event updated! It is live in 'Coming Up at IEDC' across all devices.${emailMsg}`
           : `Story updated on cloud server! Changes are live across all devices.${emailMsg}`);
-        navigate('/admin/articles');
+        navigate(category === 'Coming Up' ? '/coming-up' : '/admin/articles');
       } else {
         const published = await publishArticle(payload);
         let emailMsg = '';
@@ -445,11 +497,16 @@ export default function AdminDashboard() {
             emailMsg = '\n\n⚠️ Story published, but email broadcast to Google Sheet failed.';
           }
         }
-        alert(`Story published to cloud server! It is now live across all devices.${emailMsg}`);
-        if (publishStatus === 'published') {
-          navigate(`/article/${published.id}`);
+        if (category === 'Coming Up') {
+          alert(`🎉 Upcoming event published! It is now live in the 'Coming Up at IEDC' calendar across all devices.${emailMsg}`);
+          navigate('/coming-up');
         } else {
-          navigate('/admin/articles');
+          alert(`Story published to cloud server! It is now live across all devices.${emailMsg}`);
+          if (publishStatus === 'published') {
+            navigate(`/article/${published.id}`);
+          } else {
+            navigate('/admin/articles');
+          }
         }
       }
     } catch (err: any) {
@@ -471,6 +528,20 @@ export default function AdminDashboard() {
     const validTeamMembers = teamMembers.filter((m) => m.name.trim().length > 0);
     const validResources = resources.filter((r) => r.url.trim().length > 0);
 
+    const eventDetailsPayload: EventDetails | undefined =
+      category === 'Coming Up' || eventDate.trim() || registrationLink.trim()
+        ? {
+            eventDate: eventDate.trim() || undefined,
+            eventVenue: eventVenue.trim() || undefined,
+            eventType: eventType.trim() || 'Workshop',
+            registrationDeadline: registrationDeadline.trim() || undefined,
+            registrationLink: registrationLink.trim() || undefined,
+            registrationQrUrl: registrationQrUrl.trim() || undefined,
+            eligibility: eligibility.trim() || undefined,
+            contactPerson: contactPerson.trim() || undefined,
+          }
+        : undefined;
+
     const payload = {
       title: title.trim(),
       subtitle: subtitle.trim(),
@@ -481,16 +552,21 @@ export default function AdminDashboard() {
       html,
       authorName: category === 'Project section'
         ? (teamName.trim() || (validTeamMembers[0]?.name ? `${validTeamMembers[0].name} et al.` : 'Project Team'))
+        : category === 'Coming Up'
+        ? (authorName.trim() || 'IEDC Events Desk')
         : (authorName.trim() || 'Admin User'),
       authorRole: category === 'Project section'
         ? 'Student Project Team'
+        : category === 'Coming Up'
+        ? (authorRole.trim() || 'Event Coordinator')
         : (authorRole.trim() || 'IEDC Editorial'),
       subheadings: ['Key Takeaways'],
       status: 'draft' as const,
-      topStoryRank: category !== 'Project section' && topStoryRank && topStoryRank > 0 ? topStoryRank : null,
+      topStoryRank: category !== 'Project section' && category !== 'Coming Up' && topStoryRank && topStoryRank > 0 ? topStoryRank : null,
       teamMembers: validTeamMembers,
       teamName: teamName.trim() || undefined,
       resources: validResources,
+      eventDetails: eventDetailsPayload,
       submitterContact: submitterContact || undefined,
       needsApproval: needsApproval,
     };
@@ -1130,9 +1206,10 @@ export default function AdminDashboard() {
             <div className="flex flex-wrap gap-2">
               {[
                 { name: 'Monthly Newsletter', label: '⭐ Monthly Newsletter', color: 'primary' as const },
+                { name: 'Coming Up', label: '📅 Coming Up at IEDC', color: 'primary' as const },
+                { name: 'Project section', label: '🚀 Project section', color: 'tertiary' as const },
                 { name: 'Tech Update', label: 'Tech Update', color: 'secondary' as const },
                 { name: 'Event', label: 'Event', color: 'secondary' as const },
-                { name: 'Project section', label: '🚀 Project section', color: 'tertiary' as const },
                 { name: 'Robotics', label: 'Robotics', color: 'primary' as const },
                 { name: 'Alumni', label: 'Alumni', color: 'tertiary' as const },
               ].map((t) => (
@@ -1155,6 +1232,11 @@ export default function AdminDashboard() {
                 ⭐ <strong>Official Newsletter Tag:</strong> Publishing with this tag will feature this article as the active monthly edition headline across the portal.
               </p>
             )}
+            {category === 'Coming Up' && (
+              <p className="text-[11px] text-primary font-medium mt-2.5 bg-primary/10 p-2.5 rounded-xl border border-primary/20 leading-relaxed">
+                📅 <strong>Coming Up at IEDC Tag:</strong> This event will be published dynamically to the <strong>Coming Up at IEDC</strong> calendar on the homepage and the full schedule status page with direct registration links.
+              </p>
+            )}
             {category === 'Project section' && (
               <p className="text-[11px] text-tertiary font-medium mt-2.5 bg-tertiary/10 p-2.5 rounded-xl border border-tertiary/20 leading-relaxed">
                 🚀 <strong>Project Section Tag:</strong> This story will be featured in the official <strong>Projects Showcase</strong> section with team member profiles and embedded documents.
@@ -1162,8 +1244,182 @@ export default function AdminDashboard() {
             )}
           </div>
 
-          {/* Conditional Author OR Team Members section */}
-          {category === 'Project section' ? (
+          {/* Conditional: Coming Up Event Details OR Project Section Team Members OR Standard Author */}
+          {category === 'Coming Up' ? (
+            <div className="p-4 rounded-xl border-2 border-on-surface bg-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex flex-col gap-4">
+              <div className="flex items-center gap-2 border-b border-outline-variant/60 pb-2.5">
+                <span className="material-symbols-outlined text-primary text-[20px]">calendar_month</span>
+                <span className="text-label-bold font-label-bold uppercase text-on-surface text-xs">
+                  Event &amp; Registration Setup
+                </span>
+              </div>
+
+              {/* Event Type / Format Pills */}
+              <div>
+                <span className="block text-[11px] font-bold uppercase text-secondary mb-2">Event Format</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {['Workshop', 'Hackathon', 'Competition', 'Bootcamp', 'Talk', 'Webinar', 'Other'].map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => { setEventType(t); handleInput(); }}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all border ${
+                        eventType === t
+                          ? 'bg-primary text-on-primary border-primary shadow-xs scale-105'
+                          : 'bg-surface text-secondary border-outline-variant hover:border-on-surface'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Event Date & Time */}
+              <div>
+                <label className="text-[11px] font-semibold text-secondary block mb-1">
+                  Event Date &amp; Time
+                </label>
+                <div className="flex items-center gap-2 border border-outline-variant rounded-lg px-3 py-2 bg-surface-container-lowest focus-within:border-primary transition-colors">
+                  <span className="material-symbols-outlined text-secondary text-[18px]">schedule</span>
+                  <input
+                    type="text"
+                    value={eventDate}
+                    onChange={(e) => { setEventDate(e.target.value); handleInput(); }}
+                    placeholder="e.g. Nov 14, 2026 • 9:30 AM - 4:30 PM"
+                    className="bg-transparent border-none text-xs font-medium text-on-surface focus:ring-0 p-0 w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Event Venue */}
+              <div>
+                <label className="text-[11px] font-semibold text-secondary block mb-1">
+                  Venue / Location
+                </label>
+                <div className="flex items-center gap-2 border border-outline-variant rounded-lg px-3 py-2 bg-surface-container-lowest focus-within:border-primary transition-colors">
+                  <span className="material-symbols-outlined text-secondary text-[18px]">location_on</span>
+                  <input
+                    type="text"
+                    value={eventVenue}
+                    onChange={(e) => { setEventVenue(e.target.value); handleInput(); }}
+                    placeholder="e.g. Decennial Hall / CCF Lab 3, GECT"
+                    className="bg-transparent border-none text-xs font-medium text-on-surface focus:ring-0 p-0 w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Registration Link */}
+              <div>
+                <label className="text-[11px] font-semibold text-secondary block mb-1">
+                  Registration Link (Form / Devfolio / Unstop)
+                </label>
+                <div className="flex items-center gap-2 border border-outline-variant rounded-lg px-3 py-2 bg-surface-container-lowest focus-within:border-primary transition-colors">
+                  <span className="material-symbols-outlined text-secondary text-[18px]">link</span>
+                  <input
+                    type="url"
+                    value={registrationLink}
+                    onChange={(e) => { setRegistrationLink(e.target.value); handleInput(); }}
+                    placeholder="https://forms.gle/... or https://unstop.com/..."
+                    className="bg-transparent border-none text-xs font-mono text-[11px] text-on-surface focus:ring-0 p-0 w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Registration Deadline */}
+              <div>
+                <label className="text-[11px] font-semibold text-secondary block mb-1">
+                  Registration Deadline
+                </label>
+                <div className="flex items-center gap-2 border border-outline-variant rounded-lg px-3 py-2 bg-surface-container-lowest focus-within:border-primary transition-colors">
+                  <span className="material-symbols-outlined text-secondary text-[18px]">alarm</span>
+                  <input
+                    type="text"
+                    value={registrationDeadline}
+                    onChange={(e) => { setRegistrationDeadline(e.target.value); handleInput(); }}
+                    placeholder="e.g. Nov 12, 2026 • 11:59 PM"
+                    className="bg-transparent border-none text-xs font-medium text-on-surface focus:ring-0 p-0 w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Eligibility */}
+              <div>
+                <label className="text-[11px] font-semibold text-secondary block mb-1">
+                  Eligibility / Target Audience
+                </label>
+                <div className="flex items-center gap-2 border border-outline-variant rounded-lg px-3 py-2 bg-surface-container-lowest focus-within:border-primary transition-colors">
+                  <span className="material-symbols-outlined text-secondary text-[18px]">school</span>
+                  <input
+                    type="text"
+                    value={eligibility}
+                    onChange={(e) => { setEligibility(e.target.value); handleInput(); }}
+                    placeholder="e.g. Open to all GECT engineering batches"
+                    className="bg-transparent border-none text-xs font-medium text-on-surface focus:ring-0 p-0 w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Registration QR Code URL or Flyer */}
+              <div>
+                <label className="text-[11px] font-semibold text-secondary block mb-1">
+                  Registration QR Code or Flyer Link (Drive / Image Link)
+                </label>
+                <div className="flex items-center gap-2 border border-outline-variant rounded-lg px-3 py-2 bg-surface-container-lowest focus-within:border-primary transition-colors">
+                  <span className="material-symbols-outlined text-secondary text-[18px]">qr_code_2</span>
+                  <input
+                    type="url"
+                    value={registrationQrUrl}
+                    onChange={(e) => {
+                      const direct = getDirectDriveImageUrl(e.target.value);
+                      setRegistrationQrUrl(direct);
+                      handleInput();
+                    }}
+                    placeholder="Google Drive QR image or flyer URL"
+                    className="bg-transparent border-none text-xs font-mono text-[10px] text-on-surface focus:ring-0 p-0 w-full"
+                  />
+                  {registrationQrUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setRegistrationQrUrl('')}
+                      className="text-secondary hover:text-error text-xs shrink-0"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">close</span>
+                    </button>
+                  )}
+                </div>
+                {registrationQrUrl && (
+                  <div className="mt-2 p-2 rounded-lg border border-outline-variant bg-surface-container-high flex items-center justify-between">
+                    <img
+                      src={registrationQrUrl}
+                      alt="QR Preview"
+                      className="w-16 h-16 object-contain rounded bg-white p-1 border"
+                    />
+                    <span className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[12px]">check_circle</span> Live QR Preview Ready
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Contact Lead */}
+              <div>
+                <label className="text-[11px] font-semibold text-secondary block mb-1">
+                  Contact Lead / Phone
+                </label>
+                <div className="flex items-center gap-2 border border-outline-variant rounded-lg px-3 py-2 bg-surface-container-lowest focus-within:border-primary transition-colors">
+                  <span className="material-symbols-outlined text-secondary text-[18px]">contact_phone</span>
+                  <input
+                    type="text"
+                    value={contactPerson}
+                    onChange={(e) => { setContactPerson(e.target.value); handleInput(); }}
+                    placeholder="e.g. Anandhu S (Event Lead) - 9876543210"
+                    className="bg-transparent border-none text-xs font-medium text-on-surface focus:ring-0 p-0 w-full"
+                  />
+                </div>
+              </div>
+            </div>
+          ) : category === 'Project section' ? (
             <div className="flex flex-col gap-4 p-4 rounded-xl border-2 border-on-surface bg-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)]">
               <div>
                 <span className="block text-label-bold font-label-bold uppercase text-on-surface text-xs mb-2">
@@ -1282,14 +1538,14 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* Project Resources & Documents (when category === 'Project section') */}
-          {category === 'Project section' && (
+          {/* Resources & Documents (when category === 'Project section' || category === 'Coming Up') */}
+          {(category === 'Project section' || category === 'Coming Up') && (
             <div className="p-4 rounded-xl border-2 border-on-surface bg-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[18px] text-tertiary">folder_open</span>
                   <span className="text-label-bold font-label-bold uppercase text-on-surface text-xs">
-                    Project Resources &amp; Media
+                    {category === 'Coming Up' ? 'Event Resources & Brochures' : 'Project Resources & Media'}
                   </span>
                 </div>
                 {/* (i) button */}
@@ -1482,7 +1738,7 @@ export default function AdminDashboard() {
           )}
 
           {/* Top Stories Ranking (#1, #2, #3, ...) - Only for General / Newsletter articles */}
-          {category !== 'Project section' && (
+          {category !== 'Project section' && category !== 'Coming Up' && (
             <div className="p-4 rounded-xl border-2 border-on-surface bg-surface shadow-[3px_3px_0px_0px_rgba(28,27,27,1)] flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <span className="text-label-bold font-label-bold uppercase text-on-surface text-xs flex items-center gap-1.5">

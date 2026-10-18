@@ -15,6 +15,17 @@ export interface SubmitterContact {
   phone?: string;
 }
 
+export interface EventDetails {
+  eventDate?: string;
+  eventVenue?: string;
+  eventType?: 'Workshop' | 'Hackathon' | 'Competition' | 'Bootcamp' | 'Talk' | 'Webinar' | 'Other' | string;
+  registrationDeadline?: string;
+  registrationLink?: string;
+  registrationQrUrl?: string;
+  eligibility?: string;
+  contactPerson?: string;
+}
+
 export interface Article {
   id: string;
   title: string;
@@ -37,6 +48,7 @@ export interface Article {
     resources?: ProjectResource[];
     submitterContact?: SubmitterContact;
     needsApproval?: boolean;
+    eventDetails?: EventDetails;
   };
   author: {
     name: string;
@@ -50,6 +62,7 @@ export interface Article {
   resources?: ProjectResource[];
   submitterContact?: SubmitterContact;
   needsApproval?: boolean;
+  eventDetails?: EventDetails;
   broadcastSentAt?: string;
 }
 

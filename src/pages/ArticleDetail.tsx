@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import DOMPurify from 'dompurify';
-import { fetchArticleById, getAllArticles, getLocalArticlesSync } from '../data/articleService';
+import { fetchArticleById, getAllArticles, getLocalArticlesSync, isComingUpArticle } from '../data/articleService';
 import type { Article } from '../data/articles';
 import { getEmbedDetails, getDirectDriveImageUrl } from '../utils/embedHelper';
 
@@ -106,6 +106,8 @@ export default function ArticleDetail() {
   const teamName = article?.teamName || article?.content?.teamName;
   const resources = article?.resources || article?.content?.resources;
   const isProject = (article?.category || '').trim().toLowerCase().includes('project') || Boolean(teamMembers && teamMembers.length > 0);
+  const isEvent = article ? isComingUpArticle(article) : false;
+  const eventDetails = article?.eventDetails || article?.content?.eventDetails;
 
   return (
     <main className="flex-grow w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-12 relative">
@@ -355,6 +357,115 @@ export default function ArticleDetail() {
             </div>
           )}
         </div>
+
+        {/* Upcoming Event Details Card */}
+        {isEvent && (
+          <div className="mb-8 p-5 sm:p-7 rounded-2xl border-2 border-on-surface bg-surface shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-outline-variant/60 pb-3 flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <span className="bg-primary text-on-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
+                  <span className="material-symbols-outlined text-[15px]">event</span>
+                  {eventDetails?.eventType || 'Upcoming Event'}
+                </span>
+                <span className="text-xs font-semibold text-secondary">Coming Up at IEDC</span>
+              </div>
+              {eventDetails?.registrationDeadline && (
+                <span className="bg-red-50 text-red-700 border border-red-200 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]">alarm</span>
+                  Deadline: {eventDetails.registrationDeadline}
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm py-1">
+              {eventDetails?.eventDate ? (
+                <div className="flex items-start gap-2.5">
+                  <span className="material-symbols-outlined text-primary text-[22px] mt-0.5">calendar_month</span>
+                  <div>
+                    <span className="text-[11px] font-bold text-secondary uppercase block">Event Date &amp; Time</span>
+                    <span className="font-bold text-on-surface text-sm sm:text-base">{eventDetails.eventDate}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2.5">
+                  <span className="material-symbols-outlined text-primary text-[22px] mt-0.5">schedule</span>
+                  <div>
+                    <span className="text-[11px] font-bold text-secondary uppercase block">Scheduled Date</span>
+                    <span className="font-bold text-on-surface">{article.date}</span>
+                  </div>
+                </div>
+              )}
+
+              {eventDetails?.eventVenue && (
+                <div className="flex items-start gap-2.5">
+                  <span className="material-symbols-outlined text-primary text-[22px] mt-0.5">location_on</span>
+                  <div>
+                    <span className="text-[11px] font-bold text-secondary uppercase block">Venue / Location</span>
+                    <span className="font-bold text-on-surface text-sm sm:text-base">{eventDetails.eventVenue}</span>
+                  </div>
+                </div>
+              )}
+
+              {eventDetails?.eligibility && (
+                <div className="flex items-start gap-2.5">
+                  <span className="material-symbols-outlined text-primary text-[22px] mt-0.5">school</span>
+                  <div>
+                    <span className="text-[11px] font-bold text-secondary uppercase block">Eligibility</span>
+                    <span className="font-medium text-on-surface">{eventDetails.eligibility}</span>
+                  </div>
+                </div>
+              )}
+
+              {eventDetails?.contactPerson && (
+                <div className="flex items-start gap-2.5">
+                  <span className="material-symbols-outlined text-primary text-[22px] mt-0.5">contact_phone</span>
+                  <div>
+                    <span className="text-[11px] font-bold text-secondary uppercase block">Event Lead / Contact</span>
+                    <span className="font-medium text-on-surface">{eventDetails.contactPerson}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons & QR Code */}
+            <div className="flex items-center gap-3 pt-4 border-t border-outline-variant/60 flex-wrap">
+              {eventDetails?.registrationLink && (
+                <a
+                  href={eventDetails.registrationLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-primary text-on-primary px-6 py-2.5 rounded-full text-xs font-bold uppercase border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_rgba(28,27,27,1)] transition-all flex items-center gap-1.5"
+                >
+                  <span>Register Now</span>
+                  <span className="material-symbols-outlined text-[15px]">open_in_new</span>
+                </a>
+              )}
+
+              {/* Add to Google Calendar */}
+              <a
+                href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(article.title)}&details=${encodeURIComponent(article.subtitle || '')}&location=${encodeURIComponent(eventDetails?.eventVenue || 'GECT Thrissur')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-surface text-on-surface px-4 py-2.5 rounded-full text-xs font-bold uppercase border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] hover:bg-surface-container transition-all flex items-center gap-1.5"
+              >
+                <span className="material-symbols-outlined text-[15px]">calendar_add_on</span>
+                <span>Add to Calendar</span>
+              </a>
+
+              {eventDetails?.registrationQrUrl && (
+                <a
+                  href={getDirectDriveImageUrl(eventDetails.registrationQrUrl)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-surface text-on-surface px-4 py-2.5 rounded-full text-xs font-bold uppercase border border-outline-variant hover:border-on-surface transition-all flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-[15px]">qr_code_2</span>
+                  <span>View Registration QR</span>
+                </a>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Hero Image */}
         {article.imageUrl && (

@@ -1,4 +1,4 @@
-import { articles as initialArticles, type Article, type TeamMember, type ProjectResource, type SubmitterContact } from './articles';
+import { articles as initialArticles, type Article, type TeamMember, type ProjectResource, type SubmitterContact, type EventDetails } from './articles';
 import { supabase, isSupabaseConfigured, supabaseUrl } from '../lib/supabase';
 import { sendProjectSubmissionAdminNotification } from './subscriptionService';
 import DOMPurify from 'dompurify';
@@ -222,6 +222,7 @@ function mapSupabaseRow(item: Record<string, unknown>): Article {
   const teamMembers = Array.isArray(contentObj.teamMembers) ? (contentObj.teamMembers as TeamMember[]) : undefined;
   const teamName = typeof contentObj.teamName === 'string' ? contentObj.teamName : undefined;
   const resources = Array.isArray(contentObj.resources) ? (contentObj.resources as ProjectResource[]) : undefined;
+  const eventDetails = contentObj.eventDetails ? (contentObj.eventDetails as EventDetails) : undefined;
   const isPublished = (item.status as Article['status']) === 'published';
   const submitterContact = isPublished ? undefined : (contentObj.submitterContact ? (contentObj.submitterContact as SubmitterContact) : undefined);
   const needsApproval = typeof contentObj.needsApproval === 'boolean' ? contentObj.needsApproval : undefined;
@@ -238,7 +239,7 @@ function mapSupabaseRow(item: Record<string, unknown>): Article {
     featured: Boolean(topStoryRank) || (item.featured as boolean) || false,
     status: (item.status as Article['status']) || 'published',
     scheduledFor: (item.scheduled_for as string) || undefined,
-    content: isPublished ? { ...contentObj, submitterContact: undefined } : contentObj,
+    content: isPublished ? { ...contentObj, submitterContact: undefined, eventDetails } : { ...contentObj, eventDetails },
     author: typeof item.author === 'string' ? JSON.parse(item.author as string) : (item.author as Article['author']),
     createdAt: (item.createdAt as string) || undefined,
     topStoryRank,
@@ -247,6 +248,7 @@ function mapSupabaseRow(item: Record<string, unknown>): Article {
     resources,
     submitterContact,
     needsApproval,
+    eventDetails,
   };
 }
 
@@ -261,6 +263,7 @@ function toSupabaseRow(article: Article): Record<string, unknown> {
     teamMembers: article.teamMembers || article.content?.teamMembers || [],
     teamName: article.teamName || article.content?.teamName || '',
     resources: article.resources || article.content?.resources || [],
+    eventDetails: article.eventDetails || article.content?.eventDetails || undefined,
     needsApproval: article.needsApproval !== undefined ? article.needsApproval : (article.content?.needsApproval ?? false),
   };
 
@@ -385,6 +388,7 @@ export interface CreateArticlePayload {
   resources?: ProjectResource[];
   submitterContact?: SubmitterContact;
   needsApproval?: boolean;
+  eventDetails?: EventDetails;
 }
 
 export async function publishArticle(payload: CreateArticlePayload): Promise<Article> {
@@ -421,6 +425,7 @@ export async function publishArticle(payload: CreateArticlePayload): Promise<Art
     resources: payload.resources || [],
     submitterContact: safeContact,
     needsApproval: payload.needsApproval,
+    eventDetails: payload.eventDetails,
     content: {
       paragraphs: payload.paragraphs.length > 0 ? sanitizeParagraphs(payload.paragraphs) : ['No content provided.'],
       subheadings: payload.subheadings || [],
@@ -431,6 +436,7 @@ export async function publishArticle(payload: CreateArticlePayload): Promise<Art
       resources: payload.resources || [],
       submitterContact: safeContact,
       needsApproval: payload.needsApproval,
+      eventDetails: payload.eventDetails,
     },
     author: {
       name: payload.authorName || 'Admin User',
@@ -502,6 +508,7 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
   const resolvedTeamMembers = payload.teamMembers !== undefined ? payload.teamMembers : (existing.teamMembers || existing.content?.teamMembers);
   const resolvedTeamName = payload.teamName !== undefined ? payload.teamName : (existing.teamName || existing.content?.teamName);
   const resolvedResources = payload.resources !== undefined ? payload.resources : (existing.resources || existing.content?.resources);
+  const resolvedEventDetails = payload.eventDetails !== undefined ? payload.eventDetails : (existing.eventDetails || existing.content?.eventDetails);
   const targetStatus = payload.status ?? existing.status;
   const isPublished = targetStatus === 'published';
   // 🔒 Privacy (M6): Submitter contact info is confidential and must NEVER be stored in published articles
@@ -524,6 +531,7 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
     resources: resolvedResources,
     submitterContact: resolvedSubmitter,
     needsApproval: resolvedNeedsApproval,
+    eventDetails: resolvedEventDetails,
     content: {
       ...(payload.paragraphs ? {
         paragraphs: sanitizeParagraphs(payload.paragraphs),
@@ -536,6 +544,7 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
       resources: resolvedResources,
       submitterContact: resolvedSubmitter,
       needsApproval: resolvedNeedsApproval,
+      eventDetails: resolvedEventDetails,
     },
     author: {
       name: payload.authorName !== undefined ? sanitizeHtml(payload.authorName) : (existing.author?.name || 'Admin User'),
@@ -573,6 +582,18 @@ export async function updateArticle(id: string, payload: Partial<CreateArticlePa
   }
 
   return updated;
+}
+
+/** Check if an article belongs to Coming Up at IEDC */
+export function isComingUpArticle(a: Article): boolean {
+  const cat = (a.category || '').trim().toLowerCase();
+  return (
+    cat === 'coming up' ||
+    cat === 'coming up at iedc' ||
+    cat === 'upcoming event' ||
+    cat.includes('coming up') ||
+    Boolean(a.eventDetails && (a.eventDetails.eventDate || a.eventDetails.registrationLink))
+  );
 }
 
 export interface StudentProjectPayload {
