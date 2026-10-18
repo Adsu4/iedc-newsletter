@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { getAllArticles, getLocalArticlesSync, onArticlesChange, isComingUpArticle } from '../data/articleService';
 import type { Article } from '../data/articles';
@@ -39,6 +40,18 @@ export default function ComingUpSection({ showAll = false }: ComingUpSectionProp
   const [selectedFormat, setSelectedFormat] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [qrModalItem, setQrModalItem] = useState<{ title: string; qrUrl: string; regLink?: string } | null>(null);
+
+  // Prevent background scroll when modal is active
+  useEffect(() => {
+    if (qrModalItem) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [qrModalItem]);
 
   useEffect(() => {
     getAllArticles().then((all) => {
@@ -95,7 +108,7 @@ export default function ComingUpSection({ showAll = false }: ComingUpSectionProp
   const displayedEvents = showAll ? filteredEvents : events.slice(0, 3);
 
   return (
-    <section className="flex flex-col gap-6 animate-fade-in-up">
+    <section className="flex flex-col gap-6">
       {/* Header (shown on Home page when showAll is false) */}
       {!showAll && (
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b-2 border-on-surface pb-3 gap-3">
@@ -440,58 +453,60 @@ export default function ComingUpSection({ showAll = false }: ComingUpSectionProp
         </div>
       )}
 
-      {/* QR Code Scanning Modal */}
-      {qrModalItem && (
-        <div
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
-          onClick={() => setQrModalItem(null)}
-        >
+      {/* QR Code Scanning Modal via Portal for Full-Viewport Display */}
+      {qrModalItem && typeof document !== 'undefined' &&
+        createPortal(
           <div
-            className="bg-surface rounded-2xl border-2 border-on-surface p-6 max-w-sm w-full shadow-[6px_6px_0px_0px_rgba(28,27,27,1)] flex flex-col items-center gap-4 text-center animate-scale-up"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in"
+            onClick={() => setQrModalItem(null)}
           >
-            <div className="flex items-center justify-between w-full border-b border-outline-variant/60 pb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-secondary flex items-center gap-1">
-                <span className="material-symbols-outlined text-[16px] text-primary">qr_code_scanner</span>
-                Scan to Register
-              </span>
-              <button
-                type="button"
-                onClick={() => setQrModalItem(null)}
-                className="w-7 h-7 rounded-lg border border-outline-variant hover:border-error hover:text-error flex items-center justify-center text-secondary transition-colors"
-              >
-                <span className="material-symbols-outlined text-[16px]">close</span>
-              </button>
+            <div
+              className="bg-surface rounded-2xl border-2 border-on-surface p-6 max-w-sm w-full shadow-[6px_6px_0px_0px_rgba(28,27,27,1)] flex flex-col items-center gap-4 text-center animate-scale-in"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between w-full border-b border-outline-variant/60 pb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-secondary flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[16px] text-primary">qr_code_scanner</span>
+                  Scan to Register
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setQrModalItem(null)}
+                  className="w-7 h-7 rounded-lg border border-outline-variant hover:border-error hover:text-error flex items-center justify-center text-secondary transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[16px]">close</span>
+                </button>
+              </div>
+
+              <h3 className="font-bold text-sm text-on-surface">{qrModalItem.title}</h3>
+
+              <div className="w-56 h-56 rounded-xl border-2 border-on-surface bg-white p-3 flex items-center justify-center shadow-inner overflow-hidden">
+                <img
+                  src={qrModalItem.qrUrl}
+                  alt="Registration QR Code"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+
+              <p className="text-xs text-secondary leading-snug">
+                Point your smartphone camera at this QR code to open the registration form directly.
+              </p>
+
+              {qrModalItem.regLink && (
+                <a
+                  href={qrModalItem.regLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-primary text-on-primary py-2 px-4 rounded-xl text-xs font-bold uppercase border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-1.5"
+                >
+                  <span>Or Open Registration Link</span>
+                  <span className="material-symbols-outlined text-[15px]">open_in_new</span>
+                </a>
+              )}
             </div>
-
-            <h3 className="font-bold text-sm text-on-surface">{qrModalItem.title}</h3>
-
-            <div className="w-56 h-56 rounded-xl border-2 border-on-surface bg-white p-3 flex items-center justify-center shadow-inner overflow-hidden">
-              <img
-                src={qrModalItem.qrUrl}
-                alt="Registration QR Code"
-                className="w-full h-full object-contain"
-              />
-            </div>
-
-            <p className="text-xs text-secondary leading-snug">
-              Point your smartphone camera at this QR code to open the registration form directly.
-            </p>
-
-            {qrModalItem.regLink && (
-              <a
-                href={qrModalItem.regLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full bg-primary text-on-primary py-2 px-4 rounded-xl text-xs font-bold uppercase border border-on-surface shadow-[2px_2px_0px_0px_rgba(28,27,27,1)] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-1.5"
-              >
-                <span>Or Open Registration Link</span>
-                <span className="material-symbols-outlined text-[15px]">open_in_new</span>
-              </a>
-            )}
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </section>
   );
 }
